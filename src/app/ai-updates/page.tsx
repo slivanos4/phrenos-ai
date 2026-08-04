@@ -19,7 +19,7 @@ export default function AiUpdatesPage() {
         description="Notes on Generative AI, automation and the organisational judgement required to put them to work — coming soon."
       />
 
-      <section className="bg-forest py-14 lg:py-20">
+      <section className="bg-forest pt-10 pb-16 lg:pt-12 lg:pb-24">
         <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
           <p className="text-base leading-relaxed text-sage sm:text-lg">
             This space will gather reflections on how AI is reshaping work,
