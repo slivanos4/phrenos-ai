@@ -68,6 +68,50 @@ body {
   }
 }
 
+@keyframes orrery-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orrery-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes node-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+
+@keyframes line-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes focus-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.85rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-up {
   animation: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -92,6 +136,263 @@ body {
   animation: network-drift 8s ease-in-out infinite;
 }
 
+.animate-node-pulse {
+  animation: node-pulse 3.8s ease-in-out infinite;
+}
+
+.animate-orrery {
+  animation: orrery-spin 80s linear infinite;
+}
+
+.animate-orrery-reverse {
+  animation: orrery-spin-reverse 55s linear infinite;
+}
+
+.focus-reveal {
+  opacity: 0;
+}
+
+.focus-reveal.is-visible {
+  animation: focus-reveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.focus-line {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.focus-reveal.is-visible .focus-line {
+  animation: line-draw 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.work-book {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 90, 0.45) transparent;
+}
+
+.work-book::-webkit-scrollbar {
+  height: 6px;
+}
+
+.work-book::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 90, 0.45);
+  border-radius: 999px;
+}
+
+.book-page {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.25), transparent 40%),
+    #f4ead6;
+  color: #1a2218;
+  overflow: hidden;
+}
+
+.book-page-inner {
+  width: 100%;
+  height: 100%;
+}
+
+.book-cover {
+  background-color: #0c1510;
+}
+
+.book-cover.book-cover-art {
+  background-color: #0c1510 !important;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(8, 12, 10, 0.22) 0%,
+      rgba(8, 12, 10, 0.08) 30%,
+      rgba(8, 12, 10, 0.35) 70%,
+      rgba(8, 12, 10, 0.72) 100%
+    ),
+    url("/brand/work/cover.jpg?v=5") !important;
+  background-size: cover !important;
+  background-position: center 42% !important;
+  background-repeat: no-repeat !important;
+}
+
+.book-cover-panel {
+  max-width: 15.75rem;
+  padding: 0.65rem 0.75rem 0.85rem 0.15rem;
+  border-radius: 0;
+  background: radial-gradient(
+    ellipse 120% 95% at 20% 30%,
+    rgba(8, 12, 10, 0.82) 0%,
+    rgba(8, 12, 10, 0.55) 48%,
+    rgba(8, 12, 10, 0) 78%
+  );
+  border: none;
+  box-shadow: none;
+}
+
+.book-cover-footer {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+}
+
+.book-plate-frame {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.book-plate-page {
+  background: #0c1510 !important;
+}
+
+.book-plate-art {
+  background-color: #0c1510;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.book-block {
+  position: relative;
+  filter: drop-shadow(0 28px 50px rgba(0, 0, 0, 0.55));
+}
+
+.book-block-shadow {
+  position: absolute;
+  inset: 8% 6% -18px;
+  border-radius: 4px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.45),
+    transparent 70%
+  );
+  z-index: 0;
+}
+
+.work-flipbook {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+}
+
+.book-stage {
+  perspective: 1800px;
+}
+
+.proof-marquee {
+  animation: proof-scroll 32s linear infinite;
+}
+
+@keyframes proof-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.proof-pass-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    #c9a24a 0%,
+    #c9a24a 46%,
+    #f3e2a8 50%,
+    #c9a24a 54%,
+    #c9a24a 100%
+  );
+  background-size: 100vw 100%;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.cta-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.45) 45%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  animation: cta-shine 3.8s ease-in-out infinite;
+}
+
+@keyframes cta-shine {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  75%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.phi-ritual .phi-ring {
+  stroke-dasharray: 640;
+  stroke-dashoffset: 640;
+  animation: phi-draw 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.phi-ritual .phi-ring-2 {
+  animation-delay: 0.18s;
+}
+
+.phi-ritual .phi-ring-3 {
+  animation-delay: 0.32s;
+}
+
+.phi-ritual .phi-mark {
+  opacity: 0;
+  animation: phi-fade 0.9s ease forwards 0.7s;
+}
+
+@keyframes phi-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes phi-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proof-marquee,
+  .cta-shimmer::after,
+  .phi-ritual .phi-ring,
+  .phi-ritual .phi-mark {
+    animation: none;
+  }
+
+  .proof-pass-shimmer {
+    background: none;
+    color: #e0c078;
+    -webkit-text-fill-color: #e0c078;
+  }
+
+  .phi-ritual .phi-ring {
+    stroke-dashoffset: 0;
+  }
+
+  .phi-ritual .phi-mark {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -102,7 +403,18 @@ body {
   .animate-fade-up-delay-2,
   .animate-fade-up-delay-3,
   .animate-pulse-soft,
-  .animate-network-drift {
+  .animate-network-drift,
+  .animate-node-pulse,
+  .animate-orrery,
+  .animate-orrery-reverse,
+  .focus-reveal.is-visible,
+  .focus-reveal.is-visible .focus-line {
     animation: none;
+  }
+
+  .focus-reveal,
+  .focus-line {
+    opacity: 1;
+    transform: none;
   }
 }

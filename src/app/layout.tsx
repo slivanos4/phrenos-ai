@@ -20,7 +20,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: "Phrenos.ai — AI Strategy, Automation & Innovation",
+    default: "Phrenos.ai | AI Strategy, Automation & Innovation",
     template: "%s | Phrenos.ai",
   },
   description:

@@ -14,9 +14,12 @@ export default function WorkPage() {
       <PageHero
         image="work"
         position="center"
+        compact
+        lightWash
+        overlayMobileCopy
         eyebrow="Selected work"
         title="Systems that turn intelligence into action."
-        description="A selection of engagements spanning competitive intelligence, content operations, governance and organisational knowledge."
+        description="Five AI systems from the portfolio: competitive intelligence, brand governance, knowledge, content hubs and reporting."
       />
       <SelectedWork hideIntro />
     </>

@@ -14,9 +14,10 @@ export default function ConsultancyPage() {
       <PageHero
         image="consultancy"
         position="78% center"
+        mobilePosition="70% center"
         eyebrow="Consultancy"
         title="Capability with commercial intent."
-        description="Each engagement is designed around operational clarity and measurable outcomes — not technology for its own sake."
+        description="Each engagement is designed around operational clarity and measurable outcomes, not technology for its own sake."
       />
       <Services hideIntro />
     </>

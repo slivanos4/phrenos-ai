@@ -6,7 +6,7 @@ import { approach } from "@/data/site-content";
 export const metadata: Metadata = {
   title: "Approach",
   description:
-    "Understand, prioritise, build and embed — the Phrenos.ai method for responsible AI adoption.",
+    "Understand, prioritise, build and embed: the Phrenos.ai method for responsible AI adoption.",
 };
 
 export default function ApproachPage() {
@@ -15,6 +15,7 @@ export default function ApproachPage() {
       <PageHero
         image="approach"
         position="center"
+        mobilePosition="center 40%"
         eyebrow="Approach"
         title="From opportunity to lasting capability."
         description={approach.intro}

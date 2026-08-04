@@ -21,7 +21,7 @@ export function Services({ hideIntro = false }: ServicesProps) {
             </h2>
             <p className="mt-5 text-base leading-relaxed text-sage sm:text-lg">
               Each engagement is designed around operational clarity and
-              measurable outcomes — not technology for its own sake.
+              measurable outcomes, not technology for its own sake.
             </p>
           </div>
         )}

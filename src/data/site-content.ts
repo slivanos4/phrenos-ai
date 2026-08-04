@@ -1,7 +1,7 @@
 export const site = {
   name: "Phrenos.ai",
   tagline: "AI Strategy & Automation",
-  definition: "phren·os (n.) — mind, intellect, reason",
+  definition: "phren·os (n.): mind, intellect, reason",
   description:
     "An independent AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
   email: "hello@phrenos.ai",
@@ -118,40 +118,96 @@ export const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"] 
 
 export const selectedWork = [
   {
-    title: "AI-Powered Competitive Intelligence Platform",
+    title: "Competitive Intelligence",
+    tag: "Intelligence",
+    headline: "Automatically tracking what competitors are doing",
     problem:
-      "Market and competitor signals were scattered across sources, slowing strategic response and leaving teams reliant on incomplete manual research.",
+      "Multiple comparison sites held 10 to 15 brands per page, each with long-form reviews. Keeping hundreds of reviews competitive meant continuous manual research that was slow, inconsistent and hard to scale.",
     solution:
-      "An AI-assisted intelligence platform that gathers, structures and surfaces competitive insight for faster, clearer commercial decision-making.",
-    impact:
-      "Teams gained a repeatable intelligence rhythm, reducing research friction and improving the quality of competitive briefings.",
+      "An AI platform that crawls competitor sites, extracts products, pricing, messaging, UX, trust signals and positioning, then compares them against our own and drafts structured executive reports.",
+    transformation: {
+      from: "Days of Manual Work",
+      to: "Minutes, Automatically",
+    },
+    steps: [
+      "Competitor Websites",
+      "AI Reads & Compares",
+      "Analysis",
+      "Ready-to-Use Report",
+    ],
+    image: "/brand/work/case-intelligence.jpg",
   },
   {
-    title: "Enterprise AI Content Generation Platform",
+    title: "Brand Review Governance",
+    tag: "Governance",
+    headline: "Keeping hundreds of reviews accurate, automatically",
     problem:
-      "Content demand was growing faster than internal capacity, creating bottlenecks and inconsistent quality across channels.",
+      "Hundreds of long brand-review articles had to stay accurate. Checking them by hand was slow and easy to fall behind on.",
     solution:
-      "A governed enterprise content platform combining AI generation with editorial controls, brand standards and human review.",
-    impact:
-      "Content operations scaled without sacrificing voice, accuracy or the judgement of subject-matter experts.",
+      "A tool that automatically checks articles against official brand websites every week and month, then flags anything wrong or out of date, ranked by urgency.",
+    transformation: {
+      from: "Occasional Manual Checks",
+      to: "Continuous Automatic Monitoring",
+    },
+    steps: [
+      "Brand Websites",
+      "AI Compares & Flags Issues",
+      "Priority To-Do List",
+    ],
+    image: "/brand/work/case-governance.jpg",
   },
   {
-    title: "AI Brand Review Governance Platform",
+    title: "Content Buddy",
+    tag: "Knowledge",
+    headline: "One place to ask any company question",
     problem:
-      "Brand and compliance review was slow, fragmented and difficult to audit as content volume increased.",
+      "Company knowledge was scattered across 7 different systems, so answering a simple question, or training a new teammate, took far longer than it should.",
     solution:
-      "An AI-supported review workflow that flags risk, guides reviewers and creates a clearer trail of brand governance decisions.",
-    impact:
-      "Review cycles became more consistent, transparent and manageable for brand, legal and marketing stakeholders.",
+      "An AI chatbot that instantly answers questions using company knowledge in one place, with a human always reviewing what matters.",
+    transformation: {
+      from: "Knowledge Scattered Everywhere",
+      to: "One Simple Chat",
+    },
+    steps: ["Company Documents", "AI Chatbot", "Instant Answers"],
+    image: "/brand/work/case-knowledge.jpg",
   },
   {
-    title: "Content Buddy: AI Knowledge Assistant",
+    title: "Content & Data Hub",
+    tag: "Hub",
+    headline: "Connecting data, content and testing into one system",
     problem:
-      "Institutional knowledge was hard to find, leaving teams re-asking the same questions and recreating work that already existed.",
+      "Performance data, content planning and testing lived in separate tools, so no one could easily see why something changed, what to do next, or what had already been learned.",
     solution:
-      "A conversational AI knowledge assistant grounded in approved organisational content and processes.",
-    impact:
-      "Staff could locate guidance faster, reducing repeated queries and improving day-to-day operational confidence.",
+      "A platform that brings together performance data, AI-generated content ideas and automatic testing, so the business can spot problems, react quickly and remember what worked.",
+    transformation: {
+      from: "Separate, Disconnected Tools",
+      to: "One Connected System",
+    },
+    steps: [
+      "Performance Data",
+      "AI Spots Patterns & Suggests Content",
+      "Tested & Remembered",
+    ],
+    image: "/brand/work/case-hub.jpg",
+  },
+  {
+    title: "Monthly Report Automation",
+    tag: "Reporting",
+    headline: "Turning days of report-building into minutes",
+    problem:
+      "Monthly reporting meant manually copying data from multiple Excel workbooks into PowerPoint: slow and easy to get wrong.",
+    solution:
+      "A platform that analyses PowerPoint templates, maps KPIs to Excel once and automatically generates future reports while preserving layouts, with a roadmap for AI commentary and data warehouse integration.",
+    transformation: {
+      from: "Days",
+      to: "Minutes",
+    },
+    steps: [
+      "Spreadsheet Data",
+      "Automatic Report Builder",
+      "Finished Report",
+    ],
+    image: "/brand/work/case-reporting.jpg",
   },
 ] as const;
 
@@ -193,9 +249,9 @@ export const aboutPage = {
 export const contactCta = {
   heading: "Bring intelligence to the work that matters.",
   supporting:
-    "Let’s identify where AI, data and automation can create meaningful impact inside your organisation.",
+    "A short note is enough to begin. Tell us where the friction is, and we’ll help find the leverage.",
   button: {
-    label: "Contact Us",
+    label: "Start a Conversation",
     href: "/contact#contact-form",
   },
 } as const;
@@ -204,17 +260,17 @@ export const contactPage = {
   eyebrow: "Contact",
   title: "Start a conversation.",
   description:
-    "Tell us a little about your organisation and where AI, data or automation might create meaningful impact. We’ll respond thoughtfully.",
+    "A short note is enough to begin. Tell us a little about your organisation, and let’s find where AI, data or automation can create real leverage.",
   fields: {
     name: "Full name",
     email: "Work email",
     organisation: "Organisation",
     role: "Role",
-    message: "How can we help?",
+    message: "Where should we look first?",
     submit: "Send message",
   },
   success:
-    "Thank you — your message is ready to send. We’ll be in touch shortly.",
+    "Thank you. Your message is ready to send. We’ll be in touch shortly.",
 } as const;
 
 export const footer = {

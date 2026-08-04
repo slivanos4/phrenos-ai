@@ -24,14 +24,14 @@ export function ContactForm() {
     const message = String(data.get("message") || "").trim();
 
     const subject = encodeURIComponent(
-      `Phrenos.ai enquiry${organisation ? ` — ${organisation}` : ""}`,
+      `Phrenos.ai enquiry${organisation ? `: ${organisation}` : ""}`,
     );
     const body = encodeURIComponent(
       [
         `Name: ${name}`,
         `Email: ${email}`,
-        `Organisation: ${organisation || "—"}`,
-        `Role: ${role || "—"}`,
+        `Organisation: ${organisation || "Not provided"}`,
+        `Role: ${role || "Not provided"}`,
         "",
         message,
       ].join("\n"),

@@ -1,0 +1,218 @@
+AI Solutions Portfolio
+Solving business problems through AI, automation and intelligent workflows.
+SUMMARY
+
+
+
+Five AI tools, each fixing a real, everyday business problem
+AI is used to remove slow, repetitive work, not to replace judgement. Every tool keeps a human-in-the-loop (a person reviews and approves the
+output before it is used)
+
+
+
+
+                                                                                                                             Monthly Report
+    Competitive Intelligence    Brand Review Governance            Content Buddy               Content & Data Hub
+                                                                                                                              Automation
+
+          Days of Manual Work     Occasional Manual Checks   Knowledge Scattered Everywhere   Separate, Disconnected Tools        Days
+
+
+
+                                  Continuous Automatic
+      Minutes, Automatically                                       One Simple Chat            One Connected System              Minutes
+                                       Monitoring
+
+
+
+
+AI Solutions Portfolio                                                                                                                        01
+     METHODOLOGY
+
+
+
+     My Approach
+     A consistent methodology applied to every solution.
+
+
+
+
+    1                           2                          3           4          5          6
+
+Business                 Understanding the            Design the     Build &   Human in   Business
+Problem                      Problem                  AI Solution   Automate   the Loop    Result
+
+
+
+
+AI Solutions Portfolio                                                                           02
+01 · COMPETITIVE INTELLIGENCE
+
+
+
+Automatically tracking what competitors are doing
+THE PROBLEM                                                                        WHAT WE BUILT
+
+Multiple comparison websites contained 10–15 brands per page, each                 Built an AI platform that crawled competitor websites, extracted products,
+supported by detailed long-form reviews. Keeping hundreds of reviews               pricing, messaging, UX/UI, trust signals and positioning, then compared them
+competitive required continuous manual research across competitor                  against our own sites. The platform generated structured reports with
+websites, making the process slow, inconsistent and difficult to scale.            strengths, weaknesses, content gaps, feature ideas, payment methods, UX
+                                                                                   improvements and strategic recommendations.
+
+
+
+                                  Days of Manual Work → Minutes, Automatically
+
+                                                                          HOW IT WORKS
+
+
+
+
+            Competitor Websites                AI Reads & Compares                        Analysis                          Ready-to-Use Report
+
+
+
+
+AI Solutions Portfolio                                                                                                                                          03
+02 · BRAND REVIEW GOVERNANCE
+
+
+
+Keeping hundreds of reviews accurate, automatically
+THE PROBLEM                                                                          WHAT WE BUILT
+
+We publish hundreds of long articles reviewing different brands, and need to         Built a tool that automatically checks our articles against the official brand
+keep checking they are still accurate. Doing this by hand was slow and easy          websites every week and month, then flags anything wrong or out of date,
+to fall behind on.                                                                   ranked by urgency.
+
+
+
+
+                         Occasional Manual Checks → Continuous Automatic Monitoring
+
+                                                                          HOW IT WORKS
+
+
+
+
+                         Brand Websites                              AI Compares & Flags Issues                                   Priority To-Do List
+
+
+
+
+AI Solutions Portfolio                                                                                                                                                04
+03 · CONTENT BUDDY
+
+
+
+One place to ask any company question
+THE PROBLEM                                                                          WHAT WE BUILT
+
+Company knowledge was scattered across 7 different systems, so answering             Built an AI chatbot (a chat tool you can ask questions to, like a helpful
+a simple question, or training a new team member, took far longer than it            assistant) that instantly answers questions using all our company knowledge
+should.                                                                              in one place.
+
+
+
+
+                                  Knowledge Scattered Everywhere → One Simple Chat
+
+                                                                            HOW IT WORKS
+
+
+
+
+                         Company Documents                                   AI Chatbot                                           Instant Answers
+
+
+
+
+AI Solutions Portfolio                                                                                                                                           05
+04 · CONTENT & Data HUB
+
+
+
+Connecting data, content and testing into one system
+THE PROBLEM                                                                          WHAT WE BUILT
+
+Our performance data, content planning and testing all lived in separate             Built a platform that brings together performance data, AI-generated content
+tools, so no one could easily see why something changed, what to do next, or         ideas, and automatic testing, so the business can spot problems, react
+what had already been learned.                                                       quickly, and remember what has worked before.
+
+
+
+
+                                Separate, Disconnected Tools → One Connected System
+
+                                                                           HOW IT WORKS
+
+
+
+
+                         Performance Data                       AI Spots Patterns & Suggests Content                         Tested & Remembered
+
+
+
+
+AI Solutions Portfolio                                                                                                                                         06
+05 · MONTHLY REPORT AUTOMATION
+
+
+
+Turning days of report-building into minutes
+THE PROBLEM                                                                          WHAT WE BUILT
+
+Monthly reporting required manually copying data from multiple Excel                 Designed a platform that analyses PowerPoint templates, maps KPIs to Excel
+workbooks into PowerPoint, creating a slow and error-prone process.                  once and automatically generates future reports while preserving layouts.
+                                                                                     Built with a roadmap for AI commentary, financial projection workflows and
+                                                                                     data warehouse integration.
+
+
+
+
+                                                             Days → Minutes
+
+                                                                          HOW IT WORKS
+
+
+
+
+                         Spreadsheet Data                             Automatic Report Builder                                  Finished Report
+
+
+
+
+AI Solutions Portfolio                                                                                                                                           07
+THE RESULT
+
+
+
+
+What this means for businesses, at a glance.
+Every tool turns slow, manual work into something fast and automatic, with a human ALWAYS in the loop.
+
+
+
+                  Competitive Intelligence                                            Days of Manual Work → Minutes, Automatically
+
+
+
+                  Brand Review Governance                              Occasional Manual Checks → Continuous Automatic Monitoring
+
+
+
+                  Content Buddy                                                  Knowledge Scattered Everywhere → One Simple Chat
+
+
+
+                  Content & Data Hub                                           Separate, Disconnected Tools → One Connected System
+
+
+
+                  Monthly Report Automation                                                                      Days → Minutes
+
+
+AI Solutions Portfolio                                                                                                               08
+AI Solutions Portfolio
+Solving business problems through AI, Automation and Intelligent workflows.
+

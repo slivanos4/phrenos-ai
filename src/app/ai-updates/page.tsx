@@ -14,9 +14,10 @@ export default function AiUpdatesPage() {
       <PageHero
         image="ai-updates"
         position="center right"
+        mobilePosition="65% center"
         eyebrow="AI Updates"
         title="Intelligence worth paying attention to."
-        description="Notes on Generative AI, automation and the organisational judgement required to put them to work — coming soon."
+        description="Notes on Generative AI, automation and the organisational judgement required to put them to work. Coming soon."
       />
 
       <section className="bg-forest pt-10 pb-16 lg:pt-12 lg:pb-24">

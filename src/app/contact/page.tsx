@@ -6,7 +6,7 @@ import { contactPage } from "@/data/site-content";
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
-    "Contact Phrenos.ai to discuss Generative AI strategy, automation and organisational enablement.",
+    "Start a conversation with Phrenos.ai. A short note is enough to begin finding where AI, data or automation can create real leverage.",
 };
 
 export default function ContactPage() {

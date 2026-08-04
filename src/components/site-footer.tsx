@@ -62,7 +62,7 @@ export function SiteFooter() {
             Phrenos.ai
           </p>
           <p className="mt-4 text-sm leading-relaxed text-sage">
-            Mind, intellect, reason — applied to Generative AI strategy,
+            Mind, intellect, reason: applied to Generative AI strategy,
             automation and organisational enablement.
           </p>
         </div>
