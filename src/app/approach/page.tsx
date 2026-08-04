@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Approach } from "@/components/approach";
+import { PageHero } from "@/components/page-hero";
+import { approach } from "@/data/site-content";
 
 export const metadata: Metadata = {
   title: "Approach",
@@ -10,8 +12,14 @@ export const metadata: Metadata = {
 export default function ApproachPage() {
   return (
     <>
-      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
-      <Approach />
+      <PageHero
+        image="approach"
+        position="center"
+        eyebrow="Approach"
+        title="From opportunity to lasting capability."
+        description={approach.intro}
+      />
+      <Approach hideIntro />
     </>
   );
 }

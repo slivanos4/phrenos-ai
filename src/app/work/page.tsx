@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHero } from "@/components/page-hero";
 import { SelectedWork } from "@/components/selected-work";
 
 export const metadata: Metadata = {
@@ -10,8 +11,14 @@ export const metadata: Metadata = {
 export default function WorkPage() {
   return (
     <>
-      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
-      <SelectedWork />
+      <PageHero
+        image="work"
+        position="center"
+        eyebrow="Selected work"
+        title="Systems that turn intelligence into action."
+        description="A selection of engagements spanning competitive intelligence, content operations, governance and organisational knowledge."
+      />
+      <SelectedWork hideIntro />
     </>
   );
 }

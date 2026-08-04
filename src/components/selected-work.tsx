@@ -1,23 +1,31 @@
 import { selectedWork } from "@/data/site-content";
 
-export function SelectedWork() {
+type SelectedWorkProps = {
+  hideIntro?: boolean;
+};
+
+export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
   return (
     <section id="work" className="bg-forest py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
-            Selected work
-          </p>
-          <h2 className="mt-4 font-serif text-4xl tracking-tight text-ivory sm:text-5xl">
-            Systems that turn intelligence into action.
-          </h2>
-          <p className="mt-5 text-base leading-relaxed text-sage sm:text-lg">
-            A selection of engagements spanning competitive intelligence,
-            content operations, governance and organisational knowledge.
-          </p>
-        </div>
+        {hideIntro ? null : (
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
+              Selected work
+            </p>
+            <h2 className="mt-4 font-serif text-4xl tracking-tight text-ivory sm:text-5xl">
+              Systems that turn intelligence into action.
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-sage sm:text-lg">
+              A selection of engagements spanning competitive intelligence,
+              content operations, governance and organisational knowledge.
+            </p>
+          </div>
+        )}
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-2">
+        <div
+          className={`grid gap-8 lg:grid-cols-2 ${hideIntro ? "" : "mt-16"}`}
+        >
           {selectedWork.map((item) => (
             <article
               key={item.title}

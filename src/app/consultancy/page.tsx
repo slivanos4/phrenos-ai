@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHero } from "@/components/page-hero";
 import { Services } from "@/components/services";
 
 export const metadata: Metadata = {
@@ -10,8 +11,14 @@ export const metadata: Metadata = {
 export default function ConsultancyPage() {
   return (
     <>
-      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
-      <Services />
+      <PageHero
+        image="consultancy"
+        position="78% center"
+        eyebrow="Consultancy"
+        title="Capability with commercial intent."
+        description="Each engagement is designed around operational clarity and measurable outcomes — not technology for its own sake."
+      />
+      <Services hideIntro />
     </>
   );
 }

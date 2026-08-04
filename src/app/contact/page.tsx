@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { ContactCta } from "@/components/contact-cta";
 import { ContactForm } from "@/components/contact-form";
+import { PageHero } from "@/components/page-hero";
 import { contactPage } from "@/data/site-content";
 
 export const metadata: Metadata = {
@@ -12,29 +12,20 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
-      <ContactCta />
+      <PageHero
+        image="contact"
+        position="center"
+        eyebrow={contactPage.eyebrow}
+        title={contactPage.title}
+        description={contactPage.description}
+      />
 
       <section
         id="contact-form"
-        className="bg-forest-secondary pt-8 pb-24 lg:pb-32"
+        className="bg-forest-secondary py-24 lg:py-32"
       >
-        <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-12 lg:gap-16 lg:px-8">
-          <div className="lg:col-span-5">
-            <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
-              {contactPage.eyebrow}
-            </p>
-            <h1 className="mt-4 font-serif text-5xl tracking-tight text-ivory sm:text-6xl">
-              {contactPage.title}
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-sage">
-              {contactPage.description}
-            </p>
-          </div>
-
-          <div className="lg:col-span-7">
-            <ContactForm />
-          </div>
+        <div className="mx-auto max-w-3xl px-6 lg:px-8">
+          <ContactForm />
         </div>
       </section>
     </>

@@ -1,23 +1,31 @@
 import { services } from "@/data/site-content";
 
-export function Services() {
+type ServicesProps = {
+  hideIntro?: boolean;
+};
+
+export function Services({ hideIntro = false }: ServicesProps) {
   return (
     <section id="consultancy" className="bg-forest py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
-            Consultancy
-          </p>
-          <h2 className="mt-4 font-serif text-4xl tracking-tight text-ivory sm:text-5xl">
-            Capability with commercial intent.
-          </h2>
-          <p className="mt-5 text-base leading-relaxed text-sage sm:text-lg">
-            Each engagement is designed around operational clarity and measurable
-            outcomes — not technology for its own sake.
-          </p>
-        </div>
+        {hideIntro ? null : (
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
+              Consultancy
+            </p>
+            <h2 className="mt-4 font-serif text-4xl tracking-tight text-ivory sm:text-5xl">
+              Capability with commercial intent.
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-sage sm:text-lg">
+              Each engagement is designed around operational clarity and
+              measurable outcomes — not technology for its own sake.
+            </p>
+          </div>
+        )}
 
-        <div className="mt-16 grid gap-x-10 gap-y-12 md:grid-cols-2 xl:grid-cols-3">
+        <div
+          className={`grid gap-x-10 gap-y-12 md:grid-cols-2 xl:grid-cols-3 ${hideIntro ? "" : "mt-16"}`}
+        >
           {services.map((service, index) => (
             <article
               key={service.title}
