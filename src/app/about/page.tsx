@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { AboutFocus } from "@/components/about-focus";
 import { AboutStory } from "@/components/about-story";
 import { ContactCta } from "@/components/contact-cta";
-import { PageHero } from "@/components/page-hero";
-import { aboutPage } from "@/data/site-content";
 
 export const metadata: Metadata = {
   title: "About",
@@ -14,14 +12,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <PageHero
-        image="about"
-        position="72% center"
-        eyebrow={aboutPage.eyebrow}
-        title={aboutPage.heading}
-        description={aboutPage.supporting}
-      />
-      <AboutStory hideIntro />
+      <AboutStory />
       <AboutFocus />
       <ContactCta />
     </>
