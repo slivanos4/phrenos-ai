@@ -5,7 +5,7 @@ export const site = {
   description:
     "An independent AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
   email: "hello@phrenos.ai",
-  linkedin: "https://www.linkedin.com/",
+  linkedin: "https://www.linkedin.com/in/sophia-livanos-45144b22",
 } as const;
 
 export const navigation = [
@@ -153,12 +153,79 @@ export const selectedWork = [
   },
 ] as const;
 
-export const aboutPreview = {
-  eyebrow: "About Phrenos",
+export const aboutPage = {
+  eyebrow: "About",
   heading: "Understanding the machine — and the minds expected to use it.",
+  photo: {
+    src: "/brand/sophia-livanos.jpg",
+    alt: "Sophia Livanos, founder of Phrenos.ai",
+  },
   narrative: [
-    "The founder’s route into AI began in medicine, neuroscience and neurolinguistics rather than conventional software engineering. That understanding of language, cognition and human behaviour developed into hands-on work with NLP systems, AI-assisted content operations, automation and enterprise AI adoption.",
+    "Sophia Livanos’ route into AI didn’t start in tech; it started in medicine. Training in osteopathy gave her a grounding in how the nervous system drives human behaviour, which pulled her toward neuroscience and neurolinguistics — the mechanics of how people process language and make decisions.",
+    "That curiosity became a career. Years before “prompt engineering” was a job title, she was working hands-on with NLP engineering teams at Persado, curating linguistic datasets and shaping language model outputs. It grew into leading Generative AI strategy at Natural Intelligence, and now into consulting independently on AI strategy, business intelligence and automation.",
     "This background is a strategic advantage: Phrenos.ai understands both the machine and the people expected to use it — designing systems that fit how organisations actually think, decide and work.",
+  ],
+  trackRecord: [
+    {
+      period: "2026 — Present",
+      role: "Independent AI Consultant",
+      org: "AI Strategy, Automation, Innovation & Business Intelligence",
+      description:
+        "Advising organisations on AI strategy and automation, designing workflows that eliminate manual processes, and delivering hands-on training to upskill teams in Generative AI adoption.",
+    },
+    {
+      period: "2023 — 2026",
+      role: "Generative AI Strategy, Automation & Innovation Lead",
+      org: "Natural Intelligence · Tel Aviv / Remote",
+      description:
+        "Led Generative AI strategy across content, marketing, SEO and product. Built and scaled internal AI tools — including Content Buddy and 40+ custom GPTs — across multiple departments and international markets.",
+    },
+    {
+      period: "2020 — 2023",
+      role: "Senior Content Strategist",
+      org: "Persado · Athens",
+      description:
+        "Applied a neurolinguistics and neuroscience-informed approach to large-scale dataset analysis, directly supporting NLP model training and language optimisation.",
+    },
+    {
+      period: "2018 — 2020",
+      role: "Content Strategy & Multilingual QA",
+      org: "Persado · Athens",
+      description:
+        "Supervised multilingual QA and localisation across 8+ international markets, and tagged content entities used in machine learning training sets.",
+    },
+  ],
+  expertise: [
+    "Generative AI Strategy & Adoption",
+    "Business Process Automation",
+    "AI Workflow Design",
+    "Analytics & Executive Reporting",
+    "Prompt Engineering & GPT Development",
+    "SEO, AIO & AI Search Analysis",
+    "Stakeholder Enablement & Training",
+    "Python & FastAPI Development",
+  ],
+  education: [
+    {
+      qualification: "BSc, Osteopathic Medicine & Naturopathy",
+      institution: "British College of Osteopathic Medicine, London",
+    },
+    {
+      qualification: "Neurolinguistics",
+      institution: "Saint-Petersburg State University",
+    },
+    {
+      qualification: "Consumer Neuroscience & Neuromarketing",
+      institution: "Copenhagen Business School",
+    },
+    {
+      qualification: "Python Specialisation",
+      institution: "University of Michigan",
+    },
+    {
+      qualification: "Search Engine Optimisation Specialisation",
+      institution: "University of California, Davis",
+    },
   ],
   cta: {
     label: "Start a Conversation",

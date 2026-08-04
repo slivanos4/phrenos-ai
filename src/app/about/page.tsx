@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { AboutPreview } from "@/components/about-preview";
+import { AboutCredentials } from "@/components/about-credentials";
+import { AboutStory } from "@/components/about-story";
+import { ContactCta } from "@/components/contact-cta";
 
 export const metadata: Metadata = {
   title: "About",
@@ -11,7 +13,9 @@ export default function AboutPage() {
   return (
     <>
       <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
-      <AboutPreview />
+      <AboutStory />
+      <AboutCredentials />
+      <ContactCta />
     </>
   );
 }
