@@ -161,8 +161,8 @@ export const aboutPreview = {
     "This background is a strategic advantage: Phrenos.ai understands both the machine and the people expected to use it — designing systems that fit how organisations actually think, decide and work.",
   ],
   cta: {
-    label: "Meet the AI Mind",
-    href: "/about",
+    label: "Start a Conversation",
+    href: "/contact",
   },
 } as const;
 
@@ -172,7 +172,7 @@ export const contactCta = {
     "Let’s identify where AI, data and automation can create meaningful impact inside your organisation.",
   button: {
     label: "Contact Us",
-    href: "/contact",
+    href: "/contact#contact-form",
   },
 } as const;
 

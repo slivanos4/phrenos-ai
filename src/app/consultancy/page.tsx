@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageShell } from "@/components/page-shell";
+import { Services } from "@/components/services";
 
 export const metadata: Metadata = {
   title: "Consultancy",
@@ -9,10 +9,9 @@ export const metadata: Metadata = {
 
 export default function ConsultancyPage() {
   return (
-    <PageShell
-      eyebrow="Consultancy"
-      title="Capability with commercial intent."
-      description="Explore how Phrenos.ai helps organisations adopt Generative AI, automation and intelligence with clarity, judgement and measurable impact."
-    />
+    <>
+      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
+      <Services />
+    </>
   );
 }

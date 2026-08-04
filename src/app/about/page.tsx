@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageShell } from "@/components/page-shell";
+import { AboutPreview } from "@/components/about-preview";
 
 export const metadata: Metadata = {
   title: "About",
@@ -9,10 +9,9 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <PageShell
-      eyebrow="About"
-      title="Meet the AI Mind."
-      description="The founder’s route into AI began in medicine, neuroscience and neurolinguistics. That understanding of language, cognition and human behaviour shapes how Phrenos.ai designs systems people can actually use."
-    />
+    <>
+      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
+      <AboutPreview />
+    </>
   );
 }

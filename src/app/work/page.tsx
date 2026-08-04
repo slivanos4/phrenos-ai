@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageShell } from "@/components/page-shell";
+import { SelectedWork } from "@/components/selected-work";
 
 export const metadata: Metadata = {
   title: "Work",
@@ -9,10 +9,9 @@ export const metadata: Metadata = {
 
 export default function WorkPage() {
   return (
-    <PageShell
-      eyebrow="Selected work"
-      title="Systems that turn intelligence into action."
-      description="Case studies spanning competitive intelligence, enterprise content generation, brand governance and organisational knowledge."
-    />
+    <>
+      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
+      <SelectedWork />
+    </>
   );
 }

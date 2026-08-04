@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageShell } from "@/components/page-shell";
+import { Approach } from "@/components/approach";
 
 export const metadata: Metadata = {
   title: "Approach",
@@ -9,10 +9,9 @@ export const metadata: Metadata = {
 
 export default function ApproachPage() {
   return (
-    <PageShell
-      eyebrow="Approach"
-      title="From opportunity to lasting capability."
-      description="A structured method for identifying high-value AI opportunities, designing practical systems and helping teams adopt them successfully."
-    />
+    <>
+      <div className="h-20 sm:h-[5.25rem] lg:h-[5.5rem]" aria-hidden />
+      <Approach />
+    </>
   );
 }
