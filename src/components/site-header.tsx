@@ -1,11 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandLockup } from "@/components/brand-lockup";
 import { headerCta, navigation } from "@/data/site-content";
 
+function isActivePath(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+const navIdle =
+  "rounded-full border border-sage/70 px-3.5 py-1.5 text-sm font-medium tracking-wide text-ivory/80 transition-colors hover:border-sage hover:bg-sage/10 hover:text-ivory";
+const navActive =
+  "rounded-full border border-gold bg-gold/15 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-gold transition-colors";
+
+const mobileIdle =
+  "inline-flex w-fit rounded-full border border-sage/70 px-4 py-2 font-serif text-xl text-ivory transition-colors hover:border-sage hover:bg-sage/10";
+const mobileActive =
+  "inline-flex w-fit rounded-full border border-gold bg-gold/15 px-4 py-2 font-serif text-xl text-gold";
+
 export function SiteHeader() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -38,21 +55,29 @@ export function SiteHeader() {
           className="hidden items-center gap-2 xl:gap-2.5 lg:flex"
           aria-label="Primary"
         >
-          {navigation.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-full border border-sage/70 px-3.5 py-1.5 text-sm font-medium tracking-wide text-ivory/80 transition-colors hover:border-sage hover:bg-sage/10 hover:text-ivory"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navigation.map((item) => {
+            const active = isActivePath(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={active ? navActive : navIdle}
+                aria-current={active ? "page" : undefined}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-3">
           <Link
             href={headerCta.href}
-            className="hidden rounded-full border border-gold px-4 py-2 text-sm font-medium tracking-wide text-ivory transition-colors hover:bg-gold/10 sm:inline-flex"
+            className={`hidden rounded-full border px-4 py-2 text-sm font-medium tracking-wide transition-colors sm:inline-flex ${
+              isActivePath(pathname, headerCta.href)
+                ? "border-gold bg-gold text-forest"
+                : "border-gold text-ivory hover:bg-gold/10"
+            }`}
           >
             {headerCta.label}
           </Link>
@@ -87,19 +112,27 @@ export function SiteHeader() {
           className="border-t border-ivory/10 bg-forest/95 px-6 py-8 backdrop-blur-md lg:hidden"
         >
           <nav className="flex flex-col gap-3" aria-label="Mobile">
-            {navigation.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="inline-flex w-fit rounded-full border border-sage/70 px-4 py-2 font-serif text-xl text-ivory transition-colors hover:border-sage hover:bg-sage/10"
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const active = isActivePath(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={active ? mobileActive : mobileIdle}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
             <Link
               href={headerCta.href}
-              className="mt-2 inline-flex w-fit rounded-full border border-gold px-4 py-2 text-sm font-medium tracking-wide text-ivory sm:hidden"
+              className={`mt-2 inline-flex w-fit rounded-full border px-4 py-2 text-sm font-medium tracking-wide sm:hidden ${
+                isActivePath(pathname, headerCta.href)
+                  ? "border-gold bg-gold text-forest"
+                  : "border-gold text-ivory"
+              }`}
               onClick={() => setMenuOpen(false)}
             >
               {headerCta.label}

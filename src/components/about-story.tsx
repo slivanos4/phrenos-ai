@@ -5,11 +5,11 @@ export function AboutStory() {
   return (
     <section className="relative isolate overflow-hidden bg-[#0a0c0b]">
       <picture className="absolute inset-0">
-        <source srcSet="/brand/pages/about.webp?v=5" type="image/webp" />
+        <source srcSet="/brand/pages/about.webp?v=6" type="image/webp" />
         <img
-          src="/brand/pages/about.jpg?v=5"
+          src="/brand/pages/about.jpg?v=6"
           alt=""
-          className="h-full w-full object-cover object-[72%_center]"
+          className="h-full w-full object-cover object-[68%_center]"
           decoding="async"
           fetchPriority="high"
         />
