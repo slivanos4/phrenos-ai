@@ -4,7 +4,13 @@ import { useEffect, useRef } from "react";
 
 type Node = { x: number; y: number; vx: number; vy: number };
 
-export function HeroNetwork() {
+export function HeroNetwork({
+  interactive = true,
+  className = "",
+}: {
+  interactive?: boolean;
+  className?: string;
+} = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -104,22 +110,28 @@ export function HeroNetwork() {
     resize();
     draw();
     window.addEventListener("resize", resize);
-    canvas.addEventListener("pointermove", onMove);
-    canvas.addEventListener("pointerleave", onLeave);
+    if (interactive) {
+      canvas.addEventListener("pointermove", onMove);
+      canvas.addEventListener("pointerleave", onLeave);
+    }
 
     return () => {
       running = false;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
-      canvas.removeEventListener("pointermove", onMove);
-      canvas.removeEventListener("pointerleave", onLeave);
+      if (interactive) {
+        canvas.removeEventListener("pointermove", onMove);
+        canvas.removeEventListener("pointerleave", onLeave);
+      }
     };
-  }, []);
+  }, [interactive]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-auto absolute inset-0 z-[1] h-full w-full opacity-70"
+      className={`absolute inset-0 z-[1] h-full w-full opacity-70 ${
+        interactive ? "pointer-events-auto" : "pointer-events-none"
+      } ${className}`}
       aria-hidden
     />
   );

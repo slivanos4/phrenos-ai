@@ -12,6 +12,8 @@ type PageHeroProps = {
   compact?: boolean;
   /** Softer overlays so the artwork stays visible */
   lightWash?: boolean;
+  /** Extra local mist behind headline copy on busy art */
+  copyGuard?: boolean;
   /** On mobile, sit copy on the art instead of a solid panel below */
   overlayMobileCopy?: boolean;
 };
@@ -20,13 +22,15 @@ function HeroCopy({
   eyebrow,
   title,
   description,
+  guarded = false,
 }: {
   eyebrow?: string;
   title?: string;
   description?: string;
+  guarded?: boolean;
 }) {
   return (
-    <div className="max-w-2xl">
+    <div className={`max-w-2xl ${guarded ? "hero-copy-guard" : ""}`}>
       {eyebrow ? (
         <p className="animate-fade-up text-xs font-semibold tracking-[0.28em] text-gold uppercase">
           {eyebrow}
@@ -55,11 +59,12 @@ export function PageHero({
   mobilePosition = "center",
   compact = false,
   lightWash = false,
+  copyGuard = false,
   overlayMobileCopy = false,
 }: PageHeroProps) {
   const hasCopy = Boolean(eyebrow || title || description);
-  const srcJpg = `/brand/pages/${image}.jpg?v=5`;
-  const srcWebp = `/brand/pages/${image}.webp?v=5`;
+  const srcJpg = `/brand/pages/${image}.jpg?v=6`;
+  const srcWebp = `/brand/pages/${image}.webp?v=6`;
   const desktopMin = compact ? "min-h-[58svh]" : "min-h-[100svh]";
   const desktopPad = compact ? "pt-32 pb-24" : "pt-40";
   const bottomFade = lightWash
@@ -69,11 +74,15 @@ export function PageHero({
     : compact
       ? "linear-gradient(180deg, rgba(6,8,7,0.45) 0%, transparent 22%, transparent 48%, rgba(16,28,20,0.55) 72%, rgba(16,28,20,0.92) 88%, #101C14 100%)"
       : "linear-gradient(180deg, rgba(6,8,7,0.5) 0%, transparent 18%, transparent 78%, rgba(6,8,7,0.55) 100%)";
-  const sideFade = lightWash
-    ? "linear-gradient(90deg, rgba(6,8,7,0.42) 0%, rgba(6,8,7,0.18) 28%, rgba(6,8,7,0.05) 55%, rgba(6,8,7,0.12) 100%)"
-    : "linear-gradient(90deg, rgba(6,8,7,0.72) 0%, rgba(6,8,7,0.4) 30%, rgba(6,8,7,0.12) 55%, rgba(6,8,7,0.28) 100%)";
+  const sideFade = copyGuard
+    ? "linear-gradient(90deg, rgba(6,8,7,0.82) 0%, rgba(6,8,7,0.55) 28%, rgba(6,8,7,0.18) 52%, rgba(6,8,7,0.1) 100%)"
+    : lightWash
+      ? "linear-gradient(90deg, rgba(6,8,7,0.42) 0%, rgba(6,8,7,0.18) 28%, rgba(6,8,7,0.05) 55%, rgba(6,8,7,0.12) 100%)"
+      : "linear-gradient(90deg, rgba(6,8,7,0.72) 0%, rgba(6,8,7,0.4) 30%, rgba(6,8,7,0.12) 55%, rgba(6,8,7,0.28) 100%)";
   const mobileWash = overlayMobileCopy
-    ? "bg-[linear-gradient(180deg,rgba(6,8,7,0.45)_0%,rgba(6,8,7,0.25)_35%,rgba(16,28,20,0.55)_100%)]"
+    ? copyGuard
+      ? "bg-[linear-gradient(180deg,rgba(6,8,7,0.55)_0%,rgba(6,8,7,0.38)_40%,rgba(16,28,20,0.7)_100%)]"
+      : "bg-[linear-gradient(180deg,rgba(6,8,7,0.45)_0%,rgba(6,8,7,0.25)_35%,rgba(16,28,20,0.55)_100%)]"
     : lightWash
       ? "bg-[linear-gradient(180deg,rgba(6,8,7,0.28)_0%,transparent_40%,transparent_62%,rgba(16,28,20,0.55)_88%,#101C14_100%)]"
       : "bg-[linear-gradient(180deg,rgba(6,8,7,0.45)_0%,transparent_35%,transparent_55%,rgba(16,28,20,0.75)_82%,#101C14_100%)]";
@@ -107,6 +116,7 @@ export function PageHero({
                   eyebrow={eyebrow}
                   title={title}
                   description={description}
+                  guarded={copyGuard}
                 />
               ) : null}
             </div>
@@ -181,6 +191,7 @@ export function PageHero({
               eyebrow={eyebrow}
               title={title}
               description={description}
+              guarded={copyGuard}
             />
           </div>
         ) : null}

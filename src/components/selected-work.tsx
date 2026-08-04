@@ -14,6 +14,8 @@ import { romanNumerals, selectedWork } from "@/data/site-content";
 
 type SelectedWorkProps = {
   hideIntro?: boolean;
+  /** Sit on a shared page background instead of painting its own forest fill */
+  continuous?: boolean;
 };
 
 const HTMLFlipBook = dynamic(() => import("react-pageflip"), { ssr: false });
@@ -34,14 +36,17 @@ const BookPage = forwardRef<
     <div
       ref={ref}
       data-density={hard ? "hard" : "soft"}
-      className={`book-page ${className}`}
+      className={`book-page overflow-hidden ${className}`}
     >
-      <div className="book-page-inner">{children}</div>
+      <div className="book-page-inner overflow-hidden">{children}</div>
     </div>
   );
 });
 
-export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
+export function SelectedWork({
+  hideIntro = false,
+  continuous = false,
+}: SelectedWorkProps) {
   const bookRef = useRef<FlipBookHandle | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
@@ -50,6 +55,7 @@ export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
   const [ready, setReady] = useState(false);
 
   const pageCount = 2 + selectedWork.length * 2;
+  const singleLeaf = portrait || page === 0 || page >= pageCount - 1;
 
   const pages = useMemo(() => {
     const nodes: ReactNode[] = [];
@@ -84,29 +90,29 @@ export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
     selectedWork.forEach((item, index) => {
       nodes.push(
         <BookPage key={`${item.title}-plate`} className="book-plate-page">
-          <div className="relative h-full overflow-hidden">
+          <div className="relative h-full w-full overflow-hidden">
             <div
               className="book-plate-art absolute inset-0"
               style={{
-                backgroundImage: `url(${item.image}?v=4)`,
+                backgroundImage: `url(${item.image}?v=6)`,
               }}
               role="img"
               aria-label={item.title}
             />
             <div
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,10,0.28)_0%,transparent_22%,transparent_72%,rgba(8,12,10,0.55)_100%)]"
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,10,0.2)_0%,transparent_24%,transparent_70%,rgba(8,12,10,0.45)_100%)]"
               aria-hidden
             />
-            <div className="relative flex h-full flex-col justify-between p-6 sm:p-7">
+            <div className="relative z-[1] flex h-full flex-col justify-between p-5 sm:p-6">
               <div className="flex items-start justify-between gap-3">
-                <p className="font-serif text-4xl text-[#e0c078]/80 sm:text-5xl">
+                <p className="font-serif text-4xl text-[#e0c078]/90 sm:text-5xl">
                   {romanNumerals[index]}
                 </p>
                 <p className="text-[0.6rem] font-semibold tracking-[0.24em] text-[#e0c078] uppercase">
                   {item.tag}
                 </p>
               </div>
-              <p className="text-[0.65rem] tracking-[0.2em] text-[#f1e8d6]/85 uppercase">
+              <p className="text-[0.65rem] tracking-[0.2em] text-[#f1e8d6]/9 uppercase">
                 {item.title}
               </p>
             </div>
@@ -207,12 +213,28 @@ export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
       const isPortrait = available < 760;
       setPortrait(isPortrait);
 
+      // Keep the full book on screen: height is capped to the viewport, then width follows.
+      const maxHeight = Math.max(
+        340,
+        Math.min(Math.round(window.innerHeight * 0.58), 560),
+      );
+
       if (isPortrait) {
-        const width = Math.min(available - 16, 360);
-        setDims({ width, height: Math.round(width * 1.42) });
+        let width = Math.min(available - 24, 360);
+        let height = Math.round(width * 1.42);
+        if (height > maxHeight) {
+          height = maxHeight;
+          width = Math.round(height / 1.42);
+        }
+        setDims({ width, height });
       } else {
-        const width = Math.min(Math.floor((available - 40) / 2), 440);
-        setDims({ width, height: Math.round(width * 1.3) });
+        let width = Math.min(Math.floor((available - 48) / 2), 420);
+        let height = Math.round(width * 1.32);
+        if (height > maxHeight) {
+          height = maxHeight;
+          width = Math.round(height / 1.32);
+        }
+        setDims({ width, height });
       }
       setReady(true);
     };
@@ -232,26 +254,27 @@ export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
     bookRef.current?.pageFlip()?.flipPrev();
   }, []);
 
+  // page-flip always lays out a 2-page landscape stage; shrinking the shell to one
+  // page clips the cover. Keep the full stage width and shift closed covers to center.
+  const spreadWidth = portrait ? dims.width : dims.width * 2;
+  const coverShift =
+    !portrait && page === 0
+      ? -dims.width / 2
+      : !portrait && page >= pageCount - 1
+        ? dims.width / 2
+        : 0;
+
   return (
     <section
       id="work"
-      className={`relative z-10 overflow-hidden pb-20 lg:pb-24 ${
-        hideIntro
-          ? "mt-0 pt-8 sm:pt-10 lg:-mt-16 lg:pt-4"
-          : "bg-forest pt-8 lg:pt-10"
+      className={`relative z-10 overflow-x-clip pb-24 lg:pb-28 ${
+        continuous
+          ? "mt-0 bg-transparent pt-2 sm:pt-4"
+          : hideIntro
+            ? "mt-0 bg-forest pt-8 sm:pt-10 lg:-mt-8 lg:pt-6"
+            : "bg-forest pt-8 lg:pt-10"
       }`}
     >
-      {hideIntro ? (
-        <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-          <img
-            src="/brand/pages/work.jpg?v=5"
-            alt=""
-            className="hidden h-full w-full object-cover object-center opacity-45 lg:block"
-          />
-          <div className="absolute inset-0 bg-transparent lg:bg-[linear-gradient(180deg,rgba(16,28,20,0.35)_0%,rgba(16,28,20,0.55)_45%,rgba(16,28,20,0.82)_100%)]" />
-        </div>
-      ) : null}
-
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
         {hideIntro ? (
           <div className="mb-8 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
@@ -305,16 +328,18 @@ export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
         </div>
       </div>
 
-      <div ref={shellRef} className="relative mx-auto w-full max-w-6xl px-3 sm:px-6">
+      <div
+        ref={shellRef}
+        className="relative mx-auto w-full max-w-6xl px-3 sm:px-6"
+      >
         {ready ? (
-          <div className="book-stage mx-auto flex justify-center">
+          <div className="book-stage mx-auto flex justify-center overflow-visible">
             <div
-              className={`book-block ${portrait ? "book-block-portrait" : "book-block-landscape"}`}
-              style={
-                portrait
-                  ? { width: dims.width }
-                  : { width: dims.width * 2 }
-              }
+              className={`book-block${singleLeaf ? " is-single" : ""}`}
+              style={{
+                width: spreadWidth,
+                transform: coverShift ? `translateX(${coverShift}px)` : undefined,
+              }}
             >
               <div className="book-block-shadow" aria-hidden />
               <HTMLFlipBook
@@ -323,16 +348,16 @@ export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
                 width={dims.width}
                 height={dims.height}
                 size="fixed"
-                minWidth={260}
-                maxWidth={480}
-                minHeight={360}
-                maxHeight={680}
+                minWidth={240}
+                maxWidth={420}
+                minHeight={320}
+                maxHeight={620}
                 drawShadow
                 flippingTime={1100}
                 usePortrait={portrait}
                 startPage={0}
                 autoSize={false}
-                maxShadowOpacity={0.7}
+                maxShadowOpacity={0.75}
                 showCover
                 mobileScrollSupport
                 clickEventForward={false}

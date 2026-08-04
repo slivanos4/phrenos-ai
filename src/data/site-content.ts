@@ -92,24 +92,28 @@ export const approach = {
       title: "Understand",
       description:
         "Map the organisation, workflows and commercial goals to uncover where AI, data and automation can create meaningful leverage.",
+      image: "/brand/approach/stage-1.jpg",
     },
     {
       number: "II",
       title: "Prioritise",
       description:
         "Select the opportunities with the strongest operational and commercial return, then define a clear, staged path to value.",
+      image: "/brand/approach/stage-2.jpg",
     },
     {
       number: "III",
       title: "Build",
       description:
         "Design and implement practical systems with the right balance of automation, governance, human oversight and measurable outcomes.",
+      image: "/brand/approach/stage-3.jpg",
     },
     {
       number: "IV",
       title: "Embed",
       description:
         "Train teams, refine ways of working and leave behind capabilities that continue to deliver after the engagement ends.",
+      image: "/brand/approach/stage-4.jpg",
     },
   ],
 } as const;

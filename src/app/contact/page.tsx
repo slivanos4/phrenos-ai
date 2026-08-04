@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ContactForm } from "@/components/contact-form";
+import { ContactSection } from "@/components/contact-section";
 import { PageHero } from "@/components/page-hero";
 import { contactPage } from "@/data/site-content";
 
@@ -15,19 +15,13 @@ export default function ContactPage() {
       <PageHero
         image="contact"
         position="center"
+        lightWash
+        overlayMobileCopy
         eyebrow={contactPage.eyebrow}
         title={contactPage.title}
         description={contactPage.description}
       />
-
-      <section
-        id="contact-form"
-        className="bg-forest-secondary pt-10 pb-16 lg:pt-12 lg:pb-24"
-      >
-        <div className="mx-auto max-w-3xl px-6 lg:px-8">
-          <ContactForm />
-        </div>
-      </section>
+      <ContactSection />
     </>
   );
 }

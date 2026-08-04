@@ -16,6 +16,8 @@ export default function ApproachPage() {
         image="approach"
         position="center"
         mobilePosition="center 40%"
+        lightWash
+        copyGuard
         eyebrow="Approach"
         title="From opportunity to lasting capability."
         description={approach.intro}

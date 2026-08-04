@@ -4,13 +4,26 @@ import { FormEvent, useState } from "react";
 import { contactPage, site } from "@/data/site-content";
 
 const fieldClass =
-  "w-full rounded-full border border-gold/50 bg-forest-secondary/60 px-5 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-sage/60 focus:border-gold focus:bg-forest-secondary";
+  "w-full rounded-full border border-[#d4af5a]/55 bg-[#101c14]/55 px-5 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-sage/55 focus:border-[#e0c078] focus:bg-[#101c14]/75";
 
 const areaClass =
-  "w-full min-h-36 resize-y rounded-2xl border border-gold/50 bg-forest-secondary/60 px-5 py-4 text-sm text-ivory outline-none transition-colors placeholder:text-sage/60 focus:border-gold focus:bg-forest-secondary";
+  "w-full min-h-36 resize-y rounded-2xl border border-[#d4af5a]/55 bg-[#101c14]/55 px-5 py-4 text-sm text-ivory outline-none transition-colors placeholder:text-sage/55 focus:border-[#e0c078] focus:bg-[#101c14]/75";
 
-export function ContactForm() {
+type ContactFormProps = {
+  onActiveChange?: (active: boolean) => void;
+  onSubmittedChange?: (submitted: boolean) => void;
+};
+
+export function ContactForm({
+  onActiveChange,
+  onSubmittedChange,
+}: ContactFormProps = {}) {
   const [submitted, setSubmitted] = useState(false);
+
+  function setSubmittedState(value: boolean) {
+    setSubmitted(value);
+    onSubmittedChange?.(value);
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,14 +50,14 @@ export function ContactForm() {
       ].join("\n"),
     );
 
-    setSubmitted(true);
+    setSubmittedState(true);
     window.location.href = `mailto:${site.email}?subject=${subject}&body=${body}`;
   }
 
   if (submitted) {
     return (
       <div
-        className="rounded-2xl border border-gold/40 bg-forest-secondary/50 px-6 py-10 text-center"
+        className="rounded-2xl border border-[#d4af5a]/35 bg-[#101c14]/70 px-6 py-10 text-center backdrop-blur-sm"
         role="status"
       >
         <p className="font-serif text-2xl text-ivory">{contactPage.success}</p>
@@ -52,7 +65,7 @@ export function ContactForm() {
           If your email client didn’t open, write to{" "}
           <a
             href={`mailto:${site.email}`}
-            className="text-gold transition-colors hover:text-[#c99a45]"
+            className="text-[#e0c078] transition-colors hover:text-[#f1e8d6]"
           >
             {site.email}
           </a>
@@ -60,8 +73,8 @@ export function ContactForm() {
         </p>
         <button
           type="button"
-          onClick={() => setSubmitted(false)}
-          className="mt-8 inline-flex rounded-full border border-gold px-5 py-2.5 text-sm font-medium text-ivory transition-colors hover:bg-gold/10"
+          onClick={() => setSubmittedState(false)}
+          className="mt-8 inline-flex rounded-full border border-[#d4af5a] px-5 py-2.5 text-sm font-medium text-ivory transition-colors hover:bg-[#d4af5a]/10"
         >
           Send another message
         </button>
@@ -70,10 +83,20 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate={false}>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5"
+      noValidate={false}
+      onFocusCapture={() => onActiveChange?.(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          onActiveChange?.(false);
+        }
+      }}
+    >
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block space-y-2">
-          <span className="text-xs font-medium tracking-[0.18em] text-gold uppercase">
+          <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
             {contactPage.fields.name}
           </span>
           <input
@@ -86,7 +109,7 @@ export function ContactForm() {
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-xs font-medium tracking-[0.18em] text-gold uppercase">
+          <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
             {contactPage.fields.email}
           </span>
           <input
@@ -99,7 +122,7 @@ export function ContactForm() {
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-xs font-medium tracking-[0.18em] text-gold uppercase">
+          <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
             {contactPage.fields.organisation}
           </span>
           <input
@@ -111,7 +134,7 @@ export function ContactForm() {
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-xs font-medium tracking-[0.18em] text-gold uppercase">
+          <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
             {contactPage.fields.role}
           </span>
           <input
@@ -125,7 +148,7 @@ export function ContactForm() {
       </div>
 
       <label className="block space-y-2">
-        <span className="text-xs font-medium tracking-[0.18em] text-gold uppercase">
+        <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
           {contactPage.fields.message}
         </span>
         <textarea
@@ -142,14 +165,14 @@ export function ContactForm() {
           Or email{" "}
           <a
             href={`mailto:${site.email}`}
-            className="text-gold transition-colors hover:text-[#c99a45]"
+            className="text-[#e0c078] transition-colors hover:text-[#f1e8d6]"
           >
             {site.email}
           </a>
         </p>
         <button
           type="submit"
-          className="inline-flex items-center justify-center rounded-full border border-gold bg-ivory px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#f7f0e2]"
+          className="contact-spark-btn inline-flex items-center justify-center rounded-full border border-[#d4af5a] bg-ivory px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-transform duration-300 hover:scale-[1.02] hover:bg-[#f7f0e2]"
         >
           {contactPage.fields.submit}
         </button>
