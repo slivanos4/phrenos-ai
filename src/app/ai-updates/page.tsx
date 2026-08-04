@@ -14,13 +14,12 @@ export default function AiUpdatesPage() {
       <PageHero
         image="ai-updates"
         position="center right"
-        size="tall"
         eyebrow="AI Updates"
         title="Intelligence worth paying attention to."
         description="Notes on Generative AI, automation and the organisational judgement required to put them to work — coming soon."
       />
 
-      <section className="bg-forest py-20 lg:py-28">
+      <section className="bg-forest py-14 lg:py-20">
         <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
           <p className="text-base leading-relaxed text-sage sm:text-lg">
             This space will gather reflections on how AI is reshaping work,

@@ -6,7 +6,7 @@ type SelectedWorkProps = {
 
 export function SelectedWork({ hideIntro = false }: SelectedWorkProps) {
   return (
-    <section id="work" className="bg-forest py-24 lg:py-32">
+    <section id="work" className="bg-forest py-14 lg:py-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {hideIntro ? null : (
           <div className="max-w-2xl">

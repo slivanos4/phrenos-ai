@@ -88,31 +88,33 @@ export const approach = {
     "Phrenos.ai identifies high-value opportunities, designs practical systems, implements them responsibly and helps teams adopt them successfully.",
   stages: [
     {
-      number: "01",
+      number: "I",
       title: "Understand",
       description:
         "Map the organisation, workflows and commercial goals to uncover where AI, data and automation can create meaningful leverage.",
     },
     {
-      number: "02",
+      number: "II",
       title: "Prioritise",
       description:
         "Select the opportunities with the strongest operational and commercial return, then define a clear, staged path to value.",
     },
     {
-      number: "03",
+      number: "III",
       title: "Build",
       description:
         "Design and implement practical systems with the right balance of automation, governance, human oversight and measurable outcomes.",
     },
     {
-      number: "04",
+      number: "IV",
       title: "Embed",
       description:
         "Train teams, refine ways of working and leave behind capabilities that continue to deliver after the engagement ends.",
     },
   ],
 } as const;
+
+export const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"] as const;
 
 export const selectedWork = [
   {

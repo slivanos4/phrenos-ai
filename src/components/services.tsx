@@ -6,7 +6,7 @@ type ServicesProps = {
 
 export function Services({ hideIntro = false }: ServicesProps) {
   return (
-    <section id="consultancy" className="bg-forest py-24 lg:py-32">
+    <section id="consultancy" className="bg-forest py-14 lg:py-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {hideIntro ? null : (
           <div className="max-w-2xl">
@@ -32,7 +32,7 @@ export function Services({ hideIntro = false }: ServicesProps) {
               className="group border-t border-ivory/15 pt-8"
             >
               <p className="font-serif text-sm tracking-[0.2em] text-gold/80">
-                {String(index + 1).padStart(2, "0")}
+                {romanNumerals[index]}
               </p>
               <h3 className="mt-4 font-serif text-2xl tracking-tight text-ivory transition-colors group-hover:text-gold sm:text-[1.65rem]">
                 {service.title}

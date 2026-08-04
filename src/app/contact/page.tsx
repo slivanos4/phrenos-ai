@@ -22,7 +22,7 @@ export default function ContactPage() {
 
       <section
         id="contact-form"
-        className="bg-forest-secondary py-24 lg:py-32"
+        className="bg-forest-secondary py-14 lg:py-20"
       >
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
           <ContactForm />
