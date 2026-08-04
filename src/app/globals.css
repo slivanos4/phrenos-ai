@@ -186,23 +186,14 @@ body {
     linear-gradient(135deg, rgba(255, 255, 255, 0.25), transparent 40%),
     #f4ead6;
   color: #1a2218;
-  overflow: hidden !important;
-  clip-path: inset(0);
-  isolation: isolate;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-  box-shadow: inset 0 0 0 1px rgba(26, 34, 24, 0.12);
+  overflow: hidden;
 }
 
 .book-page-inner {
   width: 100%;
   height: 100%;
-  overflow: hidden !important;
-  clip-path: inset(0);
+  overflow: hidden;
   position: relative;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 .book-cover {
@@ -244,14 +235,11 @@ body {
 }
 
 .book-plate-page {
-  background: #15201a !important;
-  overflow: hidden !important;
-  clip-path: inset(0);
-  box-shadow: inset 0 0 0 1px rgba(212, 175, 90, 0.4);
+  background: #0c1510 !important;
 }
 
 .book-plate-art {
-  background-color: #15201a;
+  background-color: #0c1510;
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -272,8 +260,8 @@ body {
   position: absolute;
   left: 8%;
   right: 8%;
-  bottom: -36px;
-  height: 56px;
+  bottom: -30px;
+  height: 50px;
   border-radius: 50%;
   background: radial-gradient(
     ellipse at center,
@@ -298,33 +286,15 @@ body {
 }
 
 .work-flipbook .stf__parent,
-.work-flipbook .stf__wrapper {
-  outline: none !important;
-  border: none !important;
-}
-
-/* 3D page-flip breaks overflow clipping — clip-path keeps leaf edges hard */
+.work-flipbook .stf__wrapper,
+.work-flipbook .stf__block,
 .work-flipbook .stf__item {
   outline: none !important;
   border: none !important;
-  overflow: hidden !important;
-  clip-path: inset(0);
-  background: #15201a;
-}
-
-.work-flipbook .stf__block {
-  outline: none !important;
-  border: none !important;
-}
-
-.work-flipbook .stf__item .book-page,
-.work-flipbook .stf__item .book-page-inner {
-  overflow: hidden !important;
-  clip-path: inset(0);
 }
 
 .book-stage {
-  padding: 1.25rem 0 4rem;
+  padding: 1.25rem 0 3.5rem;
 }
 
 .hero-copy-guard {

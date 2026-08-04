@@ -36,9 +36,9 @@ const BookPage = forwardRef<
     <div
       ref={ref}
       data-density={hard ? "hard" : "soft"}
-      className={`book-page overflow-hidden ${className}`}
+      className={`book-page ${className}`}
     >
-      <div className="book-page-inner overflow-hidden">{children}</div>
+      <div className="book-page-inner">{children}</div>
     </div>
   );
 });
@@ -90,29 +90,29 @@ export function SelectedWork({
     selectedWork.forEach((item, index) => {
       nodes.push(
         <BookPage key={`${item.title}-plate`} className="book-plate-page">
-          <div className="relative h-full w-full overflow-hidden">
+          <div className="relative h-full overflow-hidden">
             <div
               className="book-plate-art absolute inset-0"
               style={{
-                backgroundImage: `url(${item.image}?v=6)`,
+                backgroundImage: `url(${item.image}?v=7)`,
               }}
               role="img"
               aria-label={item.title}
             />
             <div
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,10,0.2)_0%,transparent_24%,transparent_70%,rgba(8,12,10,0.45)_100%)]"
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,10,0.28)_0%,transparent_22%,transparent_72%,rgba(8,12,10,0.55)_100%)]"
               aria-hidden
             />
-            <div className="relative z-[1] flex h-full flex-col justify-between p-5 sm:p-6">
+            <div className="relative flex h-full flex-col justify-between p-6 sm:p-7">
               <div className="flex items-start justify-between gap-3">
-                <p className="font-serif text-4xl text-[#e0c078]/90 sm:text-5xl">
+                <p className="font-serif text-4xl text-[#e0c078]/80 sm:text-5xl">
                   {romanNumerals[index]}
                 </p>
                 <p className="text-[0.6rem] font-semibold tracking-[0.24em] text-[#e0c078] uppercase">
                   {item.tag}
                 </p>
               </div>
-              <p className="text-[0.65rem] tracking-[0.2em] text-[#f1e8d6]/9 uppercase">
+              <p className="text-[0.65rem] tracking-[0.2em] text-[#f1e8d6]/85 uppercase">
                 {item.title}
               </p>
             </div>
@@ -122,20 +122,20 @@ export function SelectedWork({
 
       nodes.push(
         <BookPage key={`${item.title}-story`}>
-          <div className="flex h-full flex-col p-6 sm:p-8">
+          <div className="flex h-full flex-col p-5 sm:p-7">
             <p className="text-[0.6rem] font-semibold tracking-[0.24em] text-[#8a6a2a] uppercase">
               {String(index + 1).padStart(2, "0")} · {item.tag}
             </p>
-            <h3 className="mt-3 font-serif text-[1.35rem] leading-snug tracking-tight text-[#1a2218] sm:text-[1.5rem]">
+            <h3 className="mt-2.5 font-serif text-[1.25rem] leading-snug tracking-tight text-[#1a2218] sm:text-[1.4rem]">
               {item.headline}
             </h3>
 
-            <div className="mt-5 grid gap-4">
+            <div className="mt-4 grid gap-3.5">
               <div>
                 <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-[#8a6a2a] uppercase">
                   The problem
                 </p>
-                <p className="mt-1.5 text-[0.8rem] leading-relaxed text-[#3f4b41]">
+                <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#3f4b41]">
                   {item.problem}
                 </p>
               </div>
@@ -143,14 +143,14 @@ export function SelectedWork({
                 <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-[#8a6a2a] uppercase">
                   What we built
                 </p>
-                <p className="mt-1.5 text-[0.8rem] leading-relaxed text-[#3f4b41]">
+                <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#3f4b41]">
                   {item.solution}
                 </p>
               </div>
             </div>
 
-            <div className="mt-5 rounded-sm bg-[#101c14] px-3.5 py-3">
-              <p className="text-center text-[0.72rem] leading-snug tracking-wide">
+            <div className="mt-4 rounded-sm bg-[#101c14] px-3.5 py-2.5">
+              <p className="text-center text-[0.7rem] leading-snug tracking-wide">
                 <span className="text-[#f1e8d6]/85">{item.transformation.from}</span>
                 <span className="mx-2 text-[#d4af5a]">→</span>
                 <span className="font-semibold text-[#e0c078]">
@@ -159,11 +159,11 @@ export function SelectedWork({
               </p>
             </div>
 
-            <div className="mt-auto pt-5">
+            <div className="mt-auto pt-4">
               <p className="text-center text-[0.58rem] font-semibold tracking-[0.22em] text-[#8a6a2a] uppercase">
                 How it works
               </p>
-              <div className="mt-3 flex items-start justify-between gap-1">
+              <div className="mt-2.5 flex items-start justify-between gap-1">
                 {item.steps.map((step, stepIndex) => (
                   <div
                     key={step}
@@ -172,7 +172,7 @@ export function SelectedWork({
                     <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#b88b36]/45 text-[0.65rem] text-[#8a6a2a]">
                       {stepIndex + 1}
                     </span>
-                    <p className="mt-2 text-[0.58rem] leading-snug text-[#4a564c]">
+                    <p className="mt-1.5 text-[0.55rem] leading-snug text-[#4a564c]">
                       {step}
                     </p>
                   </div>
@@ -213,10 +213,10 @@ export function SelectedWork({
       const isPortrait = available < 760;
       setPortrait(isPortrait);
 
-      // Keep the full book on screen: height is capped to the viewport, then width follows.
+      // Prefer a tall leaf so story copy and plate art fit without clipping.
       const maxHeight = Math.max(
-        340,
-        Math.min(Math.round(window.innerHeight * 0.58), 560),
+        420,
+        Math.min(Math.round(window.innerHeight * 0.72), 640),
       );
 
       if (isPortrait) {
@@ -228,11 +228,11 @@ export function SelectedWork({
         }
         setDims({ width, height });
       } else {
-        let width = Math.min(Math.floor((available - 48) / 2), 420);
-        let height = Math.round(width * 1.32);
+        let width = Math.min(Math.floor((available - 48) / 2), 430);
+        let height = Math.round(width * 1.38);
         if (height > maxHeight) {
           height = maxHeight;
-          width = Math.round(height / 1.32);
+          width = Math.round(height / 1.38);
         }
         setDims({ width, height });
       }
@@ -348,10 +348,10 @@ export function SelectedWork({
                 width={dims.width}
                 height={dims.height}
                 size="fixed"
-                minWidth={240}
-                maxWidth={420}
-                minHeight={320}
-                maxHeight={620}
+                minWidth={260}
+                maxWidth={440}
+                minHeight={360}
+                maxHeight={660}
                 drawShadow
                 flippingTime={1100}
                 usePortrait={portrait}
