@@ -155,77 +155,32 @@ export const selectedWork = [
 
 export const aboutPage = {
   eyebrow: "About",
-  heading: "Understanding the machine — and the minds expected to use it.",
+  heading: "Most people ask what AI can do.",
+  supporting: "I’m more interested in what it enables people to become.",
   photo: {
     src: "/brand/sophia-livanos.jpg",
     alt: "Sophia Livanos, founder of Phrenos.ai",
   },
   narrative: [
-    "Sophia Livanos’ route into AI didn’t start in tech; it started in medicine. Training in osteopathy gave her a grounding in how the nervous system drives human behaviour, which pulled her toward neuroscience and neurolinguistics — the mechanics of how people process language and make decisions.",
-    "That curiosity became a career. Years before “prompt engineering” was a job title, she was working hands-on with NLP engineering teams at Persado, curating linguistic datasets and shaping language model outputs. It grew into leading Generative AI strategy at Natural Intelligence, and now into consulting independently on AI strategy, business intelligence and automation.",
-    "This background is a strategic advantage: Phrenos.ai understands both the machine and the people expected to use it — designing systems that fit how organisations actually think, decide and work.",
+    "One question has shaped my work for years: how do we help people move from being impressed by AI to becoming genuinely empowered by it? I don’t see AI as a collection of tools or models. I see it as a fundamental shift in how we think, create, learn and solve problems.",
+    "My own route into it started in medicine, not software. Training in osteopathy taught me how the nervous system drives behaviour, which pulled me toward neuroscience and neurolinguistics: the mechanics of how people process language and make decisions. That’s still how I think about AI today, not as a technical problem, but a human one.",
+    "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style. I’m fascinated by the intersection of people and AI: how the right tools, combined with the right mindset, unlock entirely new ways of working. My focus isn’t keeping up with the latest release; it’s discovering what creates real value, separating signal from noise, and making AI approachable, practical and meaningful.",
+    "Over the past few years I’ve built more than 40 custom GPTs and AI assistants, designed agentic AI workflows, developed automation platforms and reporting solutions, and helped organisations adopt AI in ways that create measurable business value. I enjoy taking complex ideas and making them practical, engaging and immediately useful.",
+    "One topic I care deeply about is the growing amount of AI slop. AI isn’t the problem; poor thinking is. The best use of AI doesn’t replace expertise, creativity or human judgement. It amplifies them. That’s the philosophy behind everything I build, teach and share at Phrenos.ai.",
   ],
-  trackRecord: [
-    {
-      period: "2026 — Present",
-      role: "Independent AI Consultant",
-      org: "AI Strategy, Automation, Innovation & Business Intelligence",
-      description:
-        "Advising organisations on AI strategy and automation, designing workflows that eliminate manual processes, and delivering hands-on training to upskill teams in Generative AI adoption.",
-    },
-    {
-      period: "2023 — 2026",
-      role: "Generative AI Strategy, Automation & Innovation Lead",
-      org: "Natural Intelligence · Tel Aviv / Remote",
-      description:
-        "Led Generative AI strategy across content, marketing, SEO and product. Built and scaled internal AI tools — including Content Buddy and 40+ custom GPTs — across multiple departments and international markets.",
-    },
-    {
-      period: "2020 — 2023",
-      role: "Senior Content Strategist",
-      org: "Persado · Athens",
-      description:
-        "Applied a neurolinguistics and neuroscience-informed approach to large-scale dataset analysis, directly supporting NLP model training and language optimisation.",
-    },
-    {
-      period: "2018 — 2020",
-      role: "Content Strategy & Multilingual QA",
-      org: "Persado · Athens",
-      description:
-        "Supervised multilingual QA and localisation across 8+ international markets, and tagged content entities used in machine learning training sets.",
-    },
-  ],
-  expertise: [
+  closing: {
+    lead: "AI isn’t about replacing people.",
+    emphasis: "It’s about helping people become more capable versions of themselves.",
+  },
+  focusAreas: [
     "Generative AI Strategy & Adoption",
-    "Business Process Automation",
-    "AI Workflow Design",
-    "Analytics & Executive Reporting",
-    "Prompt Engineering & GPT Development",
-    "SEO, AIO & AI Search Analysis",
-    "Stakeholder Enablement & Training",
-    "Python & FastAPI Development",
-  ],
-  education: [
-    {
-      qualification: "BSc, Osteopathic Medicine & Naturopathy",
-      institution: "British College of Osteopathic Medicine, London",
-    },
-    {
-      qualification: "Neurolinguistics",
-      institution: "Saint-Petersburg State University",
-    },
-    {
-      qualification: "Consumer Neuroscience & Neuromarketing",
-      institution: "Copenhagen Business School",
-    },
-    {
-      qualification: "Python Specialisation",
-      institution: "University of Michigan",
-    },
-    {
-      qualification: "Search Engine Optimisation Specialisation",
-      institution: "University of California, Davis",
-    },
+    "Agentic AI & Workflow Automation",
+    "AI Assistants & Custom GPT Development",
+    "AI Search & Knowledge Management",
+    "Prompt Engineering & LLM Integration",
+    "Executive Reporting & AI Automation",
+    "AI Training & Enablement",
+    "AI Product Strategy & Innovation",
   ],
   cta: {
     label: "Start a Conversation",

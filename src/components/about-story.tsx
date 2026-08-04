@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { aboutPage } from "@/data/site-content";
 
 export function AboutStory() {
@@ -13,6 +12,9 @@ export function AboutStory() {
           <h1 className="mt-4 font-serif text-4xl tracking-tight text-ivory sm:text-5xl">
             {aboutPage.heading}
           </h1>
+          <p className="mt-4 font-serif text-2xl tracking-tight text-gold sm:text-3xl">
+            {aboutPage.supporting}
+          </p>
 
           <div className="mt-8 space-y-5">
             {aboutPage.narrative.map((paragraph) => (
@@ -24,16 +26,6 @@ export function AboutStory() {
               </p>
             ))}
           </div>
-
-          <Link
-            href={aboutPage.cta.href}
-            className="mt-8 inline-flex text-sm font-medium tracking-wide text-gold transition-colors hover:text-[#c99a45]"
-          >
-            {aboutPage.cta.label}
-            <span aria-hidden className="ml-2">
-              →
-            </span>
-          </Link>
         </div>
 
         <div className="lg:col-span-5">
