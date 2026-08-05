@@ -58,28 +58,63 @@ export const credibility = [
 export const services = [
   {
     title: "AI Strategy & Adoption",
+    short: "Strategy",
     description:
       "Clarify where Generative AI creates commercial value, set priorities that leadership can act on, and build a practical path from ambition to adoption.",
+    points: [
+      "Board-ready opportunity maps with clear commercial bets.",
+      "Prioritised adoption roadmaps leadership can fund and follow.",
+      "Governance that protects judgement while unlocking speed.",
+      "Measurable milestones from ambition to operating rhythm.",
+    ],
   },
   {
     title: "Intelligent Workflow Automation",
+    short: "Automation",
     description:
       "Redesign repetitive operational processes into reliable AI-assisted workflows that free expert time and reduce costly manual friction.",
+    points: [
+      "Process redesign around the work that actually moves outcomes.",
+      "AI-assisted workflows with human checkpoints where risk is high.",
+      "Less manual friction for the experts who create value.",
+      "Reliable systems that keep running after the engagement ends.",
+    ],
   },
   {
     title: "AI-Powered Content Systems",
+    short: "Content",
     description:
       "Design governed content engines that scale production, preserve brand voice and keep human judgement in the loop where it matters.",
+    points: [
+      "Scalable content factories with built-in governance.",
+      "Brand-aligned outputs across formats, channels and markets.",
+      "Human-in-the-loop workflows that elevate judgement.",
+      "Measurable impact through content intelligence and feedback loops.",
+    ],
   },
   {
     title: "Competitive Intelligence & Analytics",
+    short: "Intelligence",
     description:
       "Turn fragmented market signals into structured insight so teams can anticipate competitors, customers and commercial opportunity sooner.",
+    points: [
+      "Signal capture across competitors, customers and markets.",
+      "Structured insight instead of scattered screenshots and noise.",
+      "Earlier anticipation of commercial moves and threats.",
+      "Decision-ready briefings your team can act on quickly.",
+    ],
   },
   {
     title: "AI Training & Team Enablement",
+    short: "Enablement",
     description:
       "Equip leaders and practitioners with the fluency, judgement and working habits needed to use AI responsibly and productively every day.",
+    points: [
+      "Fluency programmes tailored to leaders and practitioners.",
+      "Working habits that keep judgement ahead of the tool.",
+      "Responsible use patterns that reduce risk and rework.",
+      "Capability that stays with the team after we leave.",
+    ],
   },
 ] as const;
 

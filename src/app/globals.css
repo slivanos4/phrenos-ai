@@ -457,11 +457,55 @@ body {
   }
 }
 
+.atlas-spoke {
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.atlas-node circle {
+  transition:
+    r 0.35s ease,
+    stroke 0.35s ease,
+    stroke-opacity 0.35s ease,
+    fill 0.35s ease;
+}
+
+.atlas-detail {
+  animation: atlas-detail-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes atlas-detail-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes atlas-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.atlas-star-twinkle {
+  animation: atlas-twinkle 3.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .proof-marquee,
   .cta-shimmer::after,
   .phi-ritual .phi-ring,
-  .phi-ritual .phi-mark {
+  .phi-ritual .phi-mark,
+  .atlas-orbit,
+  .atlas-detail,
+  .atlas-star-twinkle {
     animation: none;
   }
 
