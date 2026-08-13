@@ -4,7 +4,7 @@ export const site = {
   definition: "phren·os (n.): mind, intellect, reason",
   description:
     "An independent AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
-  email: "hello@phrenos.ai",
+  email: "hello@phrenosai.com",
   linkedin: "https://www.linkedin.com/in/sophia-livanos-45144b22",
 } as const;
 
