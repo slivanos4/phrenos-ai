@@ -91,28 +91,29 @@ export function SelectedWork({
       nodes.push(
         <BookPage key={`${item.title}-plate`} className="book-plate-page">
           <div className="relative h-full overflow-hidden">
-            <div
-              className="book-plate-art absolute inset-0"
-              style={{
-                backgroundImage: `url(${item.image}?v=7)`,
-              }}
-              role="img"
-              aria-label={item.title}
-            />
-            <div
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,10,0.28)_0%,transparent_22%,transparent_72%,rgba(8,12,10,0.55)_100%)]"
-              aria-hidden
-            />
-            <div className="relative flex h-full flex-col justify-between p-6 sm:p-7">
+            {/* Framed art — contain keeps top labels / UI chrome visible */}
+            <div className="book-plate-frame">
+              <div
+                className="book-plate-art absolute inset-0"
+                style={{
+                  backgroundImage: `url(${item.image}?v=8)`,
+                }}
+                role="img"
+                aria-label={item.title}
+              />
+            </div>
+
+            {/* Page chrome sits outside the art, not over it */}
+            <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between px-5 pt-4 pb-4 sm:px-6 sm:pt-5 sm:pb-5">
               <div className="flex items-start justify-between gap-3">
-                <p className="font-serif text-4xl text-[#e0c078]/80 sm:text-5xl">
+                <p className="font-serif text-3xl text-[#e0c078]/90 sm:text-4xl">
                   {romanNumerals[index]}
                 </p>
-                <p className="text-[0.6rem] font-semibold tracking-[0.24em] text-[#e0c078] uppercase">
+                <p className="pt-1.5 text-[0.58rem] font-semibold tracking-[0.24em] text-[#e0c078] uppercase">
                   {item.tag}
                 </p>
               </div>
-              <p className="text-[0.65rem] tracking-[0.2em] text-[#f1e8d6]/85 uppercase">
+              <p className="text-[0.62rem] tracking-[0.2em] text-[#f1e8d6]/9 uppercase">
                 {item.title}
               </p>
             </div>

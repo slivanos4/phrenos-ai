@@ -308,8 +308,7 @@ export const contactPage = {
     message: "Where should we look first?",
     submit: "Send message",
   },
-  success:
-    "Thank you. Your message is ready to send. We’ll be in touch shortly.",
+  success: "Thank you. Your message has been sent. We’ll be in touch shortly.",
 } as const;
 
 export const footer = {

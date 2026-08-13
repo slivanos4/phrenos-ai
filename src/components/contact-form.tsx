@@ -19,16 +19,32 @@ export function ContactForm({
   onSubmittedChange,
 }: ContactFormProps = {}) {
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function setSubmittedState(value: boolean) {
     setSubmitted(value);
     onSubmittedChange?.(value);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
+
     const form = event.currentTarget;
     const data = new FormData(form);
+
+    // Honeypot — bots fill this; real users never see it
+    if (String(data.get("botcheck") || "")) {
+      setSubmittedState(true);
+      return;
+    }
+
+    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
+    if (!accessKey) {
+      setError("Form is not configured yet. Please email us directly.");
+      return;
+    }
 
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
@@ -36,22 +52,46 @@ export function ContactForm({
     const role = String(data.get("role") || "").trim();
     const message = String(data.get("message") || "").trim();
 
-    const subject = encodeURIComponent(
-      `Phrenos.ai enquiry${organisation ? `: ${organisation}` : ""}`,
-    );
-    const body = encodeURIComponent(
-      [
-        `Name: ${name}`,
-        `Email: ${email}`,
-        `Organisation: ${organisation || "Not provided"}`,
-        `Role: ${role || "Not provided"}`,
-        "",
-        message,
-      ].join("\n"),
-    );
+    setSending(true);
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          access_key: accessKey,
+          subject: `Phrenos.ai enquiry${organisation ? `: ${organisation}` : ""}`,
+          from_name: "Phrenos.ai contact form",
+          name,
+          email,
+          organisation: organisation || "Not provided",
+          role: role || "Not provided",
+          message,
+        }),
+      });
 
-    setSubmittedState(true);
-    window.location.href = `mailto:${site.email}?subject=${subject}&body=${body}`;
+      const result = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+      };
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Something went wrong. Please try again.");
+      }
+
+      form.reset();
+      setSubmittedState(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setSending(false);
+    }
   }
 
   if (submitted) {
@@ -62,7 +102,7 @@ export function ContactForm({
       >
         <p className="font-serif text-2xl text-ivory">{contactPage.success}</p>
         <p className="mt-4 text-sm text-sage">
-          If your email client didn’t open, write to{" "}
+          Prefer email? Write to{" "}
           <a
             href={`mailto:${site.email}`}
             className="text-[#e0c078] transition-colors hover:text-[#f1e8d6]"
@@ -94,6 +134,16 @@ export function ContactForm({
         }
       }}
     >
+      {/* Honeypot */}
+      <input
+        type="checkbox"
+        name="botcheck"
+        className="hidden"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden
+      />
+
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block space-y-2">
           <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
@@ -160,6 +210,18 @@ export function ContactForm({
         />
       </label>
 
+      {error ? (
+        <p className="text-sm text-[#e8b4a0]" role="alert">
+          {error}{" "}
+          <a
+            href={`mailto:${site.email}`}
+            className="text-[#e0c078] underline-offset-2 hover:underline"
+          >
+            {site.email}
+          </a>
+        </p>
+      ) : null}
+
       <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-sage">
           Or email{" "}
@@ -172,9 +234,10 @@ export function ContactForm({
         </p>
         <button
           type="submit"
-          className="contact-spark-btn inline-flex items-center justify-center rounded-full border border-[#d4af5a] bg-ivory px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-transform duration-300 hover:scale-[1.02] hover:bg-[#f7f0e2]"
+          disabled={sending}
+          className="contact-spark-btn inline-flex items-center justify-center rounded-full border border-[#d4af5a] bg-ivory px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-transform duration-300 hover:scale-[1.02] hover:bg-[#f7f0e2] disabled:cursor-wait disabled:opacity-70 disabled:hover:scale-100"
         >
-          {contactPage.fields.submit}
+          {sending ? "Sending…" : contactPage.fields.submit}
         </button>
       </div>
     </form>
