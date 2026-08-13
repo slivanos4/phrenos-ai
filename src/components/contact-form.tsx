@@ -3,6 +3,10 @@
 import { FormEvent, useState } from "react";
 import { contactPage, site } from "@/data/site-content";
 
+const WEB3FORMS_ACCESS_KEY =
+  process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY ||
+  "5aa18ac3-e2ed-4643-bf2f-a251364db741";
+
 const fieldClass =
   "w-full rounded-full border border-[#d4af5a]/55 bg-[#101c14]/55 px-5 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-sage/55 focus:border-[#e0c078] focus:bg-[#101c14]/75";
 
@@ -40,7 +44,7 @@ export function ContactForm({
       return;
     }
 
-    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
+    const accessKey = WEB3FORMS_ACCESS_KEY;
     if (!accessKey) {
       setError("Form is not configured yet. Please email us directly.");
       return;
