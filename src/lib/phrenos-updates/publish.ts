@@ -42,27 +42,147 @@ async function uniqueSlug(
 }
 
 /**
- * Publish approved featured blogs from one run to the public /ai-updates feed.
+ * Publish one approved featured blog draft to the public /ai-updates feed.
  * Ideas and LinkedIn drafts are never published here.
+ */
+export async function publishSuggestionToSite(suggestionId: string): Promise<PublishResult> {
+  const supabase = createServiceRoleClient();
+
+  const { data: suggestion, error } = await supabase
+    .from(SUGGESTIONS_TABLE)
+    .select("*")
+    .eq("id", suggestionId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!suggestion) throw new Error("Draft not found.");
+
+  if (suggestion.suggestion_type !== "blog" || !suggestion.is_full_draft) {
+    throw new Error("Only featured blog drafts can be published to /ai-updates.");
+  }
+
+  if (suggestion.status === "published") {
+    const { data: existing } = await supabase
+      .from(PUBLISHED_POSTS_TABLE)
+      .select("id, title, slug")
+      .eq("suggestion_id", suggestionId)
+      .maybeSingle();
+
+    if (existing) {
+      return {
+        published: 0,
+        skipped: 1,
+        posts: [
+          {
+            id: existing.id as string,
+            title: existing.title as string,
+            slug: existing.slug as string,
+          },
+        ],
+      };
+    }
+  }
+
+  if (suggestion.status !== "approved" && suggestion.status !== "published") {
+    throw new Error("Approve this blog draft before publishing.");
+  }
+
+  const { data: alreadyPublished } = await supabase
+    .from(PUBLISHED_POSTS_TABLE)
+    .select("id, title, slug")
+    .eq("suggestion_id", suggestionId)
+    .maybeSingle();
+
+  if (alreadyPublished) {
+    await supabase
+      .from(SUGGESTIONS_TABLE)
+      .update({ status: "published" })
+      .eq("id", suggestionId);
+
+    return {
+      published: 0,
+      skipped: 1,
+      posts: [
+        {
+          id: alreadyPublished.id as string,
+          title: alreadyPublished.title as string,
+          slug: alreadyPublished.slug as string,
+        },
+      ],
+    };
+  }
+
+  const { data: story } = await supabase
+    .from(STORIES_TABLE)
+    .select("id, title, summary_html")
+    .eq("id", suggestion.story_id)
+    .maybeSingle();
+
+  const title = sanitizeDashes(
+    String(suggestion.title || story?.title || "Phrenos AI update")
+  );
+  const slug = await uniqueSlug(supabase, title, String(suggestion.id));
+
+  const { data: inserted, error: insertError } = await supabase
+    .from(PUBLISHED_POSTS_TABLE)
+    .insert({
+      suggestion_id: suggestion.id,
+      story_id: suggestion.story_id,
+      title,
+      slug,
+      hook: sanitizeDashes(String(suggestion.hook ?? "")),
+      summary_html: plainTextToSummaryHtml(String(story?.summary_html ?? "")),
+      body_html: normalizePresentationHtml(String(suggestion.body_html ?? "")),
+      cta: sanitizeDashes(String(suggestion.cta ?? "")),
+      published_at: new Date().toISOString(),
+    })
+    .select("id, title, slug")
+    .single();
+
+  if (insertError || !inserted) {
+    throw new Error(insertError?.message ?? "Could not publish this draft.");
+  }
+
+  await supabase
+    .from(SUGGESTIONS_TABLE)
+    .update({ status: "published" })
+    .eq("id", suggestion.id);
+
+  return {
+    published: 1,
+    skipped: 0,
+    posts: [
+      {
+        id: inserted.id as string,
+        title: inserted.title as string,
+        slug: inserted.slug as string,
+      },
+    ],
+  };
+}
+
+/**
+ * Publish all approved featured blogs from one run to /ai-updates.
+ * Prefer publishSuggestionToSite when publishing one piece at a time.
  */
 export async function publishApprovedToSite(runId: string): Promise<PublishResult> {
   const supabase = createServiceRoleClient();
 
   const { data: stories, error: storiesError } = await supabase
     .from(STORIES_TABLE)
-    .select("id, title, summary_html, sort_order")
+    .select("id")
     .eq("run_id", runId)
     .order("sort_order");
 
   if (storiesError) throw new Error(storiesError.message);
   if (!stories?.length) throw new Error("No stories found for this batch.");
 
-  const storyById = new Map(stories.map((story) => [story.id as string, story]));
+  const storyIds = stories.map((story) => story.id as string);
 
   const { data: approved, error: suggestionsError } = await supabase
     .from(SUGGESTIONS_TABLE)
-    .select("*")
-    .in("story_id", [...storyById.keys()])
+    .select("id")
+    .in("story_id", storyIds)
     .eq("suggestion_type", "blog")
     .eq("is_full_draft", true)
     .eq("status", "approved")
@@ -74,66 +194,23 @@ export async function publishApprovedToSite(runId: string): Promise<PublishResul
     return { published: 0, skipped: 0, posts: [] };
   }
 
-  const { data: alreadyPublished } = await supabase
-    .from(PUBLISHED_POSTS_TABLE)
-    .select("suggestion_id")
-    .in(
-      "suggestion_id",
-      approved.map((row) => row.id as string)
-    );
-
-  const publishedSuggestionIds = new Set(
-    (alreadyPublished ?? []).map((row) => row.suggestion_id as string)
-  );
-
   const posts: PublishResult["posts"] = [];
+  let published = 0;
   let skipped = 0;
 
-  for (const suggestion of approved) {
-    if (publishedSuggestionIds.has(suggestion.id as string)) {
+  for (const row of approved) {
+    try {
+      const result = await publishSuggestionToSite(row.id as string);
+      published += result.published;
+      skipped += result.skipped;
+      posts.push(...result.posts);
+    } catch (error) {
+      console.error(`Could not publish suggestion ${row.id}:`, error);
       skipped += 1;
-      continue;
     }
-
-    const story = storyById.get(suggestion.story_id as string);
-    const title = sanitizeDashes(String(suggestion.title || story?.title || "Phrenos AI update"));
-    const slug = await uniqueSlug(supabase, title, String(suggestion.id));
-
-    const { data: inserted, error: insertError } = await supabase
-      .from(PUBLISHED_POSTS_TABLE)
-      .insert({
-        suggestion_id: suggestion.id,
-        story_id: suggestion.story_id,
-        title,
-        slug,
-        hook: sanitizeDashes(String(suggestion.hook ?? "")),
-        summary_html: plainTextToSummaryHtml(String(story?.summary_html ?? "")),
-        body_html: normalizePresentationHtml(String(suggestion.body_html ?? "")),
-        cta: sanitizeDashes(String(suggestion.cta ?? "")),
-        published_at: new Date().toISOString(),
-      })
-      .select("id, title, slug")
-      .single();
-
-    if (insertError || !inserted) {
-      console.error(`Could not publish suggestion ${suggestion.id}:`, insertError?.message);
-      skipped += 1;
-      continue;
-    }
-
-    await supabase
-      .from(SUGGESTIONS_TABLE)
-      .update({ status: "published" })
-      .eq("id", suggestion.id);
-
-    posts.push({
-      id: inserted.id as string,
-      title: inserted.title as string,
-      slug: inserted.slug as string,
-    });
   }
 
-  return { published: posts.length, skipped, posts };
+  return { published, skipped, posts };
 }
 
 /** Public feed for /ai-updates. Server side only: reads through the service role. */

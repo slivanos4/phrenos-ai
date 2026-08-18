@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatSourcePublishedDate } from "@/lib/phrenos-updates/source-dates";
 import {
+  hasFeaturedBlogDraft,
+  isWeekHeroStory,
+  WEEK_HERO_TAG,
+} from "@/lib/phrenos-updates/week-hero-shared";
+import {
   SECTION_LABELS,
   type ContentSuggestion,
   type ResearchRun,
@@ -13,14 +18,6 @@ import {
 } from "@/lib/phrenos-updates/types";
 
 type AuthState = "loading" | "unconfigured" | "signed-out" | "signed-in";
-
-type RepairResult = {
-  repaired: number;
-  total: number;
-  remaining: number;
-  complete: boolean;
-  processingStoryTitle: string | null;
-};
 
 type PublishResponse = {
   published: number;
@@ -45,7 +42,6 @@ const CONTENT_STEPS = [
 const RESEARCH_STEP_MS = 15000;
 const CONTENT_STEP_MS = 7000;
 const POLL_MS = 4000;
-const MAX_CONTENT_PASSES = 30;
 
 const SECTION_ORDER: ResearchSection[] = ["models_research", "products_industry"];
 
@@ -263,14 +259,20 @@ function SuggestionCard({
   busy,
   onExpandIdea,
   onSetStatus,
+  onPublish,
 }: {
   suggestion: ContentSuggestion;
   busy: boolean;
   onExpandIdea: (id: string) => void;
   onSetStatus: (id: string, status: "approved" | "rejected") => void;
+  onPublish: (id: string) => void;
 }) {
   const [showBody, setShowBody] = useState(false);
   const isIdea = !suggestion.is_full_draft;
+  const canPublish =
+    !isIdea &&
+    suggestion.suggestion_type === "blog" &&
+    suggestion.status === "approved";
 
   return (
     <div className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3.5">
@@ -353,6 +355,21 @@ function SuggestionCard({
             >
               Reject
             </button>
+            {canPublish ? (
+              <button
+                type="button"
+                className={microButtonClass}
+                disabled={busy}
+                onClick={() => onPublish(suggestion.id)}
+              >
+                {busy ? "Publishing..." : "Publish to site"}
+              </button>
+            ) : null}
+            {suggestion.status === "published" ? (
+              <span className="self-center text-[11px] text-[#8fbf9f]">
+                Live on /ai-updates
+              </span>
+            ) : null}
           </>
         )}
       </div>
@@ -364,29 +381,51 @@ function StoryCard({
   story,
   index,
   busyIds,
+  runActive,
+  onGenerate,
   onExpandIdea,
   onSetStatus,
+  onPublish,
 }: {
   story: ResearchStory;
   index: number;
   busyIds: Set<string>;
+  runActive: boolean;
+  onGenerate: (storyId: string, mode?: "full" | "hero-blog") => void;
   onExpandIdea: (id: string) => void;
   onSetStatus: (id: string, status: "approved" | "rejected") => void;
+  onPublish: (id: string) => void;
 }) {
   const [showSources, setShowSources] = useState(false);
 
   const bullets = summaryBullets(story.summary_html);
   const ideas = story.suggestions.filter((item) => !item.is_full_draft);
   const drafts = story.suggestions.filter((item) => item.is_full_draft);
+  const hasContent = story.suggestions.length > 0;
+  const generating = busyIds.has(story.id);
+  const isHero = isWeekHeroStory(story);
+  const displayTags = (story.topic_tags ?? []).filter((tag) => tag !== WEEK_HERO_TAG);
+  const retryHeroBlog = isHero && !hasFeaturedBlogDraft(story);
 
   return (
-    <article className="rounded-2xl border border-[#d4af5a]/20 bg-[#101c14]/60 p-4 sm:p-5">
+    <article
+      className={`rounded-2xl border bg-[#101c14]/60 p-4 sm:p-5 ${
+        isHero
+          ? "border-[#d4af5a]/55 shadow-[0_0_0_1px_rgba(212,175,90,0.12)]"
+          : "border-[#d4af5a]/20"
+      }`}
+    >
       <div className="flex flex-wrap items-center gap-2">
+        {isHero ? (
+          <Badge tone="border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]">
+            This week&apos;s feature
+          </Badge>
+        ) : null}
         <span className="text-[10px] font-semibold tracking-[0.22em] text-[#d4af5a] uppercase">
           {SECTION_LABELS[story.section] ?? story.section}
         </span>
         <span className="text-[11px] text-[#a9b0a3]">Story {index + 1}</span>
-        {story.topic_tags?.map((tag) => (
+        {displayTags.map((tag) => (
           <Badge key={tag} tone="border-[#a9b0a3]/30 text-[#a9b0a3]">
             {tag}
           </Badge>
@@ -417,7 +456,23 @@ function StoryCard({
         <p className="mt-3 text-sm text-[#a9b0a3]">No summary saved yet.</p>
       )}
 
-      <div className="mt-4 border-t border-[#d4af5a]/15 pt-3">
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#d4af5a]/15 pt-3">
+        <button
+          type="button"
+          className={hasContent ? ghostButtonClass : primaryButtonClass}
+          disabled={generating || runActive}
+          onClick={() =>
+            onGenerate(story.id, retryHeroBlog ? "hero-blog" : "full")
+          }
+        >
+          {generating
+            ? "Generating..."
+            : hasContent
+              ? "Regenerate content"
+              : retryHeroBlog
+                ? "Retry featured blog"
+                : "Generate content"}
+        </button>
         <button
           type="button"
           className="text-[11px] font-semibold tracking-[0.16em] text-[#e0c078] uppercase"
@@ -425,14 +480,27 @@ function StoryCard({
         >
           {showSources ? "Hide" : "Show"} sources ({story.sources.length})
         </button>
-        {showSources ? (
-          <ul className="mt-3 space-y-2">
-            {story.sources.map((source) => (
-              <SourceRow key={source.id} source={source} />
-            ))}
-          </ul>
-        ) : null}
       </div>
+
+      {showSources ? (
+        <ul className="mt-3 space-y-2">
+          {story.sources.map((source) => (
+            <SourceRow key={source.id} source={source} />
+          ))}
+        </ul>
+      ) : null}
+
+      {generating ? (
+        <div className="mt-4">
+          <ProgressBanner
+            label="Content"
+            steps={CONTENT_STEPS}
+            intervalMs={CONTENT_STEP_MS}
+            cycle
+            detail={`Writing the pack for "${story.title}". Keep this tab open.`}
+          />
+        </div>
+      ) : null}
 
       {drafts.length > 0 ? (
         <div className="mt-4">
@@ -447,6 +515,7 @@ function StoryCard({
                 busy={busyIds.has(draft.id)}
                 onExpandIdea={onExpandIdea}
                 onSetStatus={onSetStatus}
+                onPublish={onPublish}
               />
             ))}
           </div>
@@ -466,15 +535,18 @@ function StoryCard({
                 busy={busyIds.has(idea.id)}
                 onExpandIdea={onExpandIdea}
                 onSetStatus={onSetStatus}
+                onPublish={onPublish}
               />
             ))}
           </div>
         </div>
       ) : null}
 
-      {story.suggestions.length === 0 ? (
+      {!hasContent && !generating ? (
         <p className="mt-4 text-sm text-[#a9b0a3]">
-          No content yet for this story. Use Generate content to write the pack.
+          {isHero
+            ? "This week's feature is selected. The featured blog drafts automatically after research; use Retry if it did not land."
+            : "No content yet for this story. Generate content when you are ready."}
         </p>
       ) : null}
     </article>
@@ -493,13 +565,8 @@ export function AiUpdatesPanel() {
 
   const [startingRun, setStartingRun] = useState(false);
   const [rerunning, setRerunning] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [publishing, setPublishing] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
-  const [contentProgress, setContentProgress] = useState<RepairResult | null>(
-    null,
-  );
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -535,6 +602,24 @@ export function AiUpdatesPanel() {
           `/api/phrenos-updates/runs/${runId}`,
         );
         setRun(result.run);
+        if (
+          result.run.status === "completed" ||
+          result.run.status === "failed"
+        ) {
+          setNotice((current) => {
+            if (!current) return current;
+            if (
+              current.includes("Research started") ||
+              current.includes("Re-run started") ||
+              current.includes("refreshes while the batch")
+            ) {
+              return result.run.status === "completed"
+                ? "Research complete. Selecting this week's strongest story and drafting its featured blog."
+                : null;
+            }
+            return current;
+          });
+        }
       } catch (cause) {
         if (!quiet) reportError(cause);
       } finally {
@@ -602,8 +687,61 @@ export function AiUpdatesPanel() {
     return () => clearInterval(timer);
   }, [runActive, selectedRunId, loadRun, loadRuns]);
 
+  const heroStory = useMemo(() => {
+    return (run?.stories ?? []).find((story) => isWeekHeroStory(story)) ?? null;
+  }, [run]);
+
+  const heroDraftPending = Boolean(
+    run &&
+      !runActive &&
+      run.status === "completed" &&
+      heroStory &&
+      !hasFeaturedBlogDraft(heroStory),
+  );
+
+  const heroCompletedRecently = Boolean(
+    run?.completed_at &&
+      Date.now() - new Date(run.completed_at).getTime() < 12 * 60 * 1000,
+  );
+
+  const heroWriting = heroDraftPending && heroCompletedRecently;
+
+  useEffect(() => {
+    const runId = selectedRunId;
+    if (!heroWriting || !runId) return;
+    const timer = setInterval(() => {
+      void loadRun(runId, true);
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [heroWriting, selectedRunId, loadRun]);
+
+  useEffect(() => {
+    if (!run || runActive) return;
+    if (heroStory && hasFeaturedBlogDraft(heroStory)) {
+      setNotice((current) => {
+        if (
+          !current ||
+          current.includes("Selecting this week's") ||
+          current.includes("drafting its featured") ||
+          current.includes("Writing this week's featured")
+        ) {
+          return `Featured blog ready for "${heroStory.title}". Approve it when you want it live.`;
+        }
+        return current;
+      });
+      return;
+    }
+    if (heroWriting) {
+      setNotice("Writing this week's featured blog. This page refreshes while it drafts.");
+    } else if (heroDraftPending) {
+      setNotice(
+        `Featured blog did not finish for "${heroStory?.title ?? "this week's story"}". Use Retry featured blog on that card.`,
+      );
+    }
+  }, [run, runActive, heroStory, heroWriting, heroDraftPending]);
+
   const storiesBySection = useMemo(() => {
-    const stories = run?.stories ?? [];
+    const stories = (run?.stories ?? []).filter((story) => !isWeekHeroStory(story));
     return SECTION_ORDER.map((section) => ({
       section,
       stories: stories.filter((story) => story.section === section),
@@ -667,7 +805,6 @@ export function AiUpdatesPanel() {
     setStartingRun(true);
     setError(null);
     setNotice(null);
-    setContentProgress(null);
     try {
       const result = await requestJson<{
         run: { id: string; status: string };
@@ -689,7 +826,6 @@ export function AiUpdatesPanel() {
     setRerunning(true);
     setError(null);
     setNotice(null);
-    setContentProgress(null);
     try {
       const result = await requestJson<{ message?: string }>(
         `/api/phrenos-updates/runs/${selectedRunId}/rerun`,
@@ -704,64 +840,6 @@ export function AiUpdatesPanel() {
     }
   }
 
-  async function handleGenerateContent() {
-    if (!selectedRunId) return;
-    setGenerating(true);
-    setError(null);
-    setNotice(null);
-    setContentProgress(null);
-    try {
-      for (let pass = 0; pass < MAX_CONTENT_PASSES; pass += 1) {
-        const result = await requestJson<RepairResult>(
-          `/api/phrenos-updates/runs/${selectedRunId}/repair-drafts`,
-          { method: "POST", body: JSON.stringify({ maxStories: 1 }) },
-        );
-        setContentProgress(result);
-        await loadRun(selectedRunId, true);
-
-        if (result.complete) {
-          setNotice(
-            `Content ready for all ${result.total} stories in this batch.`,
-          );
-          break;
-        }
-      }
-    } catch (cause) {
-      reportError(cause);
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  async function handlePublish() {
-    if (!selectedRunId) return;
-    setPublishing(true);
-    setError(null);
-    setNotice(null);
-    try {
-      const result = await requestJson<PublishResponse>(
-        "/api/phrenos-updates/publish",
-        { method: "POST", body: JSON.stringify({ runId: selectedRunId }) },
-      );
-      if (result.published === 0) {
-        setNotice(
-          "Nothing new to publish. Approve a featured blog draft first.",
-        );
-      } else {
-        setNotice(
-          `Published ${result.published} post${result.published === 1 ? "" : "s"} to /ai-updates${
-            result.skipped > 0 ? `. Skipped ${result.skipped}.` : "."
-          }`,
-        );
-      }
-      await loadRun(selectedRunId, true);
-    } catch (cause) {
-      reportError(cause);
-    } finally {
-      setPublishing(false);
-    }
-  }
-
   function markBusy(id: string, busy: boolean) {
     setBusyIds((current) => {
       const next = new Set(current);
@@ -769,6 +847,81 @@ export function AiUpdatesPanel() {
       else next.delete(id);
       return next;
     });
+  }
+
+  async function handleDraftWeekHero() {
+    if (!selectedRunId) return;
+    markBusy(`week-hero:${selectedRunId}`, true);
+    setError(null);
+    setNotice("Selecting this week's strongest story and drafting its featured blog...");
+    try {
+      const result = await requestJson<{ title: string | null }>(
+        `/api/phrenos-updates/runs/${selectedRunId}/week-hero`,
+        { method: "POST" },
+      );
+      setNotice(
+        result.title
+          ? `Featured blog ready for "${result.title}". Approve it when you want it live.`
+          : "Featured blog draft is ready.",
+      );
+      await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      markBusy(`week-hero:${selectedRunId}`, false);
+    }
+  }
+
+  async function handleGenerateStory(
+    storyId: string,
+    mode: "full" | "hero-blog" = "full",
+  ) {
+    markBusy(storyId, true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await requestJson<{ title: string; suggestionCount: number }>(
+        `/api/phrenos-updates/stories/${storyId}/generate`,
+        {
+          method: "POST",
+          body: JSON.stringify({ mode }),
+        },
+      );
+      setNotice(
+        mode === "hero-blog"
+          ? `Featured blog ready for "${result.title}".`
+          : `Content ready for "${result.title}" (${result.suggestionCount} drafts and ideas).`,
+      );
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      markBusy(storyId, false);
+    }
+  }
+
+  async function handlePublishSuggestion(suggestionId: string) {
+    markBusy(suggestionId, true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await requestJson<PublishResponse>(
+        `/api/phrenos-updates/suggestions/${suggestionId}/publish`,
+        { method: "POST" },
+      );
+      if (result.published === 0 && result.posts[0]) {
+        setNotice(`Already live at /ai-updates/${result.posts[0].slug}.`);
+      } else if (result.posts[0]) {
+        setNotice(`Published to /ai-updates/${result.posts[0].slug}.`);
+      } else {
+        setNotice("Published to /ai-updates.");
+      }
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      markBusy(suggestionId, false);
+    }
   }
 
   async function handleExpandIdea(suggestionId: string) {
@@ -870,7 +1023,7 @@ export function AiUpdatesPanel() {
     );
   }
 
-  const anyBusy = startingRun || rerunning || generating || publishing;
+  const anyBusy = startingRun || rerunning || busyIds.size > 0;
 
   return (
     <div className="space-y-5">
@@ -912,22 +1065,6 @@ export function AiUpdatesPanel() {
           >
             {rerunning ? "Re-running..." : "Re-run this week"}
           </button>
-          <button
-            type="button"
-            className={ghostButtonClass}
-            onClick={handleGenerateContent}
-            disabled={anyBusy || !selectedRunId || runActive}
-          >
-            {generating ? "Generating..." : "Generate content"}
-          </button>
-          <button
-            type="button"
-            className={ghostButtonClass}
-            onClick={handlePublish}
-            disabled={anyBusy || !selectedRunId}
-          >
-            {publishing ? "Publishing..." : "Publish approved blogs"}
-          </button>
         </div>
 
         {runs.length > 0 ? (
@@ -941,7 +1078,6 @@ export function AiUpdatesPanel() {
                   onClick={() => {
                     if (item.id === selectedRunId) return;
                     setRun(null);
-                    setContentProgress(null);
                     setNotice(null);
                     setError(null);
                     setSelectedRunId(item.id);
@@ -991,36 +1127,22 @@ export function AiUpdatesPanel() {
           label="Research"
           steps={RESEARCH_STEPS}
           intervalMs={RESEARCH_STEP_MS}
-          detail="This runs in the background and can take a few minutes. The page refreshes itself."
+          detail="This runs in the background and can take a few minutes. The page refreshes itself. Afterwards the strongest story gets an automatic featured blog."
         />
       ) : null}
 
-      {generating ? (
+      {heroWriting ? (
         <ProgressBanner
-          label="Content"
+          label="Featured blog"
           steps={CONTENT_STEPS}
           intervalMs={CONTENT_STEP_MS}
           cycle
           detail={
-            contentProgress
-              ? `${contentProgress.repaired} of ${contentProgress.total} stories ready${
-                  contentProgress.processingStoryTitle
-                    ? `. Now on "${contentProgress.processingStoryTitle}"`
-                    : ""
-                }${contentProgress.remaining > 0 ? `. ${contentProgress.remaining} to go.` : "."}`
-              : "Keep this tab open while the batch is written."
+            heroStory
+              ? `Drafting the converting piece for "${heroStory.title}".`
+              : "Choosing this week's strongest story and drafting its featured blog."
           }
         />
-      ) : null}
-
-      {!generating && contentProgress ? (
-        <div className="rounded-xl border border-[#d4af5a]/25 bg-[#0a100c]/70 px-4 py-3 text-sm text-[#c9c6ba]">
-          Content pass finished: {contentProgress.repaired} of{" "}
-          {contentProgress.total} stories have a full pack
-          {contentProgress.remaining > 0
-            ? `, ${contentProgress.remaining} still to write.`
-            : "."}
-        </div>
       ) : null}
 
       {run ? (
@@ -1048,8 +1170,30 @@ export function AiUpdatesPanel() {
               {draftCounts.withDrafts} of {draftCounts.total} stories have
               featured drafts. {draftCounts.approved} blog draft
               {draftCounts.approved === 1 ? "" : "s"} approved and ready to
-              publish.
+              publish individually.
             </p>
+          ) : null}
+
+          {!runActive &&
+          run.status === "completed" &&
+          (run.stories?.length ?? 0) > 0 &&
+          !heroStory ? (
+            <div className="mt-4">
+              <button
+                type="button"
+                className={primaryButtonClass}
+                disabled={anyBusy}
+                onClick={handleDraftWeekHero}
+              >
+                {busyIds.has(`week-hero:${run.id}`)
+                  ? "Drafting feature..."
+                  : "Draft this week's feature"}
+              </button>
+              <p className="mt-2 text-xs text-[#a9b0a3]">
+                Picks the most converting story and writes its featured blog
+                automatically.
+              </p>
+            </div>
           ) : null}
 
           {run.error_message ? (
@@ -1066,13 +1210,35 @@ export function AiUpdatesPanel() {
         </div>
       ) : null}
 
-      {run && storiesBySection.length === 0 && !runActive ? (
+      {run && storiesBySection.length === 0 && !heroStory && !runActive ? (
         <div className={panelClass}>
           <p className="text-sm text-[#a9b0a3]">
             No stories saved for this batch yet. Run a new week, or re-run this
             one.
           </p>
         </div>
+      ) : null}
+
+      {heroStory ? (
+        <section className="space-y-3">
+          <h2 className="font-serif text-2xl text-[#f1e8d6]">
+            This week&apos;s feature
+          </h2>
+          <p className="text-sm text-[#a9b0a3]">
+            Auto-selected as the most converting story. Featured blog drafts
+            after research; approve and publish when ready.
+          </p>
+          <StoryCard
+            story={heroStory}
+            index={0}
+            busyIds={busyIds}
+            runActive={runActive}
+            onGenerate={handleGenerateStory}
+            onExpandIdea={handleExpandIdea}
+            onSetStatus={handleSetStatus}
+            onPublish={handlePublishSuggestion}
+          />
+        </section>
       ) : null}
 
       {storiesBySection.map((group) => (
@@ -1087,8 +1253,11 @@ export function AiUpdatesPanel() {
                 story={story}
                 index={index}
                 busyIds={busyIds}
+                runActive={runActive}
+                onGenerate={handleGenerateStory}
                 onExpandIdea={handleExpandIdea}
                 onSetStatus={handleSetStatus}
+                onPublish={handlePublishSuggestion}
               />
             ))}
           </div>

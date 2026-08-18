@@ -8,6 +8,7 @@ import {
 import { resolveSourcePublishedDate } from "@/lib/phrenos-updates/source-dates";
 import { sanitizeSummaryText } from "@/lib/phrenos-updates/sanitize";
 import {
+  generateHeroBlogPack,
   generateStoryContentPack,
   storyHasIdeasPack,
 } from "@/lib/phrenos-updates/story-content-pack";
@@ -379,6 +380,14 @@ export async function executeResearchRun(options: {
         })
         .eq("id", activeRunId);
 
+      // Best-effort: draft the week's converting hero blog after research lands.
+      try {
+        const { generateWeekHeroContent } = await import("@/lib/phrenos-updates/week-hero");
+        await generateWeekHeroContent(activeRunId);
+      } catch (error) {
+        console.error("Week-hero auto draft failed after research:", error);
+      }
+
       return activeRunId;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Research run failed.";
@@ -406,7 +415,110 @@ export async function executeResearchRun(options: {
   throw new Error("Research run failed after retries.");
 }
 
-/** Regenerate missing content packs for an existing batch (no new Tavily fetch). */
+/**
+ * Generate (or regenerate) content for one story.
+ * Does not re-run research or fetch new sources.
+ * `hero-blog` writes blog ideas + featured blog only (used for the automatic week hero).
+ */
+export async function generateContentForStory(
+  storyId: string,
+  options?: { mode?: "full" | "hero-blog" }
+) {
+  const mode = options?.mode ?? "full";
+  const supabase = createServiceRoleClient();
+
+  const { data: storyRow } = await supabase
+    .from(STORIES_TABLE)
+    .select("*")
+    .eq("id", storyId)
+    .maybeSingle();
+
+  if (!storyRow) {
+    throw new Error("Story not found.");
+  }
+
+  const { data: run } = await supabase
+    .from(RUNS_TABLE)
+    .select("id, status, completed_at")
+    .eq("id", storyRow.run_id)
+    .maybeSingle();
+
+  if (!run || !["completed", "failed"].includes(run.status)) {
+    throw new Error("Content generation is only available after research has finished.");
+  }
+
+  const { data: existingPublished } = await supabase
+    .from(SUGGESTIONS_TABLE)
+    .select("id")
+    .eq("story_id", storyId)
+    .eq("status", "published")
+    .limit(1);
+
+  if (existingPublished?.length) {
+    throw new Error(
+      "This story already has a published blog. Unpublish it first if you need to regenerate."
+    );
+  }
+
+  const generatedStory = await loadStoryForContent(storyId);
+  if (!generatedStory) {
+    throw new Error("Story not found.");
+  }
+
+  const suggestions =
+    mode === "hero-blog"
+      ? await generateHeroBlogPack(generatedStory)
+      : await generateStoryContentPack(generatedStory);
+  const withSuggestions = { ...generatedStory, suggestions };
+
+  if (suggestions.length === 0) {
+    throw new Error(`Could not generate content for "${storyRow.title}". Try again.`);
+  }
+
+  try {
+    await persistStorySuggestions(storyId, suggestions);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not save content.";
+    throw new Error(
+      message.includes("is_full_draft")
+        ? `${message} Apply supabase/migrations/001_phrenos_updates.sql, then try again.`
+        : message
+    );
+  }
+
+  const featuredBlog = suggestions.find(
+    (item) => item.suggestion_type === "blog" && item.is_full_draft
+  );
+
+  if (mode === "hero-blog") {
+    if (!featuredBlog) {
+      throw new Error(
+        `Could not write a featured blog for "${storyRow.title}". Use Generate content on that story to retry.`
+      );
+    }
+  } else if (!storyHasIdeasPack(withSuggestions)) {
+    throw new Error(
+      `Could not generate enough post ideas for "${storyRow.title}" (${suggestions.length} saved). Try again.`
+    );
+  }
+
+  await supabase
+    .from(RUNS_TABLE)
+    .update({
+      status: "completed",
+      error_message: null,
+      completed_at: run.completed_at ?? new Date().toISOString(),
+    })
+    .eq("id", run.id);
+
+  return {
+    storyId,
+    title: storyRow.title as string,
+    suggestionCount: suggestions.length,
+  };
+}
+
+/** Fill missing content packs across a batch (one or more stories per call). */
 export async function repairRunDrafts(runId: string, options?: { maxStories?: number }) {
   const maxStories = options?.maxStories ?? 1;
   const supabase = createServiceRoleClient();
@@ -428,11 +540,6 @@ export async function repairRunDrafts(runId: string, options?: { maxStories?: nu
   }
 
   const storyIds = stories.map((story) => story.id);
-  const { data: sources } = await supabase
-    .from(SOURCES_TABLE)
-    .select("*")
-    .in("story_id", storyIds);
-
   const { data: existingSuggestions } = await supabase
     .from(SUGGESTIONS_TABLE)
     .select("*")
@@ -474,46 +581,11 @@ export async function repairRunDrafts(runId: string, options?: { maxStories?: nu
 
     processingStoryTitle = storyRow.title;
 
-    const generatedStory: GeneratedStory = {
-      section: storyRow.section as ResearchSection,
-      title: storyRow.title,
-      summary_html: storyRow.summary_html ?? "",
-      topic_tags: (storyRow.topic_tags as string[]) ?? [],
-      sources: (sources ?? [])
-        .filter((source) => source.story_id === storyRow.id)
-        .filter((source) => !isSocialMediaUrl(source.url ?? ""))
-        .map((source) => ({
-          url: source.url ?? "",
-          title: source.title ?? "",
-          excerpt: cleanSourceExcerpt(source.snapshot_excerpt ?? "") ?? "",
-          is_synthesis: source.is_synthesis,
-          published_at: source.published_at as string | null | undefined,
-          extracted_facts: source.extracted_facts ?? null,
-        })),
-      suggestions: [],
-    };
-
-    const suggestions = await generateStoryContentPack(generatedStory);
-    const withSuggestions = { ...generatedStory, suggestions };
-
-    if (suggestions.length > 0) {
-      try {
-        await persistStorySuggestions(storyRow.id, suggestions);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Could not save content.";
-        lastError = message.includes("is_full_draft")
-          ? `${message} Apply supabase/migrations/001_phrenos_updates.sql, then try again.`
-          : message;
-        console.error(lastError);
-        processed += 1;
-        continue;
-      }
-    }
-
-    if (storyHasIdeasPack(withSuggestions)) {
+    try {
+      await generateContentForStory(storyRow.id);
       repaired += 1;
-    } else {
-      lastError = `Could not generate enough post ideas for "${storyRow.title}" (${suggestions.length} saved).`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Could not generate content.";
       console.error(lastError);
     }
 
@@ -522,19 +594,10 @@ export async function repairRunDrafts(runId: string, options?: { maxStories?: nu
 
   const remaining = stories.length - repaired;
 
-  await supabase
-    .from(RUNS_TABLE)
-    .update({
-      status: "completed",
-      error_message: null,
-      completed_at: run.completed_at ?? new Date().toISOString(),
-    })
-    .eq("id", runId);
-
   if (remaining > 0 && repaired === 0) {
     throw new Error(
       lastError ??
-        `Content generation incomplete: ${repaired} of ${stories.length} stories have a full pack. Click Generate content again or re-run this week.`
+        `Content generation incomplete: ${repaired} of ${stories.length} stories have a full pack. Generate content on each story that still needs it.`
     );
   }
 

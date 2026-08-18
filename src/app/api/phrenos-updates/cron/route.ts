@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       ok: true,
       runId,
       message:
-        "Weekly research complete. Open /admin/ai-updates to generate content and approve drafts.",
+        "Weekly research complete. The week's hero story should have an automatic featured blog draft in /admin/ai-updates.",
     });
   } catch (error) {
     const message =

@@ -226,6 +226,23 @@ export async function generateStoryContentPack(
   return output;
 }
 
+/**
+ * Week-hero pack: blog ideas + one featured blog only.
+ * Skips LinkedIn so the automatic post-research pass stays focused on the converting site piece.
+ */
+export async function generateHeroBlogPack(
+  story: GeneratedStory
+): Promise<GeneratedSuggestion[]> {
+  const blogIdeas = await generateIdeas(story, "blog");
+  const seed = blogIdeas[0] ?? null;
+  const featuredBlog = seed ? await generateFeaturedDraft(story, "blog", seed) : null;
+
+  const output: GeneratedSuggestion[] = [];
+  if (featuredBlog) output.push(featuredBlog);
+  output.push(...blogIdeas);
+  return output;
+}
+
 export function storyContentCounts(story: GeneratedStory) {
   const suggestions = story.suggestions ?? [];
   const blogs = suggestions.filter((item) => item.suggestion_type === "blog");

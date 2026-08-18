@@ -31,6 +31,7 @@ export {
   executeResearchRun,
   listResearchRuns,
   loadRunWithDetails,
+  generateContentForStory,
   loadStoryForContent,
   repairRunDrafts,
   type TriggerType,
@@ -38,6 +39,7 @@ export {
 
 export {
   generateFullDraftFromIdea,
+  generateHeroBlogPack,
   generateStoryContentPack,
   generateStoryFeaturedDrafts,
   generateStoryIdeasPack,
@@ -49,9 +51,20 @@ export {
 } from "@/lib/phrenos-updates/story-content-pack";
 
 export {
+  generateWeekHeroContent,
+} from "@/lib/phrenos-updates/week-hero";
+
+export {
+  hasFeaturedBlogDraft,
+  isWeekHeroStory,
+  WEEK_HERO_TAG,
+} from "@/lib/phrenos-updates/week-hero-shared";
+
+export {
   getPublishedPostBySlug,
   listPublishedPosts,
   publishApprovedToSite,
+  publishSuggestionToSite,
   unpublishPost,
   type PublishResult,
 } from "@/lib/phrenos-updates/publish";

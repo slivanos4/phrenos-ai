@@ -56,7 +56,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       run: { id: runId, status: "pending" },
-      message: "Research started. This page refreshes while the batch runs.",
+      message:
+        "Research started. When it finishes, the week's strongest story will get an automatic featured blog draft.",
     });
   } catch (error) {
     if (error instanceof AdminAuthError) {

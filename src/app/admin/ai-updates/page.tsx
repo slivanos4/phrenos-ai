@@ -8,19 +8,19 @@ export const metadata: Metadata = {
 
 export default function AdminAiUpdatesPage() {
   return (
-    <section className="relative isolate min-h-[100svh] overflow-hidden bg-[#0a100c]">
-      {/* Artwork sits to the right so the desk stays readable on the left */}
+    <section className="relative isolate min-h-[100svh] bg-[#0a100c]">
+      {/* Fixed to the viewport so it does not grow/zoom when the portal content gets taller */}
       <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-[position:72%_center] sm:bg-[position:78%_center]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-[position:72%_center] sm:bg-[position:78%_center]"
         style={{ backgroundImage: "url(/brand/admin-desk.jpg?v=1)" }}
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,#0a100c_0%,rgba(10,16,12,0.92)_38%,rgba(10,16,12,0.55)_62%,rgba(10,16,12,0.28)_100%)]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(90deg,#0a100c_0%,rgba(10,16,12,0.92)_38%,rgba(10,16,12,0.55)_62%,rgba(10,16,12,0.28)_100%)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(10,16,12,0.55)_0%,transparent_18%,transparent_72%,rgba(10,16,12,0.75)_100%)]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(180deg,rgba(10,16,12,0.55)_0%,transparent_18%,transparent_72%,rgba(10,16,12,0.75)_100%)]"
         aria-hidden
       />
 
@@ -33,8 +33,8 @@ export default function AdminAiUpdatesPage() {
           AI Updates Portal
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#a9b0a3] sm:text-base">
-          Research, draft, approve and publish weekly Gen AI updates for
-          phrenosai.com.
+          Research the week, auto-draft the strongest featured blog, then
+          approve and publish each piece on its own.
         </p>
         <div className="mt-10 max-w-3xl">
           <AiUpdatesPanel />
