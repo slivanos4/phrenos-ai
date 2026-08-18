@@ -73,7 +73,16 @@ export function SiteFooter() {
           <p>
             © {year} {site.name}. All rights reserved.
           </p>
-          <p>Independent AI consultancy.</p>
+          <div className="flex items-center gap-4">
+            <p>Independent AI consultancy.</p>
+            <Link
+              href="/admin/ai-updates"
+              className="text-sage/35 transition-colors hover:text-sage/70"
+              aria-label="AI Updates desk"
+            >
+              Desk
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -50,7 +50,7 @@ const MAX_CONTENT_PASSES = 30;
 const SECTION_ORDER: ResearchSection[] = ["models_research", "products_industry"];
 
 const panelClass =
-  "rounded-2xl border border-[#d4af5a]/25 bg-[#101c14]/70 p-5 sm:p-6";
+  "rounded-2xl border border-[#d4af5a]/25 bg-[#101c14]/88 p-5 backdrop-blur-md sm:p-6";
 const primaryButtonClass =
   "inline-flex items-center justify-center rounded-full border border-[#d4af5a] bg-[#d4af5a] px-4 py-2 text-xs font-semibold tracking-wide text-[#0a100c] transition-colors hover:bg-[#e0c078] disabled:cursor-not-allowed disabled:opacity-50";
 const ghostButtonClass =
