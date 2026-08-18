@@ -837,7 +837,7 @@ export function AiUpdatesPanel() {
       <div className={`${panelClass} max-w-md`}>
         <h2 className="font-serif text-2xl text-[#f1e8d6]">Sign in</h2>
         <p className="mt-2 text-sm text-[#a9b0a3]">
-          This desk is private. Enter the admin password to continue.
+          Enter the admin password to continue.
         </p>
         <form onSubmit={handleSignIn} className="mt-5 space-y-3">
           <label className="block space-y-2">

@@ -78,9 +78,9 @@ export function SiteFooter() {
             <Link
               href="/admin/ai-updates"
               className="text-sage/35 transition-colors hover:text-sage/70"
-              aria-label="AI Updates desk"
+              aria-label="Admin"
             >
-              Desk
+              Admin
             </Link>
           </div>
         </div>

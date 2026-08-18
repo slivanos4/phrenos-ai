@@ -30,7 +30,7 @@ export default function AdminAiUpdatesPage() {
           Private
         </p>
         <h1 className="mt-4 max-w-xl font-serif text-3xl tracking-tight text-[#f1e8d6] sm:text-4xl">
-          AI Updates desk
+          AI Updates Portal
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#a9b0a3] sm:text-base">
           Research, draft, approve and publish weekly Gen AI updates for
