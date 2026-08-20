@@ -43,6 +43,13 @@ export {
   tavilyQueriesForSection,
 } from "@/lib/phrenos-updates/research-discovery";
 
+export { proposeClaudeDiscoverySearches } from "@/lib/phrenos-updates/claude-discovery";
+
+export {
+  enforceSourceVerifiedDraft,
+  verifyDraftAgainstSources,
+} from "@/lib/phrenos-updates/draft-verify";
+
 export {
   generateFullDraftFromIdea,
   generateHeroBlogPack,
@@ -74,6 +81,12 @@ export {
   unpublishPost,
   type PublishResult,
 } from "@/lib/phrenos-updates/publish";
+
+export {
+  isValidVisitorKey,
+  submitPostFeedback,
+  type PostReaction,
+} from "@/lib/phrenos-updates/post-feedback";
 
 export {
   ADMIN_SESSION_COOKIE,

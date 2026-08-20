@@ -168,7 +168,10 @@ Rules:
     if (hasOffVoiceMarkers(cleaned)) return null;
     if (isLowQualitySuggestionBody(cleaned.body_html)) return null;
     if (!meetsLengthTarget(cleaned)) return null;
-    return cleaned;
+
+    // Blog drafts get a hard source fact-check pass; LinkedIn too when it is a full draft.
+    const { enforceSourceVerifiedDraft } = await import("@/lib/phrenos-updates/draft-verify");
+    return await enforceSourceVerifiedDraft(story, cleaned);
   } catch {
     return null;
   }

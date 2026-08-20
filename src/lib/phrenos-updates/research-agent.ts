@@ -309,7 +309,28 @@ async function fetchSectionSources(
   section: ResearchSection,
   input: ResearchAgentInput
 ): Promise<{ sources: GeneratedSource[]; errors: string[] }> {
-  const queries = discoveryQueriesForSection(section, input);
+  const baseQueries = discoveryQueriesForSection(section, input);
+
+  let claudeQueries: TavilySearchOptions[] = [];
+  try {
+    const { proposeClaudeDiscoverySearches } = await import(
+      "@/lib/phrenos-updates/claude-discovery"
+    );
+    const plan = await proposeClaudeDiscoverySearches(section, input);
+    claudeQueries = plan.queries;
+    if (plan.domains.length > 0) {
+      claudeQueries.push({
+        query: `generative AI ${SECTION_LABELS[section]} news ${input.lookbackEnd}`,
+        topic: "news",
+        includeDomains: plan.domains,
+        maxResults: 10,
+      });
+    }
+  } catch (error) {
+    console.error("Claude discovery planning failed:", error);
+  }
+
+  const queries = [...baseQueries, ...claudeQueries];
   const batches = await Promise.all(
     queries.map((query) => fetchTavilyContextDetailed(query, input))
   );

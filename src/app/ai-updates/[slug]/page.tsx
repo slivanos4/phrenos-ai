@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { PostFeedback } from "@/components/ai-updates/post-feedback";
 import {
   getPublishedPostBySlug,
   isServiceRoleConfigured,
@@ -105,21 +106,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
           dangerouslySetInnerHTML={{ __html: post.body_html }}
         />
 
-        <div className="mt-12 rounded-2xl border border-[#d4af5a]/25 bg-[#101c14]/60 px-6 py-8 text-center">
-          {post.cta ? (
-            <p className="text-base leading-relaxed text-ivory">{post.cta}</p>
-          ) : (
-            <p className="text-base leading-relaxed text-ivory">
-              Want to talk about what this means for your organisation?
-            </p>
-          )}
-          <Link
-            href="/contact"
-            className="mt-6 inline-flex items-center justify-center rounded-full border border-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-ivory transition-colors hover:bg-gold hover:text-forest"
-          >
-            Start a Conversation
-          </Link>
-        </div>
+        <PostFeedback postId={post.id} />
 
         <div className="mt-10 border-t border-[#d4af5a]/20 pt-6">
           <Link
