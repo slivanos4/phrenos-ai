@@ -122,7 +122,7 @@ function buildStoryGenerationPrompt(
     webSources.length > 0
       ? `  * Each source MUST be a specific article from the "Web articles found" list below
   * Copy the exact url, title, and published_at from that list. Do NOT invent URLs or dates
-  * published_at must fall within the research period (${input.lookbackStart} to ${input.lookbackEnd}) or at most 14 days before ${input.lookbackEnd}
+  * published_at is required for every real article and MUST fall within ${input.lookbackStart} to ${input.lookbackEnd} (the past two weeks). Reject anything older or undated
   * NEVER use homepage, section index, or domain-root links
   * NEVER use Instagram, Facebook, Twitter/X, TikTok, or LinkedIn post URLs. Use publisher articles, official company blogs, and research coverage only
   * Use is_synthesis:true ONLY when no listed article supports a minor point; max one synthesis source per story`
@@ -219,7 +219,8 @@ async function fetchTavilyContext(
               row.url ?? "",
               row.published_date,
               null,
-              `${row.title ?? ""} ${row.content ?? ""}`
+              `${row.title ?? ""} ${row.content ?? ""}`,
+              input
             ),
             is_synthesis: false,
           })
@@ -351,24 +352,27 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
   }
 
   const [enrichedModelsPool, enrichedProductsPool] = await Promise.all([
-    enrichSourcesWithFirecrawl(modelsPool),
-    enrichSourcesWithFirecrawl(productsPool),
+    enrichSourcesWithFirecrawl(modelsPool, input),
+    enrichSourcesWithFirecrawl(productsPool, input),
   ]);
 
+  const datedModelsPool = filterSourcesByLookback(enrichedModelsPool, input);
+  const datedProductsPool = filterSourcesByLookback(enrichedProductsPool, input);
+
   const [modelStories, productStories] = await Promise.all([
-    generateSectionStories(input, "models_research", enrichedModelsPool),
-    generateSectionStories(input, "products_industry", enrichedProductsPool),
+    generateSectionStories(input, "models_research", datedModelsPool),
+    generateSectionStories(input, "products_industry", datedProductsPool),
   ]);
 
   if (modelStories.length === 0 && productStories.length === 0) {
     throw new Error(
-      `Live research returned no stories (model: ${ANTHROPIC_MODEL}). Check ANTHROPIC_API_KEY, redeploy after env changes, then re-run.`
+      `Live research returned no stories with dated sources from the past two weeks (model: ${ANTHROPIC_MODEL}). Check ANTHROPIC_API_KEY, redeploy after env changes, then re-run.`
     );
   }
 
   const [enrichedModelStories, enrichedProductStories] = await Promise.all([
-    enrichStoriesWithSources(modelStories, enrichedModelsPool, input),
-    enrichStoriesWithSources(productStories, enrichedProductsPool, input),
+    enrichStoriesWithSources(modelStories, datedModelsPool, input),
+    enrichStoriesWithSources(productStories, datedProductsPool, input),
   ]);
 
   return ensurePolishedSummaries([...enrichedModelStories, ...enrichedProductStories]);

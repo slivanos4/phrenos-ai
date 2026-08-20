@@ -5,7 +5,11 @@ import {
   STORIES_TABLE,
   SUGGESTIONS_TABLE,
 } from "@/lib/phrenos-updates/tables";
-import { resolveSourcePublishedDate } from "@/lib/phrenos-updates/source-dates";
+import {
+  LOOKBACK_DAYS,
+  isPublishedWithinLookback,
+  resolveSourcePublishedDate,
+} from "@/lib/phrenos-updates/source-dates";
 import { sanitizeSummaryText } from "@/lib/phrenos-updates/sanitize";
 import {
   generateHeroBlogPack,
@@ -44,9 +48,9 @@ function toIsoDate(date: Date) {
 
 function lookbackWindow() {
   const end = new Date();
-  end.setHours(0, 0, 0, 0);
+  end.setUTCHours(0, 0, 0, 0);
   const start = new Date(end);
-  start.setDate(start.getDate() - 7);
+  start.setUTCDate(start.getUTCDate() - LOOKBACK_DAYS);
   return { start: toIsoDate(start), end: toIsoDate(end) };
 }
 
@@ -354,19 +358,32 @@ export async function executeResearchRun(options: {
         if (storyError || !storyRow) continue;
 
         if (story.sources.length > 0) {
-          await supabase.from(SOURCES_TABLE).insert(
-            story.sources.map((source, index) => ({
-              story_id: storyRow.id,
-              url: source.url,
-              title: source.title,
-              accessed_at: new Date().toISOString(),
-              published_at: source.published_at ?? null,
-              snapshot_excerpt: source.excerpt,
-              extracted_facts: source.extracted_facts ?? null,
-              is_synthesis: source.is_synthesis,
-              sort_order: index,
-            }))
+          const lookback = {
+            lookbackStart: window.start,
+            lookbackEnd: window.end,
+          };
+          const safeSources = story.sources.filter(
+            (source) =>
+              source.is_synthesis ||
+              (Boolean(source.published_at) &&
+                isPublishedWithinLookback(source.published_at ?? null, lookback))
           );
+
+          if (safeSources.length > 0) {
+            await supabase.from(SOURCES_TABLE).insert(
+              safeSources.map((source, index) => ({
+                story_id: storyRow.id,
+                url: source.url,
+                title: source.title,
+                accessed_at: new Date().toISOString(),
+                published_at: source.published_at ?? null,
+                snapshot_excerpt: source.excerpt,
+                extracted_facts: source.extracted_facts ?? null,
+                is_synthesis: source.is_synthesis,
+                sort_order: index,
+              }))
+            );
+          }
         }
       }
 

@@ -6,7 +6,7 @@ import {
   isFirecrawlConfigured,
   scrapeArticleWithFirecrawl,
 } from "@/lib/phrenos-updates/firecrawl-extract";
-import { resolveSourcePublishedDate } from "@/lib/phrenos-updates/source-dates";
+import { resolveSourcePublishedDate, type SourceLookback } from "@/lib/phrenos-updates/source-dates";
 import { isSpecificArticleUrl } from "@/lib/phrenos-updates/research-sources";
 
 const MAX_FIRECRAWL_URLS_PER_SECTION = 16;
@@ -18,7 +18,8 @@ function articleKey(url: string) {
 
 /** Scrape full articles and extract fact bullets for the research pool. */
 export async function enrichSourcesWithFirecrawl(
-  sources: GeneratedSource[]
+  sources: GeneratedSource[],
+  lookback?: SourceLookback | null
 ): Promise<GeneratedSource[]> {
   if (!isFirecrawlConfigured()) return sources;
 
@@ -51,17 +52,22 @@ export async function enrichSourcesWithFirecrawl(
               .slice(0, 600)
           : scraped.markdown.slice(0, 600);
 
+        // Prefer Firecrawl/meta publish dates. Only fall back to body text when meta is missing,
+        // and always constrain to the lookback window when one is provided.
+        const published_at = resolveSourcePublishedDate(
+          source.url,
+          scraped.published_at ?? source.published_at,
+          source.published_at,
+          scraped.published_at ? null : scraped.markdown.slice(0, 1200),
+          lookback
+        );
+
         enrichedByUrl.set(
           articleKey(source.url),
           sanitizeSourceFields({
             ...source,
             excerpt: excerpt || source.excerpt,
-            published_at: resolveSourcePublishedDate(
-              source.url,
-              scraped.published_at ?? source.published_at,
-              source.published_at,
-              scraped.markdown.slice(0, 1200)
-            ),
+            published_at,
             extracted_facts: facts || scraped.markdown.slice(0, 2000),
           })
         );

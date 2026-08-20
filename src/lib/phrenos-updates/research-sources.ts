@@ -2,6 +2,7 @@ import type { GeneratedSource } from "@/lib/phrenos-updates/types";
 import { sanitizeSourceFields } from "@/lib/phrenos-updates/sanitize";
 import { isSocialMediaUrl, isUsableSourceExcerpt } from "@/lib/phrenos-updates/source-text";
 import {
+  LOOKBACK_DAYS,
   comparePublishedDesc,
   isPublishedInPreferredWindow,
   isPublishedWithinLookback,
@@ -99,25 +100,37 @@ function hasNonRootPath(url: string): boolean {
   }
 }
 
-function withResolvedPublishedDate(source: GeneratedSource): GeneratedSource {
+function withResolvedPublishedDate(
+  source: GeneratedSource,
+  lookback?: SourceLookback | null
+): GeneratedSource {
   return {
     ...source,
     published_at: resolveSourcePublishedDate(
       source.url,
       source.published_at,
       source.published_at,
-      `${source.title} ${source.excerpt}`
+      `${source.title} ${source.excerpt}`,
+      lookback
     ),
   };
 }
 
-function enrichFromPool(source: GeneratedSource, pool: GeneratedSource[]): GeneratedSource {
+function enrichFromPool(
+  source: GeneratedSource,
+  pool: GeneratedSource[],
+  lookback: SourceLookback
+): GeneratedSource {
   const match = pool.find((row) => row.url.toLowerCase() === source.url.toLowerCase());
-  return withResolvedPublishedDate({
-    ...source,
-    published_at: source.published_at ?? match?.published_at ?? null,
-    extracted_facts: source.extracted_facts ?? match?.extracted_facts ?? null,
-  });
+  // Prefer the pool's verified date over any model-invented published_at.
+  return withResolvedPublishedDate(
+    {
+      ...source,
+      published_at: match?.published_at ?? source.published_at ?? null,
+      extracted_facts: source.extracted_facts ?? match?.extracted_facts ?? null,
+    },
+    lookback
+  );
 }
 
 function isEligibleArticleSource(source: GeneratedSource, lookback: SourceLookback): boolean {
@@ -125,8 +138,9 @@ function isEligibleArticleSource(source: GeneratedSource, lookback: SourceLookba
   if (!source.url || isSocialMediaUrl(source.url)) return false;
   if (!isUsableSourceExcerpt(source.excerpt)) return false;
   if (!isSpecificArticleUrl(source.url)) return false;
-  const publishedAt = withResolvedPublishedDate(source).published_at ?? null;
-  if (!publishedAt) return true;
+  const publishedAt = withResolvedPublishedDate(source, lookback).published_at ?? null;
+  // Every real article must have an extracted publish date inside the 2-week window.
+  if (!publishedAt) return false;
   return isPublishedWithinLookback(publishedAt, lookback);
 }
 
@@ -147,8 +161,11 @@ function sortArticleSources(
   });
 }
 
-function finalizeSources(sources: GeneratedSource[]): GeneratedSource[] {
-  return sources.map((source) => sanitizeSourceFields(withResolvedPublishedDate(source)));
+function finalizeSources(
+  sources: GeneratedSource[],
+  lookback?: SourceLookback | null
+): GeneratedSource[] {
+  return sources.map((source) => sanitizeSourceFields(withResolvedPublishedDate(source, lookback)));
 }
 
 export function filterSourcesByLookback(
@@ -156,26 +173,37 @@ export function filterSourcesByLookback(
   lookback: SourceLookback
 ): GeneratedSource[] {
   return dedupeSources(sources)
-    .map((source) => withResolvedPublishedDate(source))
+    .map((source) => withResolvedPublishedDate(source, lookback))
     .filter((source) => source.is_synthesis || isEligibleArticleSource(source, lookback));
 }
 
-async function enrichSourcePublishedDates(sources: GeneratedSource[]): Promise<GeneratedSource[]> {
+async function enrichSourcePublishedDates(
+  sources: GeneratedSource[],
+  lookback: SourceLookback
+): Promise<GeneratedSource[]> {
   return Promise.all(
     sources.map(async (source) => {
       if (source.is_synthesis || !source.url) {
-        return withResolvedPublishedDate(source);
+        return withResolvedPublishedDate(source, lookback);
       }
 
       let published_at = resolveSourcePublishedDate(
         source.url,
         source.published_at,
         source.published_at,
-        `${source.title} ${source.excerpt}`
+        `${source.title} ${source.excerpt}`,
+        lookback
       );
 
       if (!published_at) {
-        published_at = await fetchPublishedDateFromPage(source.url);
+        const fetched = await fetchPublishedDateFromPage(source.url);
+        published_at = resolveSourcePublishedDate(
+          source.url,
+          fetched,
+          source.published_at,
+          null,
+          lookback
+        );
       }
 
       return sanitizeSourceFields({ ...source, published_at });
@@ -207,7 +235,7 @@ export function ensureStorySources(
 
   const fromStory = sortArticleSources(
     dedupeSources(storySources ?? [])
-      .map((source) => enrichFromPool(source, datedPool))
+      .map((source) => enrichFromPool(source, datedPool, lookback))
       .filter(
         (source) =>
           source.url &&
@@ -248,7 +276,10 @@ export function ensureStorySources(
 
   const articles = ranked.slice(0, maxCount);
   if (articles.length >= minCount) {
-    return finalizeSources(synthesis.length > 0 ? [...articles, ...synthesis.slice(0, 1)] : articles);
+    return finalizeSources(
+      synthesis.length > 0 ? [...articles, ...synthesis.slice(0, 1)] : articles,
+      lookback
+    );
   }
 
   if (articles.length === 0) {
@@ -259,15 +290,19 @@ export function ensureStorySources(
             {
               url: "",
               title: "Editorial synthesis",
-              excerpt: `No verifiable article URLs with a recent publish date matched "${topic}" in this run. Re-run research or add sources manually.`,
+              excerpt: `No verifiable article URLs with a publish date in the past ${LOOKBACK_DAYS} days matched "${topic}" in this run. Re-run research or add sources manually.`,
               is_synthesis: true,
               published_at: null,
             },
-          ]
+          ],
+      lookback
     );
   }
 
-  return finalizeSources([...articles, ...synthesis.slice(0, 1)].slice(0, maxCount + 1));
+  return finalizeSources(
+    [...articles, ...synthesis.slice(0, 1)].slice(0, maxCount + 1),
+    lookback
+  );
 }
 
 export async function ensureVerifiedStorySources(
@@ -280,9 +315,17 @@ export async function ensureVerifiedStorySources(
 ): Promise<GeneratedSource[]> {
   const sources = ensureStorySources(storySources, pool, topic, lookback, minCount, maxCount);
   const verified = await verifyArticleSources(sources);
-  const articles = verified.filter((source) => !source.is_synthesis && source.url);
+  const dated = await enrichSourcePublishedDates(verified, lookback);
+  // Re-filter after date extraction so stale or missing dates never persist.
+  const inWindow = dated.filter(
+    (source) =>
+      source.is_synthesis ||
+      (Boolean(source.published_at) &&
+        isPublishedWithinLookback(source.published_at ?? null, lookback))
+  );
+  const articles = inWindow.filter((source) => !source.is_synthesis && source.url);
   if (articles.length > 0) {
-    return enrichSourcePublishedDates(verified);
+    return inWindow;
   }
   return unavailableArticleSources(topic);
 }
@@ -292,7 +335,7 @@ export function unavailableArticleSources(topic: string): GeneratedSource[] {
     {
       url: "",
       title: "Live article links unavailable",
-      excerpt: `No verified articles were found for "${topic}". Check TAVILY_API_KEY and ANTHROPIC_API_KEY are set, redeploy, then re-run this week to fetch real, working article links from the past two weeks.`,
+      excerpt: `No verified articles with extractable publish dates from the past ${LOOKBACK_DAYS} days were found for "${topic}". Check TAVILY_API_KEY and ANTHROPIC_API_KEY are set, redeploy, then re-run this week.`,
       is_synthesis: true,
       published_at: null,
     },

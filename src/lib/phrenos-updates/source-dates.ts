@@ -3,7 +3,9 @@ export type SourceLookback = {
   lookbackEnd: string;
 };
 
-export const MAX_SOURCE_AGE_DAYS = 14;
+/** All research sources must fall within this many days of the run date. */
+export const LOOKBACK_DAYS = 14;
+export const MAX_SOURCE_AGE_DAYS = LOOKBACK_DAYS;
 
 const MONTHS: Record<string, string> = {
   jan: "01",
@@ -45,8 +47,17 @@ export function normalizePublishedDate(value: string | null | undefined): string
   const isoMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
   if (isoMatch) return isoMatch[1];
 
+  // Avoid Date.parse on bare "January 2026" / ambiguous strings; require a day.
+  const dmy = trimmed.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})$/);
+  if (dmy) return toIsoDate(dmy[3], dmy[2], dmy[1]);
+
+  const mdy = trimmed.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(20\d{2})$/);
+  if (mdy) return toIsoDate(mdy[3], mdy[1], mdy[2]);
+
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) return null;
+  // Reject timezone-shifted nonsense for date-only intent when input lacked a day.
+  if (!/\d{1,2}/.test(trimmed)) return null;
   return parsed.toISOString().slice(0, 10);
 }
 
@@ -62,27 +73,66 @@ function toIsoDate(year: string, month: string, day: string): string | null {
   return parseIsoDate(candidate) ? candidate : null;
 }
 
+function firstDatedMatch(
+  text: string,
+  patterns: RegExp[]
+): string | null {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (!match) continue;
+
+    if (match[1] && match[2] && match[3] && /^\d{4}$/.test(match[1])) {
+      // ISO groups year-month-day
+      const candidate = `${match[1]}-${match[2]}-${match[3]}`;
+      if (parseIsoDate(candidate)) return candidate;
+    }
+
+    if (match[1] && match[2] && match[3] && /[A-Za-z]/.test(match[2])) {
+      const resolved = toIsoDate(match[3], match[2], match[1]);
+      if (resolved) return resolved;
+    }
+
+    if (match[1] && match[2] && match[3] && /[A-Za-z]/.test(match[1])) {
+      const resolved = toIsoDate(match[3], match[1], match[2]);
+      if (resolved) return resolved;
+    }
+
+    if (match[1]) {
+      const normalized = normalizePublishedDate(match[1]);
+      if (normalized) return normalized;
+    }
+  }
+  return null;
+}
+
+/** Prefer explicit publish cues so we do not latch onto unrelated page dates. */
 export function extractPublishedDateFromText(text: string): string | null {
   if (!text) return null;
 
-  const iso = text.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
+  const cuePatterns = [
+    /(?:published|posted|publication\s*date|pub(?:lication)?\s*date|date\s*published)\s*[:\-]?\s*((?:20\d{2})-\d{2}-\d{2})/i,
+    /(?:published|posted|publication\s*date|pub(?:lication)?\s*date|date\s*published)\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]+\s+20\d{2})/i,
+    /(?:published|posted|publication\s*date|pub(?:lication)?\s*date|date\s*published)\s*[:\-]?\s*([A-Za-z]+\s+\d{1,2},?\s+20\d{2})/i,
+  ];
+
+  const fromCue = firstDatedMatch(text, cuePatterns);
+  if (fromCue) return fromCue;
+
+  // Only scan the opening slice for bare dates; footers often contain older years.
+  const head = text.slice(0, 2500);
+
+  const iso = head.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
   if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
 
-  const dmy = text.match(/\b(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\b/);
+  const dmy = head.match(/\b(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\b/);
   if (dmy) {
     const resolved = toIsoDate(dmy[3], dmy[2], dmy[1]);
     if (resolved) return resolved;
   }
 
-  const mdy = text.match(/\b([A-Za-z]+)\s+(\d{1,2}),?\s+(20\d{2})\b/);
+  const mdy = head.match(/\b([A-Za-z]+)\s+(\d{1,2}),?\s+(20\d{2})\b/);
   if (mdy) {
     const resolved = toIsoDate(mdy[3], mdy[1], mdy[2]);
-    if (resolved) return resolved;
-  }
-
-  const slashUk = text.match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);
-  if (slashUk) {
-    const resolved = toIsoDate(slashUk[3], slashUk[2], slashUk[1]);
     if (resolved) return resolved;
   }
 
@@ -131,57 +181,73 @@ export function extractPublishedDateFromUrl(url: string): string | null {
   return null;
 }
 
-const HTML_DATE_PATTERNS = [
+const PRIMARY_HTML_DATE_PATTERNS = [
   /property=["']article:published_time["'][^>]*content=["']([^"']+)["']/i,
   /content=["']([^"']+)["'][^>]*property=["']article:published_time["']/i,
   /property=["']og:published_time["'][^>]*content=["']([^"']+)["']/i,
   /content=["']([^"']+)["'][^>]*property=["']og:published_time["']/i,
   /name=["']pubdate["'][^>]*content=["']([^"']+)["']/i,
+  /name=["']publish(?:ed)?[_-]?date["'][^>]*content=["']([^"']+)["']/i,
+  /itemprop=["']datePublished["'][^>]*content=["']([^"']+)["']/i,
+  /content=["']([^"']+)["'][^>]*itemprop=["']datePublished["']/i,
+  /"datePublished"\s*:\s*"([^"]+)"/i,
+  /<time[^>]+datetime=["']([^"']+)["'][^>]*(?:itemprop=["']datePublished["']|class=["'][^"']*publish)/i,
+];
+
+const FALLBACK_HTML_DATE_PATTERNS = [
   /name=["']date["'][^>]*content=["']([^"']+)["']/i,
   /<time[^>]+datetime=["']([^"']+)["']/i,
-  /"datePublished"\s*:\s*"([^"]+)"/i,
   /"dateModified"\s*:\s*"([^"]+)"/i,
 ];
 
 export function extractPublishedDateFromHtml(html: string): string | null {
-  for (const pattern of HTML_DATE_PATTERNS) {
+  for (const pattern of PRIMARY_HTML_DATE_PATTERNS) {
     const match = html.match(pattern);
     const normalized = normalizePublishedDate(match?.[1]);
     if (normalized) return normalized;
   }
-  return extractPublishedDateFromText(html.slice(0, 8000));
+
+  const fromCues = extractPublishedDateFromText(html.slice(0, 12_000));
+  if (fromCues) return fromCues;
+
+  for (const pattern of FALLBACK_HTML_DATE_PATTERNS) {
+    const match = html.match(pattern);
+    const normalized = normalizePublishedDate(match?.[1]);
+    if (normalized) return normalized;
+  }
+
+  return null;
 }
 
+/**
+ * Resolve a publish date from API metadata, URL, and text hints.
+ * When lookback is provided, prefer candidates inside the window and never
+ * return an out-of-window date (those articles must be filtered out instead).
+ */
 export function resolveSourcePublishedDate(
   url: string,
   publishedDateFromApi?: string | null,
   existing?: string | null,
-  textHints?: string | null
+  textHints?: string | null,
+  lookback?: SourceLookback | null
 ): string | null {
-  return (
-    normalizePublishedDate(publishedDateFromApi) ??
-    extractPublishedDateFromUrl(url) ??
-    (textHints ? extractPublishedDateFromText(textHints) : null) ??
-    normalizePublishedDate(existing)
-  );
+  const candidates = [
+    normalizePublishedDate(publishedDateFromApi),
+    extractPublishedDateFromUrl(url),
+    textHints ? extractPublishedDateFromText(textHints) : null,
+    normalizePublishedDate(existing),
+  ].filter((value): value is string => Boolean(value));
+
+  if (candidates.length === 0) return null;
+
+  if (!lookback) return candidates[0];
+
+  const inWindow = candidates.find((date) => isPublishedWithinLookback(date, lookback));
+  return inWindow ?? null;
 }
 
+/** Strict: publish date must fall inside lookbackStart..lookbackEnd (inclusive). */
 export function isPublishedWithinLookback(
-  publishedAt: string | null,
-  lookback: SourceLookback
-): boolean {
-  if (!publishedAt) return false;
-  const published = parseIsoDate(publishedAt);
-  const end = parseIsoDate(lookback.lookbackEnd);
-  if (!published || !end) return false;
-
-  const earliest = new Date(end);
-  earliest.setUTCDate(earliest.getUTCDate() - MAX_SOURCE_AGE_DAYS);
-
-  return published >= earliest && published <= end;
-}
-
-export function isPublishedInPreferredWindow(
   publishedAt: string | null,
   lookback: SourceLookback
 ): boolean {
@@ -191,6 +257,13 @@ export function isPublishedInPreferredWindow(
   const end = parseIsoDate(lookback.lookbackEnd);
   if (!published || !start || !end) return false;
   return published >= start && published <= end;
+}
+
+export function isPublishedInPreferredWindow(
+  publishedAt: string | null,
+  lookback: SourceLookback
+): boolean {
+  return isPublishedWithinLookback(publishedAt, lookback);
 }
 
 export function formatSourcePublishedDate(isoDate: string | null | undefined): string {
