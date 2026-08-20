@@ -110,6 +110,7 @@ export {
   getDisplayPublishedDate,
   LOOKBACK_DAYS,
   MAX_SOURCE_AGE_DAYS,
+  textClaimsDateOutsideLookback,
 } from "@/lib/phrenos-updates/source-dates";
 
 export {

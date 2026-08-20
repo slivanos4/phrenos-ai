@@ -20,6 +20,7 @@ ${SOURCE_INTEGRITY_BLOCK}
 - Format as 3-6 bullet points, one per line, each starting with "- "
 - Each bullet must be one distinct fact or trend from the sources (not the story headline repeated)
 - Write for a strategic reader: what changed, who is involved, why it matters for adoption or capability
+- Only describe developments from the stated research period. Never backfill older months (for example do not write "in July" when the research window is in August)
 - No intro paragraph, no outro, no subheadings, bullets only
 - NEVER paste photo credits, markdown headings, social handles, or scraped page chrome
 - NEVER use placeholder text or meta instructions

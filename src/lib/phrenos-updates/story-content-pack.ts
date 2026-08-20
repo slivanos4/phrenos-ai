@@ -228,14 +228,33 @@ export async function generateStoryContentPack(
 
 /**
  * Week-hero pack: blog ideas + one featured blog only.
- * Skips LinkedIn so the automatic post-research pass stays focused on the converting site piece.
+ * Tries multiple idea seeds so a single weak draft does not fail the whole hero pass.
  */
 export async function generateHeroBlogPack(
   story: GeneratedStory
 ): Promise<GeneratedSuggestion[]> {
   const blogIdeas = await generateIdeas(story, "blog");
-  const seed = blogIdeas[0] ?? null;
-  const featuredBlog = seed ? await generateFeaturedDraft(story, "blog", seed) : null;
+  let featuredBlog: GeneratedSuggestion | null = null;
+
+  for (const seed of blogIdeas.slice(0, 3)) {
+    featuredBlog = await generateFeaturedDraft(story, "blog", seed);
+    if (featuredBlog) break;
+  }
+
+  // One more attempt with a conversion-focused seed if all drafts failed length/voice gates.
+  if (!featuredBlog && blogIdeas[0]) {
+    const forcedSeed: GeneratedSuggestion = {
+      ...blogIdeas[0],
+      title: blogIdeas[0].title || story.title,
+      hook:
+        blogIdeas[0].hook ||
+        "What this week's most consequential Gen AI move means for organisations deciding what to trust, ship, and govern next.",
+      body_html:
+        blogIdeas[0].body_html ||
+        "Expand into a full featured blog with Why this matters now, What to do next, and a clear CTA to phrenosai.com/contact.",
+    };
+    featuredBlog = await generateFeaturedDraft(story, "blog", forcedSeed);
+  }
 
   const output: GeneratedSuggestion[] = [];
   if (featuredBlog) output.push(featuredBlog);

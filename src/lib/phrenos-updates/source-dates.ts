@@ -300,3 +300,80 @@ export function comparePublishedDesc(left: string | null, right: string | null):
   if (!right) return -1;
   return right.localeCompare(left);
 }
+
+const MONTH_PATTERN =
+  /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\b/i;
+
+/**
+ * True when copy claims a calendar date clearly outside the research window
+ * (for example "July 2026" inside an 6 Aug to 20 Aug batch).
+ */
+export function textClaimsDateOutsideLookback(
+  text: string,
+  lookback: SourceLookback
+): boolean {
+  if (!text.trim()) return false;
+  const start = parseIsoDate(lookback.lookbackStart);
+  const end = parseIsoDate(lookback.lookbackEnd);
+  if (!start || !end) return false;
+
+  const latest = new Date(end);
+  latest.setUTCDate(latest.getUTCDate() + 1);
+
+  const isoMatches = text.matchAll(/\b(20\d{2})-(\d{2})-(\d{2})\b/g);
+  for (const match of isoMatches) {
+    const date = parseIsoDate(`${match[1]}-${match[2]}-${match[3]}`);
+    if (date && (date < start || date > latest)) return true;
+  }
+
+  const dmyMatches = text.matchAll(
+    /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(20\d{2})\b/gi
+  );
+  for (const match of dmyMatches) {
+    const date = parseIsoDate(
+      `${match[3]}-${MONTHS[match[2].toLowerCase()] ?? "01"}-${match[1].padStart(2, "0")}`
+    );
+    if (date && (date < start || date > latest)) return true;
+  }
+
+  const mdyMatches = text.matchAll(
+    /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2}),?\s+(20\d{2})\b/gi
+  );
+  for (const match of mdyMatches) {
+    const date = parseIsoDate(
+      `${match[3]}-${MONTHS[match[1].toLowerCase()] ?? "01"}-${match[2].padStart(2, "0")}`
+    );
+    if (date && (date < start || date > latest)) return true;
+  }
+
+  const monthYearMatches = text.matchAll(
+    /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(20\d{2})\b/gi
+  );
+  for (const match of monthYearMatches) {
+    const month = MONTHS[match[1].toLowerCase()];
+    const year = match[2];
+    if (!month) continue;
+    // Treat month+year as the first of that month for comparison.
+    const date = parseIsoDate(`${year}-${month}-01`);
+    if (!date) continue;
+    const monthEnd = new Date(Date.UTC(Number(year), Number(month), 0, 12));
+    if (monthEnd < start || date > latest) return true;
+  }
+
+  // Bare month name in the same year as the lookback, but outside the window months.
+  const startMonth = start.getUTCMonth() + 1;
+  const endMonth = end.getUTCMonth() + 1;
+  const year = start.getUTCFullYear();
+  if (end.getUTCFullYear() === year) {
+    const bareMonth = text.match(new RegExp(`${MONTH_PATTERN.source}(?!\\s+20\\d{2})`, "i"));
+    if (bareMonth) {
+      const monthNum = Number(MONTHS[bareMonth[1].toLowerCase()] ?? 0);
+      if (monthNum > 0 && (monthNum < startMonth || monthNum > endMonth)) {
+        // Only flag when the lookback year is also mentioned nearby or implied by context words.
+        if (text.includes(String(year)) || /\b20\d{2}\b/.test(text)) return true;
+      }
+    }
+  }
+
+  return false;
+}

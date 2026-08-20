@@ -28,7 +28,7 @@ import {
   filterSourcesByLookback,
   isSpecificArticleUrl,
 } from "@/lib/phrenos-updates/research-sources";
-import { resolveSourcePublishedDate } from "@/lib/phrenos-updates/source-dates";
+import { resolveSourcePublishedDate, textClaimsDateOutsideLookback } from "@/lib/phrenos-updates/source-dates";
 import {
   buildSummaryFromExcerpts,
   ensurePolishedSummaries,
@@ -131,6 +131,7 @@ Period: ${input.lookbackStart} to ${input.lookbackEnd}.
 Section: ${SECTION_LABELS[section]}
 
 Prefer stories covered by serious AI news desks (for example Artificial Intelligence News, AI Weekly, TechCrunch, The Verge, Wired, MIT Technology Review, Reuters) and official lab or product blogs when present in the list below.
+Only use articles from this period. Reject older news recycled as if it were new. Do not mention months outside ${input.lookbackStart} to ${input.lookbackEnd}.
 
 ${SOURCE_INTEGRITY_BLOCK}
 
@@ -151,6 +152,32 @@ Web articles found:
 ${JSON.stringify(webSources.slice(0, 12), null, 2)}
 
 Return ONLY valid JSON array, no markdown fences or commentary.`;
+}
+
+function storyClaimsStalePeriod(story: GeneratedStory, input: ResearchAgentInput): boolean {
+  const haystack = `${story.title}\n${story.summary_html}\n${story.sources
+    .map((source) => `${source.title} ${source.excerpt}`)
+    .join("\n")}`;
+  return textClaimsDateOutsideLookback(haystack, input);
+}
+
+function keepInPeriodStories(
+  stories: GeneratedStory[],
+  input: ResearchAgentInput
+): GeneratedStory[] {
+  return stories.filter((story) => {
+    if (storyClaimsStalePeriod(story, input)) {
+      console.warn(`Dropping out-of-period story: ${story.title}`);
+      return false;
+    }
+    const datedSources = story.sources.filter(
+      (source) =>
+        !source.is_synthesis &&
+        source.published_at &&
+        !textClaimsDateOutsideLookback(source.published_at, input)
+    );
+    return datedSources.length > 0 || story.sources.every((source) => source.is_synthesis);
+  });
 }
 
 async function callAnthropicForStories(
@@ -449,5 +476,16 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
     enrichStoriesWithSources(productStories, datedProductsPool, input),
   ]);
 
-  return ensurePolishedSummaries([...enrichedModelStories, ...enrichedProductStories]);
+  const inPeriod = keepInPeriodStories(
+    [...enrichedModelStories, ...enrichedProductStories],
+    input
+  );
+
+  if (inPeriod.length === 0) {
+    throw new Error(
+      "Research found articles, but every curated story fell outside the two-week window. Re-run this week."
+    );
+  }
+
+  return ensurePolishedSummaries(inPeriod);
 }
