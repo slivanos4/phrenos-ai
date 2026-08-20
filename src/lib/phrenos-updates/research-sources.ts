@@ -134,11 +134,26 @@ function enrichFromPool(
   );
 }
 
+function isDiscoveryArticleCandidate(source: GeneratedSource): boolean {
+  if (source.is_synthesis) return true;
+  if (!source.url || isSocialMediaUrl(source.url)) return false;
+  if (!isSpecificArticleUrl(source.url)) return false;
+  // Tavily snippets are often thin; keep URL candidates and enrich later.
+  const excerpt = (source.excerpt ?? "").trim();
+  const title = (source.title ?? "").trim();
+  return excerpt.length >= 8 || title.length >= 12;
+}
+
 function isBasicArticleCandidate(source: GeneratedSource): boolean {
   if (source.is_synthesis) return true;
   if (!source.url || isSocialMediaUrl(source.url)) return false;
-  if (!isUsableSourceExcerpt(source.excerpt)) return false;
   if (!isSpecificArticleUrl(source.url)) return false;
+  if (!isUsableSourceExcerpt(source.excerpt)) {
+    // Allow thin excerpts when we already have a dated URL; Firecrawl may have failed.
+    const excerpt = (source.excerpt ?? "").trim();
+    const title = (source.title ?? "").trim();
+    if (excerpt.length < 20 && title.length < 12) return false;
+  }
   return true;
 }
 
@@ -153,7 +168,7 @@ export function filterDiscoveryCandidates(
   return dedupeSources(sources)
     .map((source) => withResolvedPublishedDate(source))
     .filter((source) => {
-      if (!isBasicArticleCandidate(source)) return false;
+      if (!isDiscoveryArticleCandidate(source)) return false;
       if (source.is_synthesis) return true;
       if (
         source.published_at &&

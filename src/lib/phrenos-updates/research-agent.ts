@@ -39,6 +39,7 @@ import { enrichSourcesWithFirecrawl } from "@/lib/phrenos-updates/source-enrichm
 import {
   discoveryQueriesForSection,
   tavilyBodyForQuery,
+  tavilyMinimalBody,
   tavilyQueriesForSection,
   type TavilySearchOptions,
 } from "@/lib/phrenos-updates/research-discovery";
@@ -49,6 +50,11 @@ export { tavilyQueriesForSection };
 export type ResearchAgentInput = {
   lookbackStart: string;
   lookbackEnd: string;
+};
+
+type TavilyFetchResult = {
+  sources: GeneratedSource[];
+  error?: string;
 };
 
 const TOPIC_TAG_PATTERNS: [string, RegExp][] = [
@@ -165,72 +171,126 @@ async function callAnthropicForStories(
     .map((story) => sanitizeStory({ ...story, section, suggestions: [] }));
 }
 
-async function fetchTavilyContext(
+function mapTavilyRows(
+  rows: { title?: string; url?: string; content?: string; published_date?: string }[],
+  input: ResearchAgentInput
+): GeneratedSource[] {
+  return filterDiscoveryCandidates(
+    dedupeSources(
+      rows
+        .filter((row) => row.url && isSpecificArticleUrl(row.url))
+        .map((row) => {
+          const title = row.title?.trim() || "Source";
+          const excerpt = (row.content ?? "").trim() || `Article: ${title}`;
+          return sanitizeSourceFields({
+            url: row.url ?? "",
+            title,
+            excerpt: excerpt.slice(0, 500),
+            published_at: resolveSourcePublishedDate(
+              row.url ?? "",
+              row.published_date,
+              null,
+              `${title} ${row.content ?? ""}`
+            ),
+            is_synthesis: false,
+          });
+        })
+    ),
+    input
+  );
+}
+
+async function fetchTavilyContextDetailed(
   options: TavilySearchOptions | string,
-  input: ResearchAgentInput,
-  requestOptions?: { throwOnError?: boolean }
-): Promise<GeneratedSource[]> {
+  input: ResearchAgentInput
+): Promise<TavilyFetchResult> {
   const apiKey = process.env.TAVILY_API_KEY?.trim();
-  if (!apiKey) return [];
+  if (!apiKey) {
+    return { sources: [], error: "TAVILY_API_KEY is not configured." };
+  }
 
   const search =
     typeof options === "string"
       ? ({ query: options, topic: "news", maxResults: 10 } satisfies TavilySearchOptions)
       : options;
 
-  const response = await fetch("https://api.tavily.com/search", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(tavilyBodyForQuery(search, input, apiKey)),
-  });
+  const attempts: Record<string, unknown>[] = [
+    tavilyBodyForQuery(search, input, apiKey, "full"),
+    tavilyBodyForQuery(
+      { ...search, topic: "general", includeDomains: undefined },
+      input,
+      apiKey,
+      "full"
+    ),
+    tavilyMinimalBody(search.query, apiKey),
+  ];
 
-  if (!response.ok) {
-    const detail = await readApiError(response);
-    if (requestOptions?.throwOnError) {
-      throw new Error(`Tavily search failed (${response.status}): ${detail}`);
+  let lastError: string | null = null;
+
+  for (const body of attempts) {
+    try {
+      const response = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const detail = await readApiError(response);
+        lastError = `Tavily search failed (${response.status}): ${detail}`;
+        console.error(`${lastError} query="${search.query}"`);
+        if (response.status === 401 || response.status === 403) {
+          return { sources: [], error: lastError };
+        }
+        continue;
+      }
+
+      const data = (await response.json()) as {
+        results?: {
+          title?: string;
+          url?: string;
+          content?: string;
+          published_date?: string;
+        }[];
+      };
+
+      const sources = mapTavilyRows(data.results ?? [], input);
+      if (sources.length > 0) {
+        return { sources };
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Tavily request failed.";
+      console.error(`Tavily request error for "${search.query}":`, lastError);
     }
-    console.error(
-      `Tavily search failed (${response.status}) for "${search.query}": ${detail}`
-    );
-    return [];
   }
 
-  const data = (await response.json()) as {
-    results?: { title?: string; url?: string; content?: string; published_date?: string }[];
+  return {
+    sources: [],
+    error: lastError ?? `No usable article URLs for query: ${search.query}`,
   };
+}
 
-  return filterDiscoveryCandidates(
-    dedupeSources(
-      (data.results ?? [])
-        .filter((row) => row.url && isSpecificArticleUrl(row.url))
-        .map((row) =>
-          sanitizeSourceFields({
-            url: row.url ?? "",
-            title: row.title ?? "Source",
-            excerpt: (row.content ?? "").slice(0, 500),
-            published_at: resolveSourcePublishedDate(
-              row.url ?? "",
-              row.published_date,
-              null,
-              `${row.title ?? ""} ${row.content ?? ""}`
-            ),
-            is_synthesis: false,
-          })
-        )
-    ),
-    input
-  );
+async function fetchTavilyContext(
+  options: TavilySearchOptions | string,
+  input: ResearchAgentInput
+): Promise<GeneratedSource[]> {
+  const result = await fetchTavilyContextDetailed(options, input);
+  return result.sources;
 }
 
 async function fetchSectionSources(
   section: ResearchSection,
   input: ResearchAgentInput
-): Promise<GeneratedSource[]> {
+): Promise<{ sources: GeneratedSource[]; errors: string[] }> {
   const queries = discoveryQueriesForSection(section, input);
   const batches = await Promise.all(
-    queries.map((query) => fetchTavilyContext(query, input))
+    queries.map((query) => fetchTavilyContextDetailed(query, input))
   );
-  return dedupeSources(batches.flat());
+  const sources = dedupeSources(batches.flatMap((batch) => batch.sources));
+  const errors = batches
+    .map((batch) => batch.error)
+    .filter((error): error is string => Boolean(error));
+  return { sources, errors };
 }
 
 /** Doc section 9 post-processing: per-story Tavily top-up plus source verification. */
@@ -243,7 +303,7 @@ async function enrichStoriesWithSources(
     stories.map(async (story) => {
       const topicSources = await fetchTavilyContext(
         {
-          query: `"${story.title}" generative AI news ${input.lookbackEnd}`,
+          query: `${story.title} generative AI news`,
           topic: "news",
           maxResults: 8,
         },
@@ -335,14 +395,21 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
     );
   }
 
-  const [modelsPool, productsPool] = await Promise.all([
+  const [modelsResult, productsResult] = await Promise.all([
     fetchSectionSources("models_research", input),
     fetchSectionSources("products_industry", input),
   ]);
 
+  const modelsPool = modelsResult.sources;
+  const productsPool = productsResult.sources;
+
   if (modelsPool.length === 0 && productsPool.length === 0) {
+    const authError = [...modelsResult.errors, ...productsResult.errors].find((error) =>
+      /401|403|api key|unauthorized|invalid/i.test(error)
+    );
     throw new Error(
-      "Tavily returned no recent article URLs. Check TAVILY_API_KEY is valid, redeploy after env changes, then re-run."
+      authError ??
+        "Tavily returned no recent article URLs. Check TAVILY_API_KEY is valid on Vercel, redeploy, then re-run."
     );
   }
 
@@ -351,7 +418,6 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
     enrichSourcesWithFirecrawl(productsPool, input),
   ]);
 
-  // Extract publish dates for anything still undated, then keep only the two-week window.
   const [datedModelsPool, datedProductsPool] = await Promise.all([
     enrichPoolPublishedDates(enrichedModelsPool, input).then((sources) =>
       filterSourcesByLookback(sources, input)
@@ -363,7 +429,7 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
 
   if (datedModelsPool.length === 0 && datedProductsPool.length === 0) {
     throw new Error(
-      "No articles with extractable publish dates from the past two weeks were found. Re-run this week after checking TAVILY_API_KEY and FIRECRAWL_API_KEY."
+      `Found ${modelsPool.length + productsPool.length} candidate articles, but none had extractable publish dates in the past two weeks. Re-run after checking FIRECRAWL_API_KEY, or broaden source coverage.`
     );
   }
 

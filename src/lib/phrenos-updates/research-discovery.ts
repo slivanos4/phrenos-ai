@@ -1,6 +1,10 @@
 import type { ResearchSection } from "@/lib/phrenos-updates/types";
-import type { ResearchAgentInput } from "@/lib/phrenos-updates/research-agent";
 import { LOOKBACK_DAYS } from "@/lib/phrenos-updates/source-dates";
+
+export type DiscoveryLookback = {
+  lookbackStart: string;
+  lookbackEnd: string;
+};
 
 /**
  * High-signal AI news domains. Used for targeted Tavily include_domains searches.
@@ -61,44 +65,53 @@ export type TavilySearchOptions = {
 /** Build a diverse query pack so discovery is not stuck on one generic search. */
 export function discoveryQueriesForSection(
   section: ResearchSection,
-  input: ResearchAgentInput
+  input: DiscoveryLookback
 ): TavilySearchOptions[] {
-  const { lookbackStart, lookbackEnd } = input;
-  const window = `${lookbackStart} to ${lookbackEnd}`;
+  const { lookbackEnd } = input;
 
   if (section === "models_research") {
     return [
       {
-        query: `latest generative AI model releases benchmarks reasoning multimodal ${lookbackEnd}`,
+        query: `generative AI model release benchmark LLM reasoning multimodal ${lookbackEnd}`,
         topic: "news",
         maxResults: 12,
       },
       {
-        query: `OpenAI Anthropic Google DeepMind Meta new LLM model research paper ${window}`,
+        query: `OpenAI Anthropic Google DeepMind Meta new AI model research`,
         topic: "news",
         maxResults: 10,
       },
       {
-        query: `open source LLM weights Mistral Llama Qwen benchmark evaluation ${lookbackEnd}`,
+        query: `open source LLM Mistral Llama Qwen benchmark`,
         topic: "news",
         maxResults: 8,
       },
       {
-        query: `site:artificialintelligence-news.com AI model research benchmark`,
+        query: `AI model research benchmark news`,
         topic: "news",
-        includeDomains: ["artificialintelligence-news.com"],
+        includeDomains: ["artificialintelligence-news.com", "aiweekly.co"],
         maxResults: 10,
       },
       {
-        query: `site:aiweekly.co AI models research ethics frontier labs`,
-        topic: "news",
-        includeDomains: ["aiweekly.co"],
-        maxResults: 8,
-      },
-      {
-        query: `generative AI research breakthrough agentic multimodal ${window}`,
+        query: `generative AI research breakthrough agentic multimodal`,
         topic: "general",
-        includeDomains: AI_NEWS_DOMAINS,
+        includeDomains: [
+          "artificialintelligence-news.com",
+          "aiweekly.co",
+          "techcrunch.com",
+          "theverge.com",
+          "wired.com",
+          "arstechnica.com",
+          "technologyreview.com",
+          "huggingface.co",
+          "openai.com",
+          "anthropic.com",
+        ],
+        maxResults: 12,
+      },
+      {
+        query: `latest generative AI news models research last two weeks`,
+        topic: "general",
         maxResults: 12,
       },
     ];
@@ -106,75 +119,103 @@ export function discoveryQueriesForSection(
 
   return [
     {
-      query: `generative AI product launch enterprise agentic tools OpenAI Anthropic Google ${lookbackEnd}`,
+      query: `generative AI product launch enterprise agentic OpenAI Anthropic Google ${lookbackEnd}`,
       topic: "news",
       maxResults: 12,
     },
     {
-      query: `AI business strategy regulation enterprise adoption security ${window}`,
+      query: `AI business strategy regulation enterprise adoption security`,
       topic: "news",
       maxResults: 10,
     },
     {
-      query: `AI agents enterprise workflow automation product launch ${lookbackEnd}`,
+      query: `AI agents enterprise workflow automation product launch`,
       topic: "news",
       maxResults: 8,
     },
     {
-      query: `site:artificialintelligence-news.com AI business strategy product launch agents`,
+      query: `AI business strategy product launch agents`,
       topic: "news",
-      includeDomains: ["artificialintelligence-news.com"],
+      includeDomains: ["artificialintelligence-news.com", "aiweekly.co"],
       maxResults: 10,
     },
     {
-      query: `site:aiweekly.co AI news enterprise regulation`,
-      topic: "news",
-      includeDomains: ["aiweekly.co"],
-      maxResults: 8,
-    },
-    {
-      query: `AI industry news product launch regulation enterprise ${window}`,
+      query: `AI industry news product launch regulation enterprise`,
       topic: "general",
-      includeDomains: AI_NEWS_DOMAINS,
+      includeDomains: [
+        "artificialintelligence-news.com",
+        "aiweekly.co",
+        "techcrunch.com",
+        "theverge.com",
+        "reuters.com",
+        "bloomberg.com",
+        "venturebeat.com",
+        "wired.com",
+      ],
+      maxResults: 12,
+    },
+    {
+      query: `latest generative AI industry news product launches last two weeks`,
+      topic: "general",
       maxResults: 12,
     },
   ];
 }
 
+/**
+ * Build a Tavily request body.
+ * Prefer start_date/end_date. Avoid stacking deprecated/conflicting date knobs.
+ */
 export function tavilyBodyForQuery(
   options: TavilySearchOptions,
-  input: ResearchAgentInput,
-  apiKey: string
+  input: DiscoveryLookback,
+  apiKey: string,
+  mode: "full" | "minimal" = "full"
 ): Record<string, unknown> {
   const topic = options.topic ?? "news";
   const body: Record<string, unknown> = {
     api_key: apiKey,
     query: options.query,
     search_depth: "advanced",
-    max_results: options.maxResults ?? 10,
+    max_results: Math.min(options.maxResults ?? 10, 20),
     include_answer: false,
     topic,
-    start_date: input.lookbackStart,
-    end_date: input.lookbackEnd,
   };
 
-  if (topic === "news") {
-    body.days = LOOKBACK_DAYS;
-  } else {
-    body.time_range = "week";
-  }
-
-  if (options.includeDomains?.length) {
-    body.include_domains = [...options.includeDomains];
+  if (mode === "full") {
+    body.start_date = input.lookbackStart;
+    body.end_date = input.lookbackEnd;
+    if (topic === "general") {
+      body.time_range = "week";
+    }
+    if (options.includeDomains?.length) {
+      body.include_domains = [...options.includeDomains];
+    }
   }
 
   return body;
 }
 
+/** Ultra-simple body used as a last-resort retry when full params fail. */
+export function tavilyMinimalBody(
+  query: string,
+  apiKey: string
+): Record<string, unknown> {
+  return {
+    api_key: apiKey,
+    query,
+    search_depth: "basic",
+    max_results: 10,
+    include_answer: false,
+    topic: "general",
+    time_range: "week",
+  };
+}
+
 /** Back-compat shape used by older call sites / docs. */
 export function tavilyQueriesForSection(
   section: ResearchSection,
-  input: ResearchAgentInput
+  input: DiscoveryLookback
 ): { primary: string; fallback: string } {
   const pack = discoveryQueriesForSection(section, input);
   return {
@@ -182,3 +223,5 @@ export function tavilyQueriesForSection(
     fallback: pack[1]?.query ?? `AI industry updates ${input.lookbackEnd}`,
   };
 }
+
+export { LOOKBACK_DAYS };
