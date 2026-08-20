@@ -2,10 +2,10 @@ import type { GeneratedSource } from "@/lib/phrenos-updates/types";
 import { sanitizeSourceFields } from "@/lib/phrenos-updates/sanitize";
 import { isSocialMediaUrl, isUsableSourceExcerpt } from "@/lib/phrenos-updates/source-text";
 import {
-  LOOKBACK_DAYS,
   comparePublishedDesc,
   isPublishedInPreferredWindow,
   isPublishedWithinLookback,
+  LOOKBACK_DAYS,
   resolveSourcePublishedDate,
   type SourceLookback,
 } from "@/lib/phrenos-updates/source-dates";
@@ -13,6 +13,7 @@ import {
   fetchPublishedDateFromPage,
   verifyArticleSources,
 } from "@/lib/phrenos-updates/source-url-verify";
+import { domainNewsBoost } from "@/lib/phrenos-updates/research-discovery";
 
 const GENERIC_SINGLE_SEGMENTS = new Set([
   "news",
@@ -133,13 +134,42 @@ function enrichFromPool(
   );
 }
 
-function isEligibleArticleSource(source: GeneratedSource, lookback: SourceLookback): boolean {
+function isBasicArticleCandidate(source: GeneratedSource): boolean {
   if (source.is_synthesis) return true;
   if (!source.url || isSocialMediaUrl(source.url)) return false;
   if (!isUsableSourceExcerpt(source.excerpt)) return false;
   if (!isSpecificArticleUrl(source.url)) return false;
+  return true;
+}
+
+/**
+ * Discovery pass: keep undated articles so Firecrawl/page fetch can extract dates.
+ * Drop only articles that already have a clear out-of-window publish date.
+ */
+export function filterDiscoveryCandidates(
+  sources: GeneratedSource[],
+  lookback: SourceLookback
+): GeneratedSource[] {
+  return dedupeSources(sources)
+    .map((source) => withResolvedPublishedDate(source))
+    .filter((source) => {
+      if (!isBasicArticleCandidate(source)) return false;
+      if (source.is_synthesis) return true;
+      if (
+        source.published_at &&
+        !isPublishedWithinLookback(source.published_at, lookback)
+      ) {
+        return false;
+      }
+      return true;
+    });
+}
+
+function isEligibleArticleSource(source: GeneratedSource, lookback: SourceLookback): boolean {
+  if (source.is_synthesis) return true;
+  if (!isBasicArticleCandidate(source)) return false;
   const publishedAt = withResolvedPublishedDate(source, lookback).published_at ?? null;
-  // Every real article must have an extracted publish date inside the 2-week window.
+  // Final pass: every real article must have an extracted publish date inside the window.
   if (!publishedAt) return false;
   return isPublishedWithinLookback(publishedAt, lookback);
 }
@@ -150,6 +180,8 @@ function sortArticleSources(
   lookback: SourceLookback
 ): GeneratedSource[] {
   return [...sources].sort((left, right) => {
+    const domainDiff = domainNewsBoost(right.url) - domainNewsBoost(left.url);
+    if (domainDiff !== 0) return domainDiff;
     const leftPreferred = isPublishedInPreferredWindow(left.published_at ?? null, lookback) ? 1 : 0;
     const rightPreferred = isPublishedInPreferredWindow(right.published_at ?? null, lookback)
       ? 1
@@ -209,6 +241,31 @@ async function enrichSourcePublishedDates(
       return sanitizeSourceFields({ ...source, published_at });
     })
   );
+}
+
+/** Fill missing publish dates for a discovery pool, then callers can apply the strict lookback filter. */
+export async function enrichPoolPublishedDates(
+  sources: GeneratedSource[],
+  lookback: SourceLookback
+): Promise<GeneratedSource[]> {
+  const needsDate = sources.filter(
+    (source) => !source.is_synthesis && source.url && !source.published_at
+  );
+  if (needsDate.length === 0) {
+    return sources.map((source) => withResolvedPublishedDate(source, lookback));
+  }
+
+  // Cap page fetches so discovery stays within serverless time limits.
+  const dated = await enrichSourcePublishedDates(needsDate.slice(0, 24), lookback);
+  const byUrl = new Map(
+    dated.map((source) => [source.url.trim().toLowerCase().replace(/\/+$/, ""), source])
+  );
+
+  return sources.map((source) => {
+    if (source.is_synthesis || !source.url) return source;
+    const key = source.url.trim().toLowerCase().replace(/\/+$/, "");
+    return byUrl.get(key) ?? withResolvedPublishedDate(source, lookback);
+  });
 }
 
 export function ensureStorySources(

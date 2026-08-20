@@ -221,8 +221,8 @@ export function extractPublishedDateFromHtml(html: string): string | null {
 
 /**
  * Resolve a publish date from API metadata, URL, and text hints.
- * When lookback is provided, prefer candidates inside the window and never
- * return an out-of-window date (those articles must be filtered out instead).
+ * When lookback is provided, prefer an in-window candidate. If every candidate is
+ * outside the window, still return the best true date so callers can reject the article.
  */
 export function resolveSourcePublishedDate(
   url: string,
@@ -242,11 +242,12 @@ export function resolveSourcePublishedDate(
 
   if (!lookback) return candidates[0];
 
-  const inWindow = candidates.find((date) => isPublishedWithinLookback(date, lookback));
-  return inWindow ?? null;
+  return (
+    candidates.find((date) => isPublishedWithinLookback(date, lookback)) ?? candidates[0]
+  );
 }
 
-/** Strict: publish date must fall inside lookbackStart..lookbackEnd (inclusive). */
+/** Strict: publish date must fall inside lookbackStart..lookbackEnd (inclusive), with one-day end grace for timezone skew. */
 export function isPublishedWithinLookback(
   publishedAt: string | null,
   lookback: SourceLookback
@@ -256,7 +257,11 @@ export function isPublishedWithinLookback(
   const start = parseIsoDate(lookback.lookbackStart);
   const end = parseIsoDate(lookback.lookbackEnd);
   if (!published || !start || !end) return false;
-  return published >= start && published <= end;
+
+  const latest = new Date(end);
+  latest.setUTCDate(latest.getUTCDate() + 1);
+
+  return published >= start && published <= latest;
 }
 
 export function isPublishedInPreferredWindow(

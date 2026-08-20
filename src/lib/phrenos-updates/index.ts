@@ -38,6 +38,12 @@ export {
 } from "@/lib/phrenos-updates/run-research";
 
 export {
+  AI_NEWS_DOMAINS,
+  discoveryQueriesForSection,
+  tavilyQueriesForSection,
+} from "@/lib/phrenos-updates/research-discovery";
+
+export {
   generateFullDraftFromIdea,
   generateHeroBlogPack,
   generateStoryContentPack,

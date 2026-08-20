@@ -21,8 +21,10 @@ import {
 import { SOURCE_INTEGRITY_BLOCK, STORY_SUMMARY_RULES } from "@/lib/phrenos-updates/prompts";
 import {
   dedupeSources,
+  enrichPoolPublishedDates,
   ensureStorySources,
   ensureVerifiedStorySources,
+  filterDiscoveryCandidates,
   filterSourcesByLookback,
   isSpecificArticleUrl,
 } from "@/lib/phrenos-updates/research-sources";
@@ -34,31 +36,20 @@ import {
   polishSummary,
 } from "@/lib/phrenos-updates/story-summary";
 import { enrichSourcesWithFirecrawl } from "@/lib/phrenos-updates/source-enrichment";
+import {
+  discoveryQueriesForSection,
+  tavilyBodyForQuery,
+  tavilyQueriesForSection,
+  type TavilySearchOptions,
+} from "@/lib/phrenos-updates/research-discovery";
 
 export type { GeneratedSource, GeneratedStory, GeneratedSuggestion };
+export { tavilyQueriesForSection };
 
 export type ResearchAgentInput = {
   lookbackStart: string;
   lookbackEnd: string;
 };
-
-/** Doc section 6: Tavily discovery queries. */
-export function tavilyQueriesForSection(
-  section: ResearchSection,
-  input: ResearchAgentInput
-): { primary: string; fallback: string } {
-  if (section === "models_research") {
-    return {
-      primary: `generative AI new model release benchmark LLM reasoning multimodal research ${input.lookbackEnd}`,
-      fallback: `LLM open source weights Mistral LLaMA benchmark ${input.lookbackEnd}`,
-    };
-  }
-
-  return {
-    primary: `generative AI product launch feature agentic AI OpenAI Anthropic Google enterprise ${input.lookbackEnd}`,
-    fallback: `AI regulation EU AI Act enterprise adoption generative AI news ${input.lookbackEnd}`,
-  };
-}
 
 const TOPIC_TAG_PATTERNS: [string, RegExp][] = [
   ["models", /\b(?:model|llm|gpt|claude|gemini|llama|mistral|checkpoint|weights)\b/i],
@@ -133,6 +124,8 @@ function buildStoryGenerationPrompt(
 Period: ${input.lookbackStart} to ${input.lookbackEnd}.
 Section: ${SECTION_LABELS[section]}
 
+Prefer stories covered by serious AI news desks (for example Artificial Intelligence News, AI Weekly, TechCrunch, The Verge, Wired, MIT Technology Review, Reuters) and official lab or product blogs when present in the list below.
+
 ${SOURCE_INTEGRITY_BLOCK}
 
 Generate exactly ${MAX_STORIES_PER_SECTION} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that.
@@ -173,32 +166,32 @@ async function callAnthropicForStories(
 }
 
 async function fetchTavilyContext(
-  query: string,
+  options: TavilySearchOptions | string,
   input: ResearchAgentInput,
-  options?: { throwOnError?: boolean }
+  requestOptions?: { throwOnError?: boolean }
 ): Promise<GeneratedSource[]> {
   const apiKey = process.env.TAVILY_API_KEY?.trim();
   if (!apiKey) return [];
 
+  const search =
+    typeof options === "string"
+      ? ({ query: options, topic: "news", maxResults: 10 } satisfies TavilySearchOptions)
+      : options;
+
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      search_depth: "advanced",
-      max_results: 10,
-      days: 14,
-      include_answer: false,
-    }),
+    body: JSON.stringify(tavilyBodyForQuery(search, input, apiKey)),
   });
 
   if (!response.ok) {
     const detail = await readApiError(response);
-    if (options?.throwOnError) {
+    if (requestOptions?.throwOnError) {
       throw new Error(`Tavily search failed (${response.status}): ${detail}`);
     }
-    console.error(`Tavily search failed (${response.status}): ${detail}`);
+    console.error(
+      `Tavily search failed (${response.status}) for "${search.query}": ${detail}`
+    );
     return [];
   }
 
@@ -206,7 +199,7 @@ async function fetchTavilyContext(
     results?: { title?: string; url?: string; content?: string; published_date?: string }[];
   };
 
-  return filterSourcesByLookback(
+  return filterDiscoveryCandidates(
     dedupeSources(
       (data.results ?? [])
         .filter((row) => row.url && isSpecificArticleUrl(row.url))
@@ -219,8 +212,7 @@ async function fetchTavilyContext(
               row.url ?? "",
               row.published_date,
               null,
-              `${row.title ?? ""} ${row.content ?? ""}`,
-              input
+              `${row.title ?? ""} ${row.content ?? ""}`
             ),
             is_synthesis: false,
           })
@@ -234,12 +226,11 @@ async function fetchSectionSources(
   section: ResearchSection,
   input: ResearchAgentInput
 ): Promise<GeneratedSource[]> {
-  const queries = tavilyQueriesForSection(section, input);
-  const primary = await fetchTavilyContext(queries.primary, input);
-  if (primary.length >= 4) return primary;
-
-  const fallback = await fetchTavilyContext(queries.fallback, input);
-  return dedupeSources([...primary, ...fallback]);
+  const queries = discoveryQueriesForSection(section, input);
+  const batches = await Promise.all(
+    queries.map((query) => fetchTavilyContext(query, input))
+  );
+  return dedupeSources(batches.flat());
 }
 
 /** Doc section 9 post-processing: per-story Tavily top-up plus source verification. */
@@ -251,7 +242,11 @@ async function enrichStoriesWithSources(
   return Promise.all(
     stories.map(async (story) => {
       const topicSources = await fetchTavilyContext(
-        `"${story.title}" generative AI LLM ${input.lookbackStart} ${input.lookbackEnd}`,
+        {
+          query: `"${story.title}" generative AI news ${input.lookbackEnd}`,
+          topic: "news",
+          maxResults: 8,
+        },
         input
       );
       const pool = dedupeSources([...topicSources, ...sectionPool]);
@@ -356,8 +351,21 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
     enrichSourcesWithFirecrawl(productsPool, input),
   ]);
 
-  const datedModelsPool = filterSourcesByLookback(enrichedModelsPool, input);
-  const datedProductsPool = filterSourcesByLookback(enrichedProductsPool, input);
+  // Extract publish dates for anything still undated, then keep only the two-week window.
+  const [datedModelsPool, datedProductsPool] = await Promise.all([
+    enrichPoolPublishedDates(enrichedModelsPool, input).then((sources) =>
+      filterSourcesByLookback(sources, input)
+    ),
+    enrichPoolPublishedDates(enrichedProductsPool, input).then((sources) =>
+      filterSourcesByLookback(sources, input)
+    ),
+  ]);
+
+  if (datedModelsPool.length === 0 && datedProductsPool.length === 0) {
+    throw new Error(
+      "No articles with extractable publish dates from the past two weeks were found. Re-run this week after checking TAVILY_API_KEY and FIRECRAWL_API_KEY."
+    );
+  }
 
   const [modelStories, productStories] = await Promise.all([
     generateSectionStories(input, "models_research", datedModelsPool),

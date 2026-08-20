@@ -9,7 +9,7 @@ import {
 import { resolveSourcePublishedDate, type SourceLookback } from "@/lib/phrenos-updates/source-dates";
 import { isSpecificArticleUrl } from "@/lib/phrenos-updates/research-sources";
 
-const MAX_FIRECRAWL_URLS_PER_SECTION = 16;
+const MAX_FIRECRAWL_URLS_PER_SECTION = 24;
 const FIRECRAWL_CONCURRENCY = 3;
 
 function articleKey(url: string) {
