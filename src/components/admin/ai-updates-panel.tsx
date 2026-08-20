@@ -55,6 +55,10 @@ const microButtonClass =
   "inline-flex items-center justify-center rounded-full border border-[#d4af5a]/45 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#e0c078] transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10 disabled:cursor-not-allowed disabled:opacity-50";
 const inputClass =
   "w-full rounded-full border border-[#d4af5a]/55 bg-[#0a100c]/70 px-5 py-3 text-sm text-[#f1e8d6] outline-none transition-colors placeholder:text-[#a9b0a3]/60 focus:border-[#e0c078]";
+const fieldClass =
+  "w-full rounded-xl border border-[#d4af5a]/55 bg-[#0a100c]/70 px-4 py-2.5 text-sm text-[#f1e8d6] outline-none transition-colors placeholder:text-[#a9b0a3]/60 focus:border-[#e0c078]";
+const labelClass =
+  "block text-[10px] font-semibold tracking-[0.18em] text-[#a9b0a3] uppercase";
 
 class ApiError extends Error {
   status: number;
@@ -328,15 +332,46 @@ function SuggestionCard({
   onExpandIdea,
   onSetStatus,
   onPublish,
+  onSave,
 }: {
   suggestion: ContentSuggestion;
   busy: boolean;
   onExpandIdea: (id: string) => void;
   onSetStatus: (id: string, status: "approved" | "rejected") => void;
   onPublish: (id: string) => void;
+  onSave: (
+    id: string,
+    fields: {
+      title: string;
+      hook: string;
+      body_html: string;
+      cta: string;
+      hashtags: string;
+      image_ideas: string;
+    },
+  ) => Promise<void>;
 }) {
   const [showBody, setShowBody] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [title, setTitle] = useState(suggestion.title);
+  const [hook, setHook] = useState(suggestion.hook);
+  const [bodyHtml, setBodyHtml] = useState(suggestion.body_html);
+  const [cta, setCta] = useState(suggestion.cta);
+  const [hashtags, setHashtags] = useState(suggestion.hashtags);
+  const [imageIdeas, setImageIdeas] = useState(suggestion.image_ideas);
+
+  useEffect(() => {
+    if (editing) return;
+    setTitle(suggestion.title);
+    setHook(suggestion.hook);
+    setBodyHtml(suggestion.body_html);
+    setCta(suggestion.cta);
+    setHashtags(suggestion.hashtags);
+    setImageIdeas(suggestion.image_ideas);
+  }, [suggestion, editing]);
+
   const isIdea = !suggestion.is_full_draft;
   const canPublish =
     !isIdea &&
@@ -358,6 +393,44 @@ function SuggestionCard({
     );
   }
 
+  function startEditing() {
+    setTitle(suggestion.title);
+    setHook(suggestion.hook);
+    setBodyHtml(suggestion.body_html);
+    setCta(suggestion.cta);
+    setHashtags(suggestion.hashtags);
+    setImageIdeas(suggestion.image_ideas);
+    setEditing(true);
+    if (!isIdea) setShowBody(true);
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+    setTitle(suggestion.title);
+    setHook(suggestion.hook);
+    setBodyHtml(suggestion.body_html);
+    setCta(suggestion.cta);
+    setHashtags(suggestion.hashtags);
+    setImageIdeas(suggestion.image_ideas);
+  }
+
+  async function saveEditing() {
+    setSaving(true);
+    try {
+      await onSave(suggestion.id, {
+        title,
+        hook,
+        body_html: bodyHtml,
+        cta,
+        hashtags,
+        image_ideas: imageIdeas,
+      });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -375,36 +448,122 @@ function SuggestionCard({
         ) : null}
       </div>
 
-      <p className="mt-2.5 text-sm font-semibold text-[#f1e8d6]">
-        {suggestion.title}
-      </p>
-      {suggestion.hook ? (
-        <p className="mt-1 text-xs leading-relaxed text-[#c9c6ba]">
-          {suggestion.hook}
-        </p>
-      ) : null}
+      {editing ? (
+        <div className="mt-3 space-y-3">
+          <label className="block space-y-1.5">
+            <span className={labelClass}>Title</span>
+            <input
+              className={fieldClass}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className={labelClass}>Hook</span>
+            <textarea
+              className={`${fieldClass} min-h-[4.5rem] resize-y`}
+              value={hook}
+              onChange={(event) => setHook(event.target.value)}
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className={labelClass}>
+              {isIdea ? "Idea notes" : "Body (HTML)"}
+            </span>
+            <textarea
+              className={`${fieldClass} min-h-[10rem] resize-y font-mono text-[12px] leading-relaxed`}
+              value={bodyHtml}
+              onChange={(event) => setBodyHtml(event.target.value)}
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className={labelClass}>Call to action</span>
+            <input
+              className={fieldClass}
+              value={cta}
+              onChange={(event) => setCta(event.target.value)}
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className={labelClass}>Hashtags</span>
+            <input
+              className={fieldClass}
+              value={hashtags}
+              onChange={(event) => setHashtags(event.target.value)}
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className={labelClass}>Image ideas</span>
+            <textarea
+              className={`${fieldClass} min-h-[4rem] resize-y`}
+              value={imageIdeas}
+              onChange={(event) => setImageIdeas(event.target.value)}
+            />
+          </label>
+        </div>
+      ) : (
+        <>
+          <p className="mt-2.5 text-sm font-semibold text-[#f1e8d6]">
+            {suggestion.title}
+          </p>
+          {suggestion.hook ? (
+            <p className="mt-1 text-xs leading-relaxed text-[#c9c6ba]">
+              {suggestion.hook}
+            </p>
+          ) : null}
 
-      {!isIdea && !showBody && suggestion.body_html ? (
-        <p className="mt-2 text-xs leading-relaxed text-[#a9b0a3]">
-          {htmlToText(suggestion.body_html).slice(0, 260)}...
-        </p>
-      ) : null}
+          {!isIdea && !showBody && suggestion.body_html ? (
+            <p className="mt-2 text-xs leading-relaxed text-[#a9b0a3]">
+              {htmlToText(suggestion.body_html).slice(0, 260)}...
+            </p>
+          ) : null}
 
-      {!isIdea && showBody ? (
-        <div
-          className="mt-3 space-y-3 border-t border-[#d4af5a]/15 pt-3 text-xs leading-relaxed text-[#c9c6ba] [&_a]:text-[#e0c078] [&_h2]:mt-4 [&_h2]:font-serif [&_h2]:text-base [&_h2]:text-[#f1e8d6] [&_h3]:mt-3 [&_h3]:font-serif [&_h3]:text-sm [&_h3]:text-[#f1e8d6] [&_li]:ml-4 [&_li]:list-disc [&_strong]:text-[#f1e8d6]"
-          dangerouslySetInnerHTML={{ __html: suggestion.body_html }}
-        />
-      ) : null}
+          {!isIdea && showBody ? (
+            <div
+              className="mt-3 space-y-3 border-t border-[#d4af5a]/15 pt-3 text-xs leading-relaxed text-[#c9c6ba] [&_a]:text-[#e0c078] [&_h2]:mt-4 [&_h2]:font-serif [&_h2]:text-base [&_h2]:text-[#f1e8d6] [&_h3]:mt-3 [&_h3]:font-serif [&_h3]:text-sm [&_h3]:text-[#f1e8d6] [&_li]:ml-4 [&_li]:list-disc [&_strong]:text-[#f1e8d6]"
+              dangerouslySetInnerHTML={{ __html: suggestion.body_html }}
+            />
+          ) : null}
 
-      {!isIdea && suggestion.cta ? (
-        <p className="mt-3 text-[11px] text-[#a9b0a3]">
-          <span className="tracking-[0.16em] uppercase">Call to action</span>{" "}
-          {suggestion.cta}
-        </p>
-      ) : null}
+          {!isIdea && suggestion.cta ? (
+            <p className="mt-3 text-[11px] text-[#a9b0a3]">
+              <span className="tracking-[0.16em] uppercase">Call to action</span>{" "}
+              {suggestion.cta}
+            </p>
+          ) : null}
+        </>
+      )}
 
       <div className="mt-3 flex flex-wrap gap-2">
+        {editing ? (
+          <>
+            <button
+              type="button"
+              className={microButtonClass}
+              disabled={busy || saving}
+              onClick={() => void saveEditing()}
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              className={microButtonClass}
+              disabled={saving}
+              onClick={cancelEditing}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={microButtonClass}
+            disabled={busy}
+            onClick={startEditing}
+          >
+            Edit
+          </button>
+        )}
         <button type="button" className={microButtonClass} onClick={handleCopy}>
           {copyState === "copied"
             ? "Copied"
@@ -423,24 +582,26 @@ function SuggestionCard({
           <button
             type="button"
             className={microButtonClass}
-            disabled={busy}
+            disabled={busy || editing}
             onClick={() => onExpandIdea(suggestion.id)}
           >
             {busy ? "Expanding..." : "Expand into featured post"}
           </button>
         ) : (
           <>
+            {!editing ? (
+              <button
+                type="button"
+                className={microButtonClass}
+                onClick={() => setShowBody((current) => !current)}
+              >
+                {showBody ? "Hide draft" : "Read draft"}
+              </button>
+            ) : null}
             <button
               type="button"
               className={microButtonClass}
-              onClick={() => setShowBody((current) => !current)}
-            >
-              {showBody ? "Hide draft" : "Read draft"}
-            </button>
-            <button
-              type="button"
-              className={microButtonClass}
-              disabled={busy || suggestion.status === "published"}
+              disabled={busy || editing || suggestion.status === "published"}
               onClick={() => onSetStatus(suggestion.id, "approved")}
             >
               Approve
@@ -448,7 +609,7 @@ function SuggestionCard({
             <button
               type="button"
               className={microButtonClass}
-              disabled={busy || suggestion.status === "published"}
+              disabled={busy || editing || suggestion.status === "published"}
               onClick={() => onSetStatus(suggestion.id, "rejected")}
             >
               Reject
@@ -457,7 +618,7 @@ function SuggestionCard({
               <button
                 type="button"
                 className={microButtonClass}
-                disabled={busy}
+                disabled={busy || editing}
                 onClick={() => onPublish(suggestion.id)}
               >
                 {busy ? "Publishing..." : "Publish to site"}
@@ -466,6 +627,7 @@ function SuggestionCard({
             {suggestion.status === "published" ? (
               <span className="self-center text-[11px] text-[#8fbf9f]">
                 Live on /ai-updates
+                {editing ? " · edits update the live post" : ""}
               </span>
             ) : null}
           </>
@@ -484,6 +646,8 @@ function StoryCard({
   onExpandIdea,
   onSetStatus,
   onPublish,
+  onSaveSuggestion,
+  onSaveStory,
 }: {
   story: ResearchStory;
   index: number;
@@ -493,8 +657,37 @@ function StoryCard({
   onExpandIdea: (id: string) => void;
   onSetStatus: (id: string, status: "approved" | "rejected") => void;
   onPublish: (id: string) => void;
+  onSaveSuggestion: (
+    id: string,
+    fields: {
+      title: string;
+      hook: string;
+      body_html: string;
+      cta: string;
+      hashtags: string;
+      image_ideas: string;
+    },
+  ) => Promise<void>;
+  onSaveStory: (
+    id: string,
+    fields: { title: string; summary_html: string },
+  ) => Promise<void>;
 }) {
   const [showSources, setShowSources] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState(story.title);
+  const [summaryText, setSummaryText] = useState(
+    summaryBullets(story.summary_html).map((bullet) => `- ${bullet}`).join("\n"),
+  );
+
+  useEffect(() => {
+    if (editing) return;
+    setTitle(story.title);
+    setSummaryText(
+      summaryBullets(story.summary_html).map((bullet) => `- ${bullet}`).join("\n"),
+    );
+  }, [story, editing]);
 
   const bullets = summaryBullets(story.summary_html);
   const ideas = story.suggestions.filter((item) => !item.is_full_draft);
@@ -511,6 +704,35 @@ function StoryCard({
       : retryHeroBlog
         ? "Generate full pack"
         : "Generate content";
+
+  function startEditing() {
+    setTitle(story.title);
+    setSummaryText(
+      summaryBullets(story.summary_html).map((bullet) => `- ${bullet}`).join("\n"),
+    );
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setEditing(false);
+    setTitle(story.title);
+    setSummaryText(
+      summaryBullets(story.summary_html).map((bullet) => `- ${bullet}`).join("\n"),
+    );
+  }
+
+  async function saveEditing() {
+    setSaving(true);
+    try {
+      await onSaveStory(story.id, {
+        title,
+        summary_html: summaryText,
+      });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <article
@@ -537,39 +759,93 @@ function StoryCard({
         ))}
       </div>
 
-      <h3 className="mt-2 font-serif text-xl leading-snug text-[#f1e8d6]">
-        {story.title}
-      </h3>
-
-      {bullets.length > 0 ? (
-        <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-[#c9c6ba]">
-          {bullets.map((bullet) => (
-            <li key={bullet} className="flex gap-2">
-              <span aria-hidden className="text-[#d4af5a]">
-                •
-              </span>
-              <span>{bullet}</span>
-            </li>
-          ))}
-        </ul>
-      ) : story.summary_html ? (
-        <div
-          className="mt-3 text-sm leading-relaxed text-[#c9c6ba] [&_li]:ml-4 [&_li]:list-disc [&_p]:mt-2"
-          dangerouslySetInnerHTML={{ __html: story.summary_html }}
-        />
+      {editing ? (
+        <div className="mt-3 space-y-3">
+          <label className="block space-y-1.5">
+            <span className={labelClass}>Story title</span>
+            <input
+              className={fieldClass}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className={labelClass}>Summary (one bullet per line)</span>
+            <textarea
+              className={`${fieldClass} min-h-[8rem] resize-y`}
+              value={summaryText}
+              onChange={(event) => setSummaryText(event.target.value)}
+            />
+          </label>
+        </div>
       ) : (
-        <p className="mt-3 text-sm text-[#a9b0a3]">No summary saved yet.</p>
+        <>
+          <h3 className="mt-2 font-serif text-xl leading-snug text-[#f1e8d6]">
+            {story.title}
+          </h3>
+
+          {bullets.length > 0 ? (
+            <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-[#c9c6ba]">
+              {bullets.map((bullet) => (
+                <li key={bullet} className="flex gap-2">
+                  <span aria-hidden className="text-[#d4af5a]">
+                    •
+                  </span>
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          ) : story.summary_html ? (
+            <div
+              className="mt-3 text-sm leading-relaxed text-[#c9c6ba] [&_li]:ml-4 [&_li]:list-disc [&_p]:mt-2"
+              dangerouslySetInnerHTML={{ __html: story.summary_html }}
+            />
+          ) : (
+            <p className="mt-3 text-sm text-[#a9b0a3]">No summary saved yet.</p>
+          )}
+        </>
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#d4af5a]/15 pt-3">
-        <button
-          type="button"
-          className={hasContent ? ghostButtonClass : primaryButtonClass}
-          disabled={generating || runActive}
-          onClick={() => onGenerate(story.id, "full")}
-        >
-          {generateLabel}
-        </button>
+        {editing ? (
+          <>
+            <button
+              type="button"
+              className={primaryButtonClass}
+              disabled={saving || generating || runActive}
+              onClick={() => void saveEditing()}
+            >
+              {saving ? "Saving..." : "Save story"}
+            </button>
+            <button
+              type="button"
+              className={ghostButtonClass}
+              disabled={saving}
+              onClick={cancelEditing}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className={ghostButtonClass}
+              disabled={generating || runActive}
+              onClick={startEditing}
+            >
+              Edit story
+            </button>
+            <button
+              type="button"
+              className={hasContent ? ghostButtonClass : primaryButtonClass}
+              disabled={generating || runActive}
+              onClick={() => onGenerate(story.id, "full")}
+            >
+              {generateLabel}
+            </button>
+          </>
+        )}
         <button
           type="button"
           className="text-[11px] font-semibold tracking-[0.16em] text-[#e0c078] uppercase"
@@ -613,6 +889,7 @@ function StoryCard({
                 onExpandIdea={onExpandIdea}
                 onSetStatus={onSetStatus}
                 onPublish={onPublish}
+                onSave={onSaveSuggestion}
               />
             ))}
           </div>
@@ -633,6 +910,7 @@ function StoryCard({
                 onExpandIdea={onExpandIdea}
                 onSetStatus={onSetStatus}
                 onPublish={onPublish}
+                onSave={onSaveSuggestion}
               />
             ))}
           </div>
@@ -1058,6 +1336,57 @@ export function AiUpdatesPanel() {
     }
   }
 
+  async function handleSaveSuggestion(
+    suggestionId: string,
+    fields: {
+      title: string;
+      hook: string;
+      body_html: string;
+      cta: string;
+      hashtags: string;
+      image_ideas: string;
+    },
+  ) {
+    markBusy(suggestionId, true);
+    setError(null);
+    setNotice(null);
+    try {
+      await requestJson(`/api/phrenos-updates/suggestions/${suggestionId}`, {
+        method: "PATCH",
+        body: JSON.stringify(fields),
+      });
+      setNotice("Content saved.");
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+      throw cause;
+    } finally {
+      markBusy(suggestionId, false);
+    }
+  }
+
+  async function handleSaveStory(
+    storyId: string,
+    fields: { title: string; summary_html: string },
+  ) {
+    markBusy(storyId, true);
+    setError(null);
+    setNotice(null);
+    try {
+      await requestJson(`/api/phrenos-updates/stories/${storyId}`, {
+        method: "PATCH",
+        body: JSON.stringify(fields),
+      });
+      setNotice("Story saved.");
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+      throw cause;
+    } finally {
+      markBusy(storyId, false);
+    }
+  }
+
   if (authState === "loading") {
     return (
       <div className={panelClass}>
@@ -1334,6 +1663,8 @@ export function AiUpdatesPanel() {
             onExpandIdea={handleExpandIdea}
             onSetStatus={handleSetStatus}
             onPublish={handlePublishSuggestion}
+            onSaveSuggestion={handleSaveSuggestion}
+            onSaveStory={handleSaveStory}
           />
         </section>
       ) : null}
@@ -1355,6 +1686,8 @@ export function AiUpdatesPanel() {
                 onExpandIdea={handleExpandIdea}
                 onSetStatus={handleSetStatus}
                 onPublish={handlePublishSuggestion}
+                onSaveSuggestion={handleSaveSuggestion}
+                onSaveStory={handleSaveStory}
               />
             ))}
           </div>

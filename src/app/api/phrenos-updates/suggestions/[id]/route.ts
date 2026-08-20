@@ -3,10 +3,14 @@ import {
   AdminAuthError,
   createServiceRoleClient,
   errorResponse,
+  normalizePresentationHtml,
   requireAdminSession,
   sanitizeDashes,
 } from "@/lib/phrenos-updates";
-import { SUGGESTIONS_TABLE } from "@/lib/phrenos-updates/tables";
+import {
+  PUBLISHED_POSTS_TABLE,
+  SUGGESTIONS_TABLE,
+} from "@/lib/phrenos-updates/tables";
 
 export async function PATCH(
   request: Request,
@@ -31,7 +35,9 @@ export async function PATCH(
 
     if (body.title != null) patch.title = sanitizeDashes(body.title);
     if (body.hook != null) patch.hook = sanitizeDashes(body.hook);
-    if (body.body_html != null) patch.body_html = sanitizeDashes(body.body_html);
+    if (body.body_html != null) {
+      patch.body_html = normalizePresentationHtml(sanitizeDashes(body.body_html));
+    }
     if (body.cta != null) patch.cta = sanitizeDashes(body.cta);
     if (body.hashtags != null) patch.hashtags = sanitizeDashes(body.hashtags);
     if (body.image_ideas != null) {
@@ -43,14 +49,49 @@ export async function PATCH(
         body.status === "approved" ? new Date().toISOString() : null;
     }
 
+    if (Object.keys(patch).length <= 1) {
+      return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
+    }
+
     const supabase = createServiceRoleClient();
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from(SUGGESTIONS_TABLE)
       .update(patch)
-      .eq("id", id);
+      .eq("id", id)
+      .select(
+        "id, status, title, hook, body_html, cta, hashtags, image_ideas, is_full_draft, suggestion_type"
+      )
+      .maybeSingle();
 
     if (error) throw new Error(error.message);
-    return NextResponse.json({ ok: true });
+    if (!updated) {
+      return NextResponse.json({ error: "Suggestion not found." }, { status: 404 });
+    }
+
+    // If this draft is already live, push content edits to the published post.
+    const contentTouched =
+      body.title != null ||
+      body.hook != null ||
+      body.body_html != null ||
+      body.cta != null;
+
+    if (contentTouched && updated.status === "published") {
+      const livePatch: Record<string, unknown> = {};
+      if (body.title != null) livePatch.title = updated.title;
+      if (body.hook != null) livePatch.hook = updated.hook;
+      if (body.body_html != null) livePatch.body_html = updated.body_html;
+      if (body.cta != null) livePatch.cta = updated.cta;
+
+      if (Object.keys(livePatch).length > 0) {
+        const { error: liveError } = await supabase
+          .from(PUBLISHED_POSTS_TABLE)
+          .update(livePatch)
+          .eq("suggestion_id", id);
+        if (liveError) throw new Error(liveError.message);
+      }
+    }
+
+    return NextResponse.json({ ok: true, suggestion: updated });
   } catch (error) {
     if (error instanceof AdminAuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
