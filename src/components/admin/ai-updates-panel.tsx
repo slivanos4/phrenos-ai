@@ -135,6 +135,74 @@ function countWords(html: string): number {
   return text ? text.split(" ").length : 0;
 }
 
+function slugifyFilename(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "phrenos-content"
+  );
+}
+
+function formatSuggestionPlainText(suggestion: ContentSuggestion): string {
+  const kind = suggestion.suggestion_type === "blog" ? "Blog" : "LinkedIn";
+  const tier = suggestion.is_full_draft ? "Featured draft" : "Idea";
+  const body = suggestion.is_full_draft
+    ? htmlToText(suggestion.body_html)
+    : htmlToText(suggestion.body_html || suggestion.hook || "");
+
+  return [
+    `${kind} · ${tier}`,
+    suggestion.title,
+    "",
+    suggestion.hook ? `Hook: ${suggestion.hook}` : null,
+    suggestion.hook ? "" : null,
+    body,
+    suggestion.cta ? "" : null,
+    suggestion.cta ? `CTA: ${suggestion.cta}` : null,
+    suggestion.hashtags ? `Hashtags: ${suggestion.hashtags}` : null,
+    suggestion.image_ideas ? `Image ideas: ${suggestion.image_ideas}` : null,
+  ]
+    .filter((line) => line != null)
+    .join("\n")
+    .trim();
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.left = "-9999px";
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(area);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function downloadTextFile(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 function statusTone(status: SuggestionStatus | ResearchRun["status"]): string {
   switch (status) {
     case "approved":
@@ -268,11 +336,27 @@ function SuggestionCard({
   onPublish: (id: string) => void;
 }) {
   const [showBody, setShowBody] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const isIdea = !suggestion.is_full_draft;
   const canPublish =
     !isIdea &&
     suggestion.suggestion_type === "blog" &&
     suggestion.status === "approved";
+
+  async function handleCopy() {
+    const ok = await copyTextToClipboard(formatSuggestionPlainText(suggestion));
+    setCopyState(ok ? "copied" : "failed");
+    window.setTimeout(() => setCopyState("idle"), 1600);
+  }
+
+  function handleDownload() {
+    const kind = suggestion.suggestion_type === "blog" ? "blog" : "linkedin";
+    const tier = suggestion.is_full_draft ? "draft" : "idea";
+    downloadTextFile(
+      `${slugifyFilename(suggestion.title || kind)}-${kind}-${tier}.txt`,
+      formatSuggestionPlainText(suggestion),
+    );
+  }
 
   return (
     <div className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3.5">
@@ -321,6 +405,20 @@ function SuggestionCard({
       ) : null}
 
       <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" className={microButtonClass} onClick={handleCopy}>
+          {copyState === "copied"
+            ? "Copied"
+            : copyState === "failed"
+              ? "Copy failed"
+              : "Copy"}
+        </button>
+        <button
+          type="button"
+          className={microButtonClass}
+          onClick={handleDownload}
+        >
+          Download
+        </button>
         {isIdea ? (
           <button
             type="button"
@@ -406,6 +504,13 @@ function StoryCard({
   const isHero = isWeekHeroStory(story);
   const displayTags = (story.topic_tags ?? []).filter((tag) => tag !== WEEK_HERO_TAG);
   const retryHeroBlog = isHero && !hasFeaturedBlogDraft(story);
+  const generateLabel = generating
+    ? "Generating..."
+    : hasContent
+      ? "Regenerate content"
+      : retryHeroBlog
+        ? "Generate full pack"
+        : "Generate content";
 
   return (
     <article
@@ -461,17 +566,9 @@ function StoryCard({
           type="button"
           className={hasContent ? ghostButtonClass : primaryButtonClass}
           disabled={generating || runActive}
-          onClick={() =>
-            onGenerate(story.id, retryHeroBlog ? "hero-blog" : "full")
-          }
+          onClick={() => onGenerate(story.id, "full")}
         >
-          {generating
-            ? "Generating..."
-            : hasContent
-              ? "Regenerate content"
-              : retryHeroBlog
-                ? "Retry featured blog"
-                : "Generate content"}
+          {generateLabel}
         </button>
         <button
           type="button"
@@ -545,7 +642,7 @@ function StoryCard({
       {!hasContent && !generating ? (
         <p className="mt-4 text-sm text-[#a9b0a3]">
           {isHero
-            ? "This week's feature is selected. The featured blog drafts automatically after research; use Retry if it did not land."
+            ? "This week's feature is selected. Generate the full pack for blog and LinkedIn drafts, or wait for the automatic pass after research."
             : "No content yet for this story. Generate content when you are ready."}
         </p>
       ) : null}

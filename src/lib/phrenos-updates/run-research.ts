@@ -508,9 +508,17 @@ export async function generateContentForStory(
   );
 
   if (mode === "hero-blog") {
+    const hasLinkedinIdeas = suggestions.some(
+      (item) => item.suggestion_type === "linkedin" && !item.is_full_draft
+    );
     if (!featuredBlog) {
       throw new Error(
         `Could not write a featured blog for "${storyRow.title}". Use Generate content on that story to retry.`
+      );
+    }
+    if (!hasLinkedinIdeas) {
+      throw new Error(
+        `Featured blog saved, but LinkedIn ideas were missing for "${storyRow.title}". Use Generate content to retry the full pack.`
       );
     }
   } else if (!storyHasIdeasPack(withSuggestions)) {

@@ -227,21 +227,21 @@ export async function generateStoryContentPack(
 }
 
 /**
- * Week-hero pack: blog ideas + one featured blog only.
- * Tries multiple idea seeds so a single weak draft does not fail the whole hero pass.
+ * Week-hero pack: full blog + LinkedIn ideas and featured drafts for the converting story.
  */
 export async function generateHeroBlogPack(
   story: GeneratedStory
 ): Promise<GeneratedSuggestion[]> {
-  const blogIdeas = await generateIdeas(story, "blog");
-  let featuredBlog: GeneratedSuggestion | null = null;
+  const ideas = await generateStoryIdeasPack(story);
+  const blogIdeas = ideas.filter((item) => item.suggestion_type === "blog");
+  const linkedinIdeas = ideas.filter((item) => item.suggestion_type === "linkedin");
 
+  let featuredBlog: GeneratedSuggestion | null = null;
   for (const seed of blogIdeas.slice(0, 3)) {
     featuredBlog = await generateFeaturedDraft(story, "blog", seed);
     if (featuredBlog) break;
   }
 
-  // One more attempt with a conversion-focused seed if all drafts failed length/voice gates.
   if (!featuredBlog && blogIdeas[0]) {
     const forcedSeed: GeneratedSuggestion = {
       ...blogIdeas[0],
@@ -256,9 +256,17 @@ export async function generateHeroBlogPack(
     featuredBlog = await generateFeaturedDraft(story, "blog", forcedSeed);
   }
 
+  let featuredLinkedin: GeneratedSuggestion | null = null;
+  for (const seed of linkedinIdeas.slice(0, 2)) {
+    featuredLinkedin = await generateFeaturedDraft(story, "linkedin", seed);
+    if (featuredLinkedin) break;
+  }
+
   const output: GeneratedSuggestion[] = [];
   if (featuredBlog) output.push(featuredBlog);
   output.push(...blogIdeas);
+  if (featuredLinkedin) output.push(featuredLinkedin);
+  output.push(...linkedinIdeas);
   return output;
 }
 
