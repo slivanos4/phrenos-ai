@@ -92,15 +92,22 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
   const cta = splitCta(post.cta ?? "");
 
   return (
-    <article className="relative isolate overflow-hidden bg-forest pt-32 pb-20 lg:pt-40 lg:pb-28">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
+    <article className="relative isolate bg-forest pt-32 pb-20 lg:pt-40 lg:pb-28">
+      {/* Viewport-fixed artwork so the owl stays visible and never stretches with article length. */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+        <div className="absolute inset-0 bg-forest" />
         <img
           src="/brand/pages/article-owl.jpg"
           alt=""
-          className="h-full w-full object-cover object-[78%_center] opacity-[0.42] sm:opacity-50"
+          className="absolute top-0 right-0 hidden h-full w-[min(58vw,880px)] object-cover object-[72%_42%] opacity-[0.58] lg:block"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,28,20,0.96)_0%,rgba(16,28,20,0.9)_38%,rgba(16,28,20,0.72)_62%,rgba(16,28,20,0.55)_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,28,20,0.55)_0%,transparent_18%,transparent_72%,rgba(16,28,20,0.85)_100%)]" />
+        <img
+          src="/brand/pages/article-owl.jpg"
+          alt=""
+          className="absolute inset-0 h-[70vh] w-full object-cover object-[78%_30%] opacity-35 lg:hidden"
+        />
+        <div className="absolute inset-0 hidden bg-[linear-gradient(90deg,#101C14_0%,#101C14_46%,rgba(16,28,20,0.92)_60%,rgba(16,28,20,0.55)_78%,rgba(16,28,20,0.28)_100%)] lg:block" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,28,20,0.55)_0%,rgba(16,28,20,0.82)_38%,#101C14_72%)] lg:bg-[linear-gradient(180deg,rgba(16,28,20,0.35)_0%,transparent_22%,transparent_70%,rgba(16,28,20,0.55)_100%)]" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-3xl px-6 lg:px-8">
@@ -145,12 +152,6 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
                 {cta.supporting}
               </p>
             ) : null}
-            <Link
-              href="/contact"
-              className="mt-7 inline-flex items-center justify-center rounded-full border border-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-ivory transition-colors hover:bg-gold hover:text-forest"
-            >
-              Build Your AI Strategy
-            </Link>
           </div>
         ) : null}
 
