@@ -376,7 +376,7 @@ function SuggestionCard({
   const canPublish =
     !isIdea &&
     suggestion.suggestion_type === "blog" &&
-    suggestion.status === "approved";
+    (suggestion.status === "approved" || suggestion.status === "published");
 
   async function handleCopy() {
     const ok = await copyTextToClipboard(formatSuggestionPlainText(suggestion));
@@ -624,13 +624,17 @@ function SuggestionCard({
                 disabled={busy || editing}
                 onClick={() => onPublish(suggestion.id)}
               >
-                {busy ? "Publishing..." : "Publish to site"}
+                {busy
+                  ? "Publishing..."
+                  : suggestion.status === "published"
+                    ? "Refresh on site"
+                    : "Publish to site"}
               </button>
             ) : null}
             {suggestion.status === "published" ? (
               <span className="self-center text-[11px] text-[#8fbf9f]">
-                Live on /ai-updates
-                {editing ? " · edits update the live post" : ""}
+                Marked live
+                {editing ? " · edits sync when you refresh on site" : ""}
               </span>
             ) : null}
           </>
@@ -1288,7 +1292,9 @@ export function AiUpdatesPanel() {
         { method: "POST" },
       );
       if (result.published === 0 && result.posts[0]) {
-        setNotice(`Already live at /ai-updates/${result.posts[0].slug}.`);
+        setNotice(
+          `Live post refreshed at /ai-updates/${result.posts[0].slug}. Open that page (hard refresh if needed).`,
+        );
       } else if (result.posts[0]) {
         setNotice(`Published to /ai-updates/${result.posts[0].slug}.`);
       } else {

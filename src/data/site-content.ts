@@ -298,8 +298,8 @@ export const contactCta = {
 export const contactPage = {
   eyebrow: "Contact",
   title: "Let’s build an AI strategy that fits your business",
-  description:
-    "A short note is enough to begin. Tell us a little about your organisation, and let’s find where AI, data or automation can create real leverage.",
+  formIntro:
+    "Tell us a little about your organisation, and let’s find where AI, data or automation can create real leverage.",
   fields: {
     name: "Full name",
     email: "Work email",

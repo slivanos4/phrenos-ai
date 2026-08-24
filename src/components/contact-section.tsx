@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ContactForm } from "@/components/contact-form";
+import { contactPage } from "@/data/site-content";
 
 export function ContactSection() {
   const [active, setActive] = useState(false);
@@ -31,6 +32,9 @@ export function ContactSection() {
           <h2 className="mt-3 font-serif text-3xl tracking-tight text-ivory sm:text-4xl">
             A short note is enough.
           </h2>
+          <p className="mt-4 text-base leading-relaxed text-sage sm:text-lg">
+            {contactPage.formIntro}
+          </p>
         </div>
         <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-8">
           <ContactForm

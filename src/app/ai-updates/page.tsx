@@ -13,7 +13,8 @@ export const metadata: Metadata = {
     "Weekly notes on Generative AI models, products and industry moves, written for leaders putting AI to work.",
 };
 
-export const revalidate = 300;
+// Always read the latest published posts (avoid a stale empty ISR shell after publish).
+export const dynamic = "force-dynamic";
 
 function formatPublishedDate(value: string): string {
   const date = new Date(value);

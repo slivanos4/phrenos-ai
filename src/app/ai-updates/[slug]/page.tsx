@@ -9,7 +9,7 @@ import {
   type PublishedPost,
 } from "@/lib/phrenos-updates";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 type AiUpdatePageProps = {
   params: Promise<{ slug: string }>;

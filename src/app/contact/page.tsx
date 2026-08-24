@@ -19,7 +19,6 @@ export default function ContactPage() {
         overlayMobileCopy
         eyebrow={contactPage.eyebrow}
         title={contactPage.title}
-        description={contactPage.description}
       />
       <ContactSection />
     </>

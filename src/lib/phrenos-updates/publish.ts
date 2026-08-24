@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import {
   PUBLISHED_POSTS_TABLE,
@@ -41,9 +42,50 @@ async function uniqueSlug(
   return `${base}-${Date.now().toString(36)}`;
 }
 
+function refreshAiUpdatesCache(slug?: string) {
+  revalidatePath("/ai-updates");
+  if (slug) revalidatePath(`/ai-updates/${slug}`);
+}
+
+type SuggestionRow = {
+  id: string;
+  story_id: string;
+  suggestion_type: string;
+  is_full_draft: boolean;
+  status: string;
+  title: string | null;
+  hook: string | null;
+  body_html: string | null;
+  cta: string | null;
+};
+
+async function buildPostFields(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  suggestion: SuggestionRow
+) {
+  const { data: story } = await supabase
+    .from(STORIES_TABLE)
+    .select("id, title, summary_html")
+    .eq("id", suggestion.story_id)
+    .maybeSingle();
+
+  const title = sanitizeDashes(
+    String(suggestion.title || story?.title || "Phrenos AI update")
+  );
+
+  return {
+    title,
+    hook: sanitizeDashes(String(suggestion.hook ?? "")),
+    summary_html: plainTextToSummaryHtml(String(story?.summary_html ?? "")),
+    body_html: normalizePresentationHtml(String(suggestion.body_html ?? "")),
+    cta: sanitizeDashes(String(suggestion.cta ?? "")),
+  };
+}
+
 /**
  * Publish one approved featured blog draft to the public /ai-updates feed.
  * Ideas and LinkedIn drafts are never published here.
+ * If already live, refreshes the published row from the current draft and busts the cache.
  */
 export async function publishSuggestionToSite(suggestionId: string): Promise<PublishResult> {
   const supabase = createServiceRoleClient();
@@ -61,31 +103,11 @@ export async function publishSuggestionToSite(suggestionId: string): Promise<Pub
     throw new Error("Only featured blog drafts can be published to /ai-updates.");
   }
 
-  if (suggestion.status === "published") {
-    const { data: existing } = await supabase
-      .from(PUBLISHED_POSTS_TABLE)
-      .select("id, title, slug")
-      .eq("suggestion_id", suggestionId)
-      .maybeSingle();
-
-    if (existing) {
-      return {
-        published: 0,
-        skipped: 1,
-        posts: [
-          {
-            id: existing.id as string,
-            title: existing.title as string,
-            slug: existing.slug as string,
-          },
-        ],
-      };
-    }
-  }
-
   if (suggestion.status !== "approved" && suggestion.status !== "published") {
     throw new Error("Approve this blog draft before publishing.");
   }
+
+  const fields = await buildPostFields(supabase, suggestion as SuggestionRow);
 
   const { data: alreadyPublished } = await supabase
     .from(PUBLISHED_POSTS_TABLE)
@@ -94,10 +116,23 @@ export async function publishSuggestionToSite(suggestionId: string): Promise<Pub
     .maybeSingle();
 
   if (alreadyPublished) {
+    const { error: updateError } = await supabase
+      .from(PUBLISHED_POSTS_TABLE)
+      .update({
+        ...fields,
+        // Keep the existing slug so shared links stay stable.
+      })
+      .eq("id", alreadyPublished.id);
+
+    if (updateError) throw new Error(updateError.message);
+
     await supabase
       .from(SUGGESTIONS_TABLE)
       .update({ status: "published" })
       .eq("id", suggestionId);
+
+    const slug = alreadyPublished.slug as string;
+    refreshAiUpdatesCache(slug);
 
     return {
       published: 0,
@@ -105,35 +140,22 @@ export async function publishSuggestionToSite(suggestionId: string): Promise<Pub
       posts: [
         {
           id: alreadyPublished.id as string,
-          title: alreadyPublished.title as string,
-          slug: alreadyPublished.slug as string,
+          title: fields.title,
+          slug,
         },
       ],
     };
   }
 
-  const { data: story } = await supabase
-    .from(STORIES_TABLE)
-    .select("id, title, summary_html")
-    .eq("id", suggestion.story_id)
-    .maybeSingle();
-
-  const title = sanitizeDashes(
-    String(suggestion.title || story?.title || "Phrenos AI update")
-  );
-  const slug = await uniqueSlug(supabase, title, String(suggestion.id));
+  const slug = await uniqueSlug(supabase, fields.title, String(suggestion.id));
 
   const { data: inserted, error: insertError } = await supabase
     .from(PUBLISHED_POSTS_TABLE)
     .insert({
       suggestion_id: suggestion.id,
       story_id: suggestion.story_id,
-      title,
+      ...fields,
       slug,
-      hook: sanitizeDashes(String(suggestion.hook ?? "")),
-      summary_html: plainTextToSummaryHtml(String(story?.summary_html ?? "")),
-      body_html: normalizePresentationHtml(String(suggestion.body_html ?? "")),
-      cta: sanitizeDashes(String(suggestion.cta ?? "")),
       published_at: new Date().toISOString(),
     })
     .select("id, title, slug")
@@ -147,6 +169,8 @@ export async function publishSuggestionToSite(suggestionId: string): Promise<Pub
     .from(SUGGESTIONS_TABLE)
     .update({ status: "published" })
     .eq("id", suggestion.id);
+
+  refreshAiUpdatesCache(inserted.slug as string);
 
   return {
     published: 1,
@@ -210,6 +234,7 @@ export async function publishApprovedToSite(runId: string): Promise<PublishResul
     }
   }
 
+  refreshAiUpdatesCache();
   return { published, skipped, posts };
 }
 
@@ -243,7 +268,7 @@ export async function unpublishPost(postId: string): Promise<void> {
 
   const { data: post } = await supabase
     .from(PUBLISHED_POSTS_TABLE)
-    .select("suggestion_id")
+    .select("suggestion_id, slug")
     .eq("id", postId)
     .maybeSingle();
 
@@ -256,4 +281,6 @@ export async function unpublishPost(postId: string): Promise<void> {
       .update({ status: "approved" })
       .eq("id", post.suggestion_id);
   }
+
+  refreshAiUpdatesCache(post?.slug ? String(post.slug) : undefined);
 }
