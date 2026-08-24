@@ -477,9 +477,11 @@ function SuggestionCard({
             />
           </label>
           <label className="block space-y-1.5">
-            <span className={labelClass}>Call to action</span>
-            <input
-              className={fieldClass}
+            <span className={labelClass}>
+              Call to action (primary line, then supporting copy)
+            </span>
+            <textarea
+              className={`${fieldClass} min-h-[5.5rem] resize-y`}
               value={cta}
               onChange={(event) => setCta(event.target.value)}
             />
@@ -493,7 +495,7 @@ function SuggestionCard({
             />
           </label>
           <label className="block space-y-1.5">
-            <span className={labelClass}>Image ideas</span>
+            <span className={labelClass}>Image concept (for LinkedIn / social)</span>
             <textarea
               className={`${fieldClass} min-h-[4rem] resize-y`}
               value={imageIdeas}
@@ -526,8 +528,9 @@ function SuggestionCard({
           ) : null}
 
           {!isIdea && suggestion.cta ? (
-            <p className="mt-3 text-[11px] text-[#a9b0a3]">
-              <span className="tracking-[0.16em] uppercase">Call to action</span>{" "}
+            <p className="mt-3 whitespace-pre-wrap text-[11px] leading-relaxed text-[#a9b0a3]">
+              <span className="tracking-[0.16em] uppercase">Call to action</span>
+              {"\n"}
               {suggestion.cta}
             </p>
           ) : null}

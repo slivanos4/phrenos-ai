@@ -95,7 +95,7 @@ export default async function AiUpdatesPage() {
                 href="/contact"
                 className="mt-10 inline-flex items-center justify-center rounded-full border border-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-ivory transition-colors hover:bg-gold hover:text-forest"
               >
-                Start a Conversation
+                Build Your AI Strategy
               </Link>
             </div>
           )}

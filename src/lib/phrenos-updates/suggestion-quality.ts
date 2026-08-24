@@ -61,6 +61,33 @@ export function hasConversionBeats(suggestion: GeneratedSuggestion): boolean {
   return haystack.includes("why this matters now") && haystack.includes("what to do next");
 }
 
+const WEAK_CTA_MARKERS = [
+  "start a conversation",
+  "get in touch",
+  "contact us",
+  "learn more",
+  "book a call",
+  "reach out",
+  "schedule a call",
+];
+
+/** Reject soft contact CTAs; article CTAs must sell the next outcome. */
+export function hasWeakCta(suggestion: GeneratedSuggestion): boolean {
+  const cta = (suggestion.cta ?? "").toLowerCase().trim();
+  if (!cta) return true;
+  return WEAK_CTA_MARKERS.some((marker) => cta.includes(marker));
+}
+
+/** Prefer titles that carry tension, not a pure news announcement. */
+export function hasNewsWireTitle(suggestion: GeneratedSuggestion): boolean {
+  const title = (suggestion.title ?? "").trim();
+  if (!title) return true;
+  if (/[?.!]/.test(title)) return false;
+  return /^(company|openai|google|microsoft|amazon|meta|anthropic|nvidia|binance)\b/i.test(
+    title
+  ) && /\b(launches?|announces?|unveils?|releases?|introduces?)\b/i.test(title);
+}
+
 export function meetsLengthTarget(suggestion: GeneratedSuggestion): boolean {
   const words = countWords(suggestion.body_html);
   if (suggestion.suggestion_type === "blog") return words >= BLOG_MIN_WORDS;
@@ -76,7 +103,20 @@ export function isTooShortSuggestion(suggestion: GeneratedSuggestion): boolean {
 export function isPublishableFullDraft(suggestion: GeneratedSuggestion): boolean {
   if (isLowQualitySuggestionBody(suggestion.body_html)) return false;
   if (hasOffVoiceMarkers(suggestion)) return false;
+  if (hasWeakCta(suggestion)) return false;
+  if (hasNewsWireTitle(suggestion)) return false;
   return meetsLengthTarget(suggestion);
+}
+
+function normalizeCta(value: string): string {
+  const cleaned = sanitizeDashes(value ?? "").trim();
+  if (!cleaned) return "";
+  const parts = cleaned
+    .split(/\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length <= 1) return cleaned;
+  return parts.slice(0, 2).join("\n\n");
 }
 
 /** Preserve LLM HTML structure; only reject junk and sanitize dashes. */
@@ -90,7 +130,7 @@ export function cleanSuggestionFields(suggestion: GeneratedSuggestion): Generate
     title: sanitizeDashes(suggestion.title ?? "").trim(),
     hook: sanitizeDashes(suggestion.hook ?? "").trim(),
     body_html: sanitizeDashes(suggestion.body_html).trim(),
-    cta: sanitizeDashes(suggestion.cta ?? "").trim(),
+    cta: normalizeCta(suggestion.cta ?? ""),
     hashtags: sanitizeDashes(suggestion.hashtags ?? "").trim(),
     image_ideas: sanitizeDashes(suggestion.image_ideas ?? "").trim(),
   };

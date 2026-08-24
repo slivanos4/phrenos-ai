@@ -136,7 +136,9 @@ export {
   BLOG_MIN_WORDS,
   BLOG_TARGET_WORDS,
   hasConversionBeats,
+  hasNewsWireTitle,
   hasOffVoiceMarkers,
+  hasWeakCta,
   isPublishableFullDraft,
   LINKEDIN_MAX_WORDS,
   LINKEDIN_MIN_WORDS,
@@ -146,6 +148,7 @@ export {
 
 export {
   PHRENOS_BLOG_TOV,
+  PHRENOS_CONVERSION_FORMULA,
   PHRENOS_LINKEDIN_TOV,
   PHRENOS_VOICE_ONE_LINER,
   SOURCE_INTEGRITY_BLOCK,

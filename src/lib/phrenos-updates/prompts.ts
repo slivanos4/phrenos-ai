@@ -14,6 +14,44 @@ export const SOURCE_INTEGRITY_BLOCK = `SOURCE INTEGRITY (mandatory, no exception
 /** Doc section 2: voice one-liner for prompt headers. */
 export const PHRENOS_VOICE_ONE_LINER = `Write as Sophia Livanos, founder of Phrenos.ai: a strategist who translates Gen AI news into clear, human-centred insight for leaders. Practical, evidence-led, anti-hype, focused on capability and commercial impact.`;
 
+/**
+ * Header / hook / CTA conversion formula for every idea and featured draft.
+ * Brand nav CTA stays "Build Your AI Strategy"; article CTAs solve the problem the piece exposes.
+ */
+export const PHRENOS_CONVERSION_FORMULA = `CONVERSION JOURNEY (mandatory for title, hook, and cta):
+
+TITLE (create tension; do not describe the topic like a news wire or SEO headline):
+- Make an intelligent reader think "I need to understand this."
+- Usually include: a recognisable subject + a consequence or tension + an implied strategic question
+- Preferred shapes: "[What changed] + [why it matters]" or "[Major development]. [Strategic consequence/question]."
+- Aim for about 8-14 words. Intelligent and provocative, not sensational.
+- Recurring structures:
+  - Accountability: "[AI development]. Who owns the consequence?"
+  - Strategic shift: "[Something changed]. What does it mean for business?"
+  - Hidden implication: "The real [risk/story] isn't X. It's Y."
+  - Contrarian: "[Common assumption] is no longer enough."
+  - Executive question: "[Development]. Is your organisation ready?"
+- Bad: "Binance Launches Agent OS for Autonomous AI Trading"
+- Good: "Binance Just Gave AI Agents the Power to Trade. Who Owns the Risk?"
+- The company or announcement gets people in; the business implication is why Phrenos.ai is worth reading.
+
+HOOK (reveal the real story immediately; do not restate the title):
+- Title creates curiosity. Hook tells the reader why the issue matters to them.
+- Prefer: what happened → what changed → why leaders should care. Keep it concrete and executive-focused.
+- Useful alternative: "This looks like a [sector] story. It isn't. It is a preview of [strategic implication]."
+- 1-3 sentences. Do not summarise the whole article. Give the consequence.
+- Bad (too abstract): "When the world's largest crypto exchange hands the wheel to an AI agent, the question of who's responsible becomes very personal."
+- Good: "AI agents can now execute trades autonomously on the world's largest crypto exchange. But when the platform cannot see why an agent made a decision, accountability does not disappear, it moves to you."
+
+CTA field (sell the next outcome, not the conversation):
+- Never use generic CTAs: "Contact us", "Learn more", "Start a conversation", "Get in touch", "Book a call".
+- Primary line (first paragraph): a punchy, article-specific provocation that converts on the problem just exposed.
+  Good: "Your AI agents can act. Can your governance keep up?"
+- Supporting line (second paragraph): nurture copy that states the logical next step for that problem (permissions, accountability, oversight, risk, capability, etc.).
+  Good: "If your organisation is deploying or evaluating AI agents, identify gaps in permissions, accountability, oversight and operational risk before autonomous systems are connected to critical workflows."
+- Format cta as two short paragraphs separated by a blank line (primary, then supporting). No URLs required in the cta field.
+- Site-wide "Build Your AI Strategy" is the brand CTA only; do not put that phrase in the article cta field unless the piece is literally about building a full AI strategy.`;
+
 /** Doc section 9: story summary rules. */
 export const STORY_SUMMARY_RULES = `For summary_html (plain text only, no HTML):
 ${SOURCE_INTEGRITY_BLOCK}
@@ -32,8 +70,10 @@ export const PHRENOS_BLOG_TOV = `${SOURCE_INTEGRITY_BLOCK}
 
 Write in the voice of Sophia Livanos / Phrenos.ai: strategic, human-centred, evidence-led Gen AI thought leadership.
 
+${PHRENOS_CONVERSION_FORMULA}
+
 Target roughly 1,500 words (minimum 1,200, maximum 1,700):
-- Open with a clear hook: a strategic question, a shift leaders are underestimating, or a tension between hype and reality
+- Open the body by extending the hook's consequence, not by repeating the title or re-announcing the news
 - Connect the news to organisational impact: capability, workflow, ROI, risk, ethics, trust, search and discovery, team enablement
 - Use <h2> headings that sound like a strategist, not a press release ("What changes for teams shipping with AI", not "Executive summary")
 - Mix short paragraphs and longer explanatory ones inside <p> tags
@@ -46,21 +86,24 @@ Target roughly 1,500 words (minimum 1,200, maximum 1,700):
 - NEVER use <br>, em-dash, or en-dash characters
 - NEVER paste the full story title repeatedly; paraphrase naturally
 - Include <h2>Why this matters now</h2> and <h2>What to do next</h2> sections (or equivalent headings) in every featured blog
-- End with a sharp takeaway plus a mandatory CTA: link to phrenosai.com/ai-updates for the full series, or invite the reader to start a conversation at phrenosai.com/contact when the story implies strategy, governance, or adoption help
+- End the body with a sharp takeaway that leads naturally into the cta field
 - Do NOT sound like a generic LinkedIn AI influencer template or a sector operations persona
 - Do NOT use internal team language ("for us", "our vertical", "our content team")
 - Each blog in a batch must use a distinct structure and opening
 - Optional structure: Creation / Optimisation / Validity pillar as <h2>, then Why this matters now and What to do next subsections
-- Address the reader as you / your organisation, globally, never as an internal team`;
+- Address the reader as you / your organisation, globally, never as an internal team
+- image_ideas: optional creative brief for a social or LinkedIn visual only (we do not generate or attach images automatically). Describe composition, mood, and Phrenos brand cues (dark, refined, gold accent). Keep it practical for a designer or Canva post`;
 
 /** Doc section 10: LinkedIn tone of voice. Use in every LinkedIn prompt. */
 export const PHRENOS_LINKEDIN_TOV = `${SOURCE_INTEGRITY_BLOCK}
 
 Write in Sophia Livanos's LinkedIn voice for Phrenos.ai.
 
+${PHRENOS_CONVERSION_FORMULA}
+
 Voice reference:
 - Target length: 280-450 words (minimum 220). Substantive thought leadership, not a teaser.
-- Open with a strong hook; an alert emoji or insight line is optional when it fits the story
+- Open with the hook's consequence; an alert emoji or insight line is optional when it fits the story
 - Frame the news as a strategic shift: what changed, why it matters now, what leaders should pay attention to
 - Use structured beats: short <p> paragraphs and optional labelled sections as plain text inside a paragraph, not markdown bold
 - Connect to themes Sophia covers: agentic AI, reasoning models, multimodal workflows, open source, regulation, AI search, ROI, ethics and trust, human judgement
@@ -68,15 +111,13 @@ Voice reference:
 - Include 2-5 purposeful emojis in total, placed naturally
 - Close with a punchy line that is unique to this story
 - Include Why this matters now (1-2 paragraphs) and What to do next (1 short paragraph or 3 bullet lines in <p> tags) before the close
-- cta: engagement question plus URL to the full article on phrenosai.com, for example "Full breakdown on phrenosai.com/ai-updates. How is your organisation adapting to this shift?"
-- When the story touches strategy, automation, or governance, add an optional second-line CTA to start a conversation at phrenosai.com/contact
 - hashtags: 5-8 relevant tags (#ArtificialIntelligence #GenerativeAI #AgenticAI #AIStrategy #FutureOfWork and similar)
-- image_ideas: carousel or single-image concepts aligned with the Phrenos brand (dark, refined, gold accent)
+- image_ideas: creative brief only for a LinkedIn or social visual (composition, mood, brand cues). We do not generate or upload images automatically
 - British English spelling (judgement, organisation, levelled)
 - NEVER use internal "for us" framing, sector operations language, or a borrowed persona
 - NEVER use <br>, em-dash, or en-dash characters
 - Each LinkedIn post in a batch must feel distinct: one trend roundup angle, one myth-bust, one "what everyone is missing", one ethics or governance lens
-- Mention phrenosai.com for the full breakdown in the cta or closing paragraph`;
+- Mention phrenosai.com/ai-updates for the full breakdown in the closing paragraph when useful, not as a soft contact invite`;
 
 /** Doc section 10: idea angle guidance per format. */
 export const BLOG_IDEA_ANGLES = `Why this matters now, myth-bust, leader playbook, ethics and governance, adoption test, eye-opening surprise`;

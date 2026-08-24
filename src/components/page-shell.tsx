@@ -20,7 +20,7 @@ export function PageShell({ eyebrow, title, description }: PageShellProps) {
         <p className="mt-10 text-sm text-ivory/50">
           Detailed page content coming soon.{" "}
           <Link href="/contact" className="text-gold hover:text-[#c99a45]">
-            Start a conversation
+            Build your AI strategy
           </Link>{" "}
           in the meantime.
         </p>

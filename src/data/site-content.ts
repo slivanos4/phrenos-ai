@@ -19,7 +19,7 @@ export const navigation = [
 ] as const;
 
 export const headerCta = {
-  label: "Start a Conversation",
+  label: "Build Your AI Strategy",
   href: "/contact",
 } as const;
 
@@ -280,7 +280,7 @@ export const aboutPage = {
     "AI Product Strategy & Innovation",
   ],
   cta: {
-    label: "Start a Conversation",
+    label: "Build Your AI Strategy",
     href: "/contact",
   },
 } as const;
@@ -290,14 +290,14 @@ export const contactCta = {
   supporting:
     "A short note is enough to begin. Tell us where the friction is, and we’ll help find the leverage.",
   button: {
-    label: "Start a Conversation",
+    label: "Build Your AI Strategy",
     href: "/contact#contact-form",
   },
 } as const;
 
 export const contactPage = {
   eyebrow: "Contact",
-  title: "Start a conversation.",
+  title: "Let’s build an AI strategy that fits your business",
   description:
     "A short note is enough to begin. Tell us a little about your organisation, and let’s find where AI, data or automation can create real leverage.",
   fields: {

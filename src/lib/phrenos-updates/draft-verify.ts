@@ -3,7 +3,9 @@ import { SOURCE_INTEGRITY_BLOCK } from "@/lib/phrenos-updates/prompts";
 import { sourceFactsForPrompt } from "@/lib/phrenos-updates/source-enrichment";
 import {
   cleanSuggestionFields,
+  hasNewsWireTitle,
   hasOffVoiceMarkers,
+  hasWeakCta,
   isLowQualitySuggestionBody,
   meetsLengthTarget,
 } from "@/lib/phrenos-updates/suggestion-quality";
@@ -83,6 +85,7 @@ Return ONLY JSON:
 
 Rules for revised:
 - Keep Phrenos voice and British English
+- Preserve a tension-driven title, concrete executive hook, and two-part cta (primary provocation + supporting nurture line)
 - Remove or rewrite every unsupported claim
 - Do not invent replacement facts
 - Keep Why this matters now and What to do next for blog drafts
@@ -124,6 +127,8 @@ Rules for revised:
     const revised =
       revisedRaw &&
       !hasOffVoiceMarkers(revisedRaw) &&
+      !hasWeakCta(revisedRaw) &&
+      !hasNewsWireTitle(revisedRaw) &&
       !isLowQualitySuggestionBody(revisedRaw.body_html) &&
       meetsLengthTarget(revisedRaw)
         ? revisedRaw

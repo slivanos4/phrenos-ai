@@ -17,7 +17,9 @@ import {
   BLOG_MIN_WORDS,
   BLOG_TARGET_WORDS,
   cleanSuggestionFields,
+  hasNewsWireTitle,
   hasOffVoiceMarkers,
+  hasWeakCta,
   IDEA_MIN_WORDS,
   isLowQualitySuggestionBody,
   LINKEDIN_MIN_WORDS,
@@ -99,7 +101,9 @@ Rules:
 - Address the reader as you or your organisation, never as an internal team
 - British English spelling
 - Never use em-dash or en-dash characters
-${tovDigest(tovFor(suggestionType), 8)}`;
+- Follow the Phrenos conversion formula for title, hook, and cta (tension title, concrete executive hook, primary provocation + supporting nurture line)
+- image_ideas: short creative brief for a social visual only (no auto-generated image)
+${tovDigest(tovFor(suggestionType), 12)}`;
 
   const text = await callAnthropic(prompt, suggestionType === "blog" ? 4000 : 2500);
   const json = extractJsonArray(text);
@@ -142,7 +146,11 @@ Return ONLY one JSON object:
 {"suggestion_type":"${suggestionType}","title":"...","hook":"...","body_html":"...","cta":"...","hashtags":"...","image_ideas":"..."}
 
 Rules:
-- Primary draft for the week: most relevant, engaging, and strategically useful for a global Phrenos audience. It must convert, so include Why this matters now, What to do next, and a clear CTA
+- Primary draft for the week: most relevant, engaging, and strategically useful for a global Phrenos audience. It must convert through title → hook → article → cta
+- title must create strategic tension (not a news wire headline). Prefer "[Development]. [Consequence/question]." Aim for roughly 8-14 words
+- hook must be concrete and executive-focused (what happened → what changed → why leaders should care). Do not restate the title
+- cta must be two paragraphs: (1) punchy problem-specific provocation, (2) supporting nurture line with the logical next step. Never soft contact CTAs
+- image_ideas is a creative brief for social artwork only; do not invent that an image file will be attached
 - Target ${target} words (minimum ${minimum})
 - ${
     suggestionType === "blog"
@@ -166,6 +174,8 @@ Rules:
     });
     if (!cleaned) return null;
     if (hasOffVoiceMarkers(cleaned)) return null;
+    if (hasWeakCta(cleaned)) return null;
+    if (hasNewsWireTitle(cleaned)) return null;
     if (isLowQualitySuggestionBody(cleaned.body_html)) return null;
     if (!meetsLengthTarget(cleaned)) return null;
 
