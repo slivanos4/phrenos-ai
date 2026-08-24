@@ -51,6 +51,10 @@ export { tavilyQueriesForSection };
 export type ResearchAgentInput = {
   lookbackStart: string;
   lookbackEnd: string;
+  /** Complementary desk brief prompt block from Cursor weekly GenAI ideas. */
+  deskBriefPrompt?: string;
+  /** Preferred source URLs extracted from the desk brief. */
+  deskBriefUrls?: string[];
 };
 
 type TavilyFetchResult = {
@@ -138,7 +142,8 @@ ${SOURCE_INTEGRITY_BLOCK}
 
 ${BRITISH_ENGLISH_BLOCK}
 
-Generate exactly ${MAX_STORIES_PER_SECTION} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that.
+${input.deskBriefPrompt ? `${input.deskBriefPrompt}\n` : ""}
+Generate exactly ${MAX_STORIES_PER_SECTION} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that. When the desk brief suggests an angle, prefer matching in-period articles from the list if they exist — never invent facts from the brief alone.
 
 Each story needs:
 - title (string): specific editorial headline reflecting the trend, not the raw article headline
@@ -319,7 +324,10 @@ async function fetchSectionSources(
     const { proposeClaudeDiscoverySearches } = await import(
       "@/lib/phrenos-updates/claude-discovery"
     );
-    const plan = await proposeClaudeDiscoverySearches(section, input);
+    const plan = await proposeClaudeDiscoverySearches(section, {
+      ...input,
+      deskBriefPrompt: input.deskBriefPrompt,
+    });
     claudeQueries = plan.queries;
     if (plan.domains.length > 0) {
       claudeQueries.push({
@@ -334,6 +342,25 @@ async function fetchSectionSources(
   }
 
   const queries = [...baseQueries, ...claudeQueries];
+
+  // Prefer desk-brief URLs as extra discovery hints when available.
+  if (input.deskBriefUrls && input.deskBriefUrls.length > 0) {
+    const hintTitles = input.deskBriefUrls.slice(0, 3).map((url) => {
+      try {
+        return new URL(url).hostname.replace(/^www\./, "");
+      } catch {
+        return "AI news";
+      }
+    });
+    for (const host of [...new Set(hintTitles)].slice(0, 2)) {
+      queries.push({
+        query: `${host} generative AI ${SECTION_LABELS[section]} ${input.lookbackEnd}`,
+        topic: "news",
+        maxResults: 6,
+      });
+    }
+  }
+
   const batches = await Promise.all(
     queries.map((query) => fetchTavilyContextDetailed(query, input))
   );

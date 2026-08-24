@@ -38,7 +38,7 @@ export async function POST(
     return NextResponse.json({
       run: { id, status: "pending" },
       message:
-        "Re-run started. After research, the week's strongest story will get a new featured blog draft.",
+        "Re-run started. After research, the week's strongest story will get a new featured blog and LinkedIn pack.",
     });
   } catch (error) {
     if (error instanceof AdminAuthError) {

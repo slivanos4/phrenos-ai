@@ -83,6 +83,19 @@ export {
 } from "@/lib/phrenos-updates/publish";
 
 export {
+  formatDeskBriefForPrompt,
+  getWeeklyBrief,
+  ingestWeeklyBrief,
+  listWeeklyBriefs,
+  loadDeskBriefForLookback,
+  verifyWeeklyBrief,
+  type BriefIdea,
+  type BriefStatus,
+  type IngestBriefInput,
+  type WeeklyBrief,
+} from "@/lib/phrenos-updates/weekly-briefs";
+
+export {
   isValidVisitorKey,
   submitPostFeedback,
   type PostReaction,

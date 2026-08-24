@@ -22,7 +22,7 @@ export async function POST(
         {
           error:
             result.error ??
-            "Could not draft this week's featured blog. Try again in a moment.",
+            "Could not draft this week's featured blog and LinkedIn pack. Try again in a moment.",
           ...result,
         },
         { status: 422 },

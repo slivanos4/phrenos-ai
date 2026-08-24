@@ -82,7 +82,7 @@ async function pickHeroWithClaude(
 
 Research period: ${lookback.lookbackStart} to ${lookback.lookbackEnd}.
 Pick the single most WOW, influential, and converting topic for a global business audience.
-Prioritise: strategic surprise, practical implication for organisations, and conversion potential for a featured blog on phrenosai.com (Why this matters now + What to do next).
+Prioritise: strategic surprise, practical implication for organisations, and conversion potential for a featured blog on phrenosai.com plus a LinkedIn post (Why this matters now + What to do next).
 Never pick a story that is clearly about an older month outside this research period.
 Avoid rumour-only or unverifiable sensational claims.
 
@@ -191,8 +191,8 @@ async function markWeekHero(storyId: string, runId: string, currentTags: string[
 }
 
 /**
- * After research: pick the week's most converting story and auto-write its featured blog.
- * Best-effort: research success must not fail if drafting fails.
+ * After research: pick the week's most converting story and auto-write its
+ * featured blog + LinkedIn pack. Best-effort: research success must not fail if drafting fails.
  */
 export async function generateWeekHeroContent(runId: string): Promise<{
   storyId: string | null;
@@ -227,15 +227,23 @@ export async function generateWeekHeroContent(runId: string): Promise<{
 
   await markWeekHero(hero.id, runId, hero.topic_tags);
 
-  const { data: existingBlog } = await supabase
+  const { data: existingSuggestions } = await supabase
     .from(SUGGESTIONS_TABLE)
-    .select("id")
-    .eq("story_id", hero.id)
-    .eq("suggestion_type", "blog")
-    .eq("is_full_draft", true)
-    .limit(1);
+    .select("id, suggestion_type, is_full_draft")
+    .eq("story_id", hero.id);
 
-  if (existingBlog?.length) {
+  const hasFeaturedBlog = (existingSuggestions ?? []).some(
+    (item) => item.suggestion_type === "blog" && item.is_full_draft
+  );
+  const hasLinkedinIdeas = (existingSuggestions ?? []).some(
+    (item) => item.suggestion_type === "linkedin" && !item.is_full_draft
+  );
+  const hasFeaturedLinkedin = (existingSuggestions ?? []).some(
+    (item) => item.suggestion_type === "linkedin" && item.is_full_draft
+  );
+
+  // Blog alone is not enough: still draft LinkedIn if the pack is incomplete.
+  if (hasFeaturedBlog && hasLinkedinIdeas && hasFeaturedLinkedin) {
     return { storyId: hero.id, title: hero.title, drafted: true };
   }
 
@@ -243,7 +251,8 @@ export async function generateWeekHeroContent(runId: string): Promise<{
     await generateContentForStory(hero.id, { mode: "hero-blog" });
     return { storyId: hero.id, title: hero.title, drafted: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Featured blog draft failed.";
+    const message =
+      error instanceof Error ? error.message : "Featured blog and LinkedIn draft failed.";
     console.error(`Week-hero draft failed for "${hero.title}":`, message);
     return { storyId: hero.id, title: hero.title, drafted: false, error: message };
   }

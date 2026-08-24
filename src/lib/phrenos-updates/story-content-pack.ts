@@ -270,9 +270,23 @@ export async function generateHeroBlogPack(
   }
 
   let featuredLinkedin: GeneratedSuggestion | null = null;
-  for (const seed of linkedinIdeas.slice(0, 2)) {
+  for (const seed of linkedinIdeas.slice(0, 3)) {
     featuredLinkedin = await generateFeaturedDraft(story, "linkedin", seed);
     if (featuredLinkedin) break;
+  }
+
+  if (!featuredLinkedin && linkedinIdeas[0]) {
+    const forcedSeed: GeneratedSuggestion = {
+      ...linkedinIdeas[0],
+      title: linkedinIdeas[0].title || story.title,
+      hook:
+        linkedinIdeas[0].hook ||
+        "What this week's Gen AI move means for leaders deciding what to trust, ship, and govern next.",
+      body_html:
+        linkedinIdeas[0].body_html ||
+        "Expand into a full LinkedIn post with Why this matters now, What to do next, and a punchy story-specific CTA.",
+    };
+    featuredLinkedin = await generateFeaturedDraft(story, "linkedin", forcedSeed);
   }
 
   const output: GeneratedSuggestion[] = [];

@@ -17,6 +17,18 @@ import {
   type SuggestionStatus,
 } from "@/lib/phrenos-updates/types";
 
+type WeeklyBriefSummary = {
+  id: string;
+  title: string;
+  lookback_start: string | null;
+  lookback_end: string | null;
+  status: "received" | "verified" | "needs_review" | "rejected";
+  verification_notes: string;
+  ideas: { suggestion_type: string; title: string }[];
+  source_urls: string[];
+  created_at: string;
+};
+
 type AuthState = "loading" | "unconfigured" | "signed-out" | "signed-in";
 
 type PublishResponse = {
@@ -935,6 +947,196 @@ function StoryCard({
   );
 }
 
+function DeskBriefsPanel({
+  briefs,
+  busy,
+  onRefresh,
+  onVerify,
+  onIngest,
+}: {
+  briefs: WeeklyBriefSummary[];
+  busy: boolean;
+  onRefresh: () => void;
+  onVerify: (id: string) => void;
+  onIngest: (payload: {
+    title: string;
+    research_markdown: string;
+    content_markdown: string;
+  }) => Promise<void>;
+}) {
+  const [title, setTitle] = useState("");
+  const [researchMarkdown, setResearchMarkdown] = useState("");
+  const [contentMarkdown, setContentMarkdown] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(true);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!researchMarkdown.trim() && !contentMarkdown.trim()) return;
+    setSaving(true);
+    try {
+      await onIngest({
+        title: title.trim() || "Desk brief",
+        research_markdown: researchMarkdown,
+        content_markdown: contentMarkdown,
+      });
+      setTitle("");
+      setResearchMarkdown("");
+      setContentMarkdown("");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={panelClass}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
+            Desk briefs
+          </p>
+          <p className="mt-1 text-sm text-[#f1e8d6]">
+            Cursor weekly GenAI ideas that complement research
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={microButtonClass}
+            disabled={busy}
+            onClick={onRefresh}
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            className={microButtonClass}
+            onClick={() => setOpen((current) => !current)}
+          >
+            {open ? "Hide" : "Show"}
+          </button>
+        </div>
+      </div>
+
+      {open ? (
+        <>
+          <form onSubmit={(event) => void handleSubmit(event)} className="mt-4 space-y-3">
+            <label className="block space-y-1.5">
+              <span className={labelClass}>Title</span>
+              <input
+                className={fieldClass}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="GenAI Content — Week of ..."
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className={labelClass}>Research markdown</span>
+              <textarea
+                className={`${fieldClass} min-h-[5.5rem] resize-y font-mono text-[12px]`}
+                value={researchMarkdown}
+                onChange={(event) => setResearchMarkdown(event.target.value)}
+                placeholder="Paste the research log markdown from the weekly automation."
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className={labelClass}>Content markdown</span>
+              <textarea
+                className={`${fieldClass} min-h-[5.5rem] resize-y font-mono text-[12px]`}
+                value={contentMarkdown}
+                onChange={(event) => setContentMarkdown(event.target.value)}
+                placeholder="Paste the LinkedIn/blog ideas markdown."
+              />
+            </label>
+            <button
+              type="submit"
+              className={ghostButtonClass}
+              disabled={
+                busy ||
+                saving ||
+                (!researchMarkdown.trim() && !contentMarkdown.trim())
+              }
+            >
+              {saving ? "Logging brief..." : "Log desk brief"}
+            </button>
+          </form>
+
+          <div className="mt-5 space-y-2.5">
+            {briefs.length === 0 ? (
+              <p className="text-sm text-[#a9b0a3]">
+                No desk briefs yet. Log one here, or POST to
+                /api/phrenos-updates/briefs from the weekly automation.
+              </p>
+            ) : (
+              briefs.map((brief) => (
+                <div
+                  key={brief.id}
+                  className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      tone={
+                        brief.status === "verified"
+                          ? statusTone("completed")
+                          : brief.status === "needs_review"
+                            ? statusTone("failed")
+                            : statusTone("running")
+                      }
+                    >
+                      {brief.status.replace(/_/g, " ")}
+                    </Badge>
+                    <span className="text-[11px] text-[#a9b0a3]">
+                      {brief.lookback_start && brief.lookback_end
+                        ? `${brief.lookback_start} → ${brief.lookback_end}`
+                        : formatDateTime(brief.created_at)}
+                    </span>
+                    <span className="text-[11px] text-[#a9b0a3]">
+                      {brief.ideas.length} angle
+                      {brief.ideas.length === 1 ? "" : "s"} ·{" "}
+                      {brief.source_urls.length} source
+                      {brief.source_urls.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm font-semibold text-[#f1e8d6]">
+                    {brief.title}
+                  </p>
+                  {brief.verification_notes ? (
+                    <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">
+                      {brief.verification_notes}
+                    </p>
+                  ) : null}
+                  {brief.ideas.length > 0 ? (
+                    <ul className="mt-2 space-y-1 text-xs text-[#c9c6ba]">
+                      {brief.ideas.slice(0, 4).map((idea) => (
+                        <li key={`${brief.id}-${idea.title}`}>
+                          <span className="text-[#d4af5a]">
+                            {idea.suggestion_type === "blog" ? "Blog" : "LinkedIn"}
+                          </span>{" "}
+                          {idea.title}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {brief.status !== "verified" ? (
+                    <button
+                      type="button"
+                      className={`${microButtonClass} mt-3`}
+                      disabled={busy}
+                      onClick={() => onVerify(brief.id)}
+                    >
+                      Verify brief
+                    </button>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export function AiUpdatesPanel() {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [password, setPassword] = useState("");
@@ -951,6 +1153,7 @@ export function AiUpdatesPanel() {
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [briefs, setBriefs] = useState<WeeklyBriefSummary[]>([]);
 
   const reportError = useCallback((cause: unknown) => {
     if (cause instanceof ApiError && cause.status === 401) {
@@ -960,6 +1163,20 @@ export function AiUpdatesPanel() {
     }
     setError(cause instanceof Error ? cause.message : "Something went wrong.");
   }, []);
+
+  const loadBriefs = useCallback(
+    async (quiet = false) => {
+      try {
+        const result = await requestJson<{ briefs: WeeklyBriefSummary[] }>(
+          "/api/phrenos-updates/briefs",
+        );
+        setBriefs(result.briefs);
+      } catch (cause) {
+        if (!quiet) reportError(cause);
+      }
+    },
+    [reportError],
+  );
 
   const loadRuns = useCallback(
     async (quiet = false) => {
@@ -996,7 +1213,7 @@ export function AiUpdatesPanel() {
               current.includes("refreshes while the batch")
             ) {
               return result.run.status === "completed"
-                ? "Research complete. Selecting this week's strongest story and drafting its featured blog."
+                ? "Research complete. Selecting this week's strongest story and drafting blog + LinkedIn."
                 : null;
             }
             return current;
@@ -1041,11 +1258,11 @@ export function AiUpdatesPanel() {
     if (authState !== "signed-in") return;
 
     async function bootstrap() {
-      await loadRuns();
+      await Promise.all([loadRuns(), loadBriefs(true)]);
     }
 
     void bootstrap();
-  }, [authState, loadRuns]);
+  }, [authState, loadRuns, loadBriefs]);
 
   useEffect(() => {
     if (authState !== "signed-in" || !selectedRunId) return;
@@ -1107,17 +1324,19 @@ export function AiUpdatesPanel() {
           current.includes("drafting its featured") ||
           current.includes("Writing this week's featured")
         ) {
-          return `Featured blog ready for "${heroStory.title}". Approve it when you want it live.`;
+          return `Featured blog and LinkedIn ready for "${heroStory.title}". Approve the blog when you want it live.`;
         }
         return current;
       });
       return;
     }
     if (heroWriting) {
-      setNotice("Writing this week's featured blog. This page refreshes while it drafts.");
+      setNotice(
+        "Writing this week's featured blog and LinkedIn. This page refreshes while it drafts.",
+      );
     } else if (heroDraftPending) {
       setNotice(
-        `Featured blog did not finish for "${heroStory?.title ?? "this week's story"}". Use Retry featured blog on that card.`,
+        `Featured drafts did not finish for "${heroStory?.title ?? "this week's story"}". Use Generate full pack on that card.`,
       );
     }
   }, [run, runActive, heroStory, heroWriting, heroDraftPending]);
@@ -1222,6 +1441,43 @@ export function AiUpdatesPanel() {
     }
   }
 
+  async function handleIngestBrief(payload: {
+    title: string;
+    research_markdown: string;
+    content_markdown: string;
+  }) {
+    setError(null);
+    setNotice(null);
+    try {
+      await requestJson("/api/phrenos-updates/briefs", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      setNotice("Desk brief logged and checked.");
+      await loadBriefs(true);
+    } catch (cause) {
+      reportError(cause);
+      throw cause;
+    }
+  }
+
+  async function handleVerifyBrief(briefId: string) {
+    markBusy(briefId, true);
+    setError(null);
+    setNotice(null);
+    try {
+      await requestJson(`/api/phrenos-updates/briefs/${briefId}/verify`, {
+        method: "POST",
+      });
+      setNotice("Desk brief verified.");
+      await loadBriefs(true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      markBusy(briefId, false);
+    }
+  }
+
   function markBusy(id: string, busy: boolean) {
     setBusyIds((current) => {
       const next = new Set(current);
@@ -1235,7 +1491,9 @@ export function AiUpdatesPanel() {
     if (!selectedRunId) return;
     markBusy(`week-hero:${selectedRunId}`, true);
     setError(null);
-    setNotice("Selecting this week's strongest story and drafting its featured blog...");
+    setNotice(
+      "Selecting this week's strongest story and drafting blog + LinkedIn...",
+    );
     try {
       const result = await requestJson<{ title: string | null }>(
         `/api/phrenos-updates/runs/${selectedRunId}/week-hero`,
@@ -1243,8 +1501,8 @@ export function AiUpdatesPanel() {
       );
       setNotice(
         result.title
-          ? `Featured blog ready for "${result.title}". Approve it when you want it live.`
-          : "Featured blog draft is ready.",
+          ? `Featured blog and LinkedIn ready for "${result.title}". Approve the blog when you want it live.`
+          : "Featured drafts are ready.",
       );
       await loadRun(selectedRunId, true);
     } catch (cause) {
@@ -1271,7 +1529,7 @@ export function AiUpdatesPanel() {
       );
       setNotice(
         mode === "hero-blog"
-          ? `Featured blog ready for "${result.title}".`
+          ? `Featured blog and LinkedIn ready for "${result.title}".`
           : `Content ready for "${result.title}" (${result.suggestionCount} drafts and ideas).`,
       );
       if (selectedRunId) await loadRun(selectedRunId, true);
@@ -1462,6 +1720,14 @@ export function AiUpdatesPanel() {
 
   return (
     <div className="space-y-5">
+      <DeskBriefsPanel
+        briefs={briefs}
+        busy={anyBusy}
+        onRefresh={() => void loadBriefs()}
+        onVerify={(id) => void handleVerifyBrief(id)}
+        onIngest={handleIngestBrief}
+      />
+
       <div className={panelClass}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -1562,20 +1828,20 @@ export function AiUpdatesPanel() {
           label="Research"
           steps={RESEARCH_STEPS}
           intervalMs={RESEARCH_STEP_MS}
-          detail="This runs in the background and can take a few minutes. The page refreshes itself. Afterwards the strongest story gets an automatic featured blog."
+          detail="This runs in the background and can take a few minutes. The page refreshes itself. Afterwards the strongest story gets an automatic featured blog and LinkedIn pack."
         />
       ) : null}
 
       {heroWriting ? (
         <ProgressBanner
-          label="Featured blog"
+          label="Featured drafts"
           steps={CONTENT_STEPS}
           intervalMs={CONTENT_STEP_MS}
           cycle
           detail={
             heroStory
-              ? `Drafting the converting piece for "${heroStory.title}".`
-              : "Choosing this week's strongest story and drafting its featured blog."
+              ? `Drafting blog and LinkedIn for "${heroStory.title}".`
+              : "Choosing this week's strongest story and drafting blog + LinkedIn."
           }
         />
       ) : null}
@@ -1625,8 +1891,8 @@ export function AiUpdatesPanel() {
                   : "Draft this week's feature"}
               </button>
               <p className="mt-2 text-xs text-[#a9b0a3]">
-                Picks the most converting story and writes its featured blog
-                automatically.
+                Picks the most converting story and writes its featured blog and
+                LinkedIn pack automatically.
               </p>
             </div>
           ) : null}
@@ -1660,8 +1926,9 @@ export function AiUpdatesPanel() {
             This week&apos;s feature
           </h2>
           <p className="text-sm text-[#a9b0a3]">
-            Auto-selected as the most converting story. Featured blog drafts
-            after research; approve and publish when ready.
+            Auto-selected as the most converting story. Featured blog and
+            LinkedIn drafts after research; approve and publish the blog when
+            ready. Copy LinkedIn from the same card.
           </p>
           <StoryCard
             story={heroStory}

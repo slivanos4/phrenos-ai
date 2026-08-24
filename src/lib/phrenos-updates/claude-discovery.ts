@@ -24,7 +24,9 @@ function normalizeDomain(value: string): string | null {
  */
 export async function proposeClaudeDiscoverySearches(
   section: ResearchSection,
-  input: DiscoveryLookback
+  input: DiscoveryLookback & {
+    deskBriefPrompt?: string;
+  }
 ): Promise<ClaudeDiscoveryPlan> {
   const prompt = `You are the research desk lead for Phrenos.ai's weekly Gen AI news brief.
 
@@ -32,6 +34,7 @@ Propose live web searches for the last two weeks only.
 Period: ${input.lookbackStart} to ${input.lookbackEnd}
 Section: ${SECTION_LABELS[section]}
 
+${input.deskBriefPrompt ? `${input.deskBriefPrompt}\n` : ""}
 Return ONLY JSON:
 {
   "queries": ["short news search query 1", "query 2", "query 3", "query 4"],
@@ -40,6 +43,7 @@ Return ONLY JSON:
 
 Rules:
 - 4 queries, specific to recent generative AI news in this section
+- If a desk brief is provided, include 1-2 queries that chase those angles with live reporting
 - Prefer queries that surface primary reporting, official blogs, and serious AI desks
 - domains: up to 8 trustworthy publishers likely to have coverage this week (no social networks)
 - Do not invent article URLs

@@ -336,9 +336,29 @@ export async function executeResearchRun(options: {
     await supabase.from(STORIES_TABLE).delete().eq("run_id", activeRunId);
 
     try {
+      let deskBriefPrompt: string | undefined;
+      let deskBriefUrls: string[] | undefined;
+      try {
+        const {
+          formatDeskBriefForPrompt,
+          loadDeskBriefForLookback,
+        } = await import("@/lib/phrenos-updates/weekly-briefs");
+        const brief = await loadDeskBriefForLookback({
+          lookbackStart: window.start,
+          lookbackEnd: window.end,
+        });
+        const prompt = formatDeskBriefForPrompt(brief);
+        if (prompt) deskBriefPrompt = prompt;
+        if (brief?.source_urls?.length) deskBriefUrls = brief.source_urls;
+      } catch (briefError) {
+        console.warn("Desk brief load skipped:", briefError);
+      }
+
       const storyRows = await runResearchAgent({
         lookbackStart: window.start,
         lookbackEnd: window.end,
+        deskBriefPrompt,
+        deskBriefUrls,
       });
 
       for (const [storyIndex, story] of storyRows.entries()) {
@@ -435,7 +455,7 @@ export async function executeResearchRun(options: {
 /**
  * Generate (or regenerate) content for one story.
  * Does not re-run research or fetch new sources.
- * `hero-blog` writes blog ideas + featured blog only (used for the automatic week hero).
+ * `hero-blog` writes blog + LinkedIn ideas and featured drafts for the week hero.
  */
 export async function generateContentForStory(
   storyId: string,
@@ -511,6 +531,9 @@ export async function generateContentForStory(
     const hasLinkedinIdeas = suggestions.some(
       (item) => item.suggestion_type === "linkedin" && !item.is_full_draft
     );
+    const hasFeaturedLinkedin = suggestions.some(
+      (item) => item.suggestion_type === "linkedin" && item.is_full_draft
+    );
     if (!featuredBlog) {
       throw new Error(
         `Could not write a featured blog for "${storyRow.title}". Use Generate content on that story to retry.`
@@ -519,6 +542,11 @@ export async function generateContentForStory(
     if (!hasLinkedinIdeas) {
       throw new Error(
         `Featured blog saved, but LinkedIn ideas were missing for "${storyRow.title}". Use Generate content to retry the full pack.`
+      );
+    }
+    if (!hasFeaturedLinkedin) {
+      console.warn(
+        `Week-hero pack for "${storyRow.title}" saved without a featured LinkedIn draft; LinkedIn ideas are available to expand.`
       );
     }
   } else if (!storyHasIdeasPack(withSuggestions)) {

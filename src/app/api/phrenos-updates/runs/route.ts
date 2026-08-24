@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       run: { id: runId, status: "pending" },
       message:
-        "Research started. When it finishes, the week's strongest story will get an automatic featured blog draft.",
+        "Research started. When it finishes, the week's strongest story will get an automatic featured blog and LinkedIn pack.",
     });
   } catch (error) {
     if (error instanceof AdminAuthError) {
