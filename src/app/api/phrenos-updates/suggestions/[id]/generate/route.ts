@@ -6,7 +6,7 @@ import {
   generateFullDraftFromIdea,
   loadStoryForContent,
   requireAdminSession,
-  sanitizeDashes,
+  sanitizeEditorialText,
 } from "@/lib/phrenos-updates";
 import { SUGGESTIONS_TABLE } from "@/lib/phrenos-updates/tables";
 
@@ -59,12 +59,12 @@ export async function POST(
       .insert({
         story_id: idea.story_id,
         suggestion_type: draft.suggestion_type,
-        title: sanitizeDashes(draft.title),
-        hook: sanitizeDashes(draft.hook),
-        body_html: sanitizeDashes(draft.body_html),
-        cta: sanitizeDashes(draft.cta),
-        hashtags: sanitizeDashes(draft.hashtags),
-        image_ideas: sanitizeDashes(draft.image_ideas),
+        title: sanitizeEditorialText(draft.title),
+        hook: sanitizeEditorialText(draft.hook),
+        body_html: sanitizeEditorialText(draft.body_html),
+        cta: sanitizeEditorialText(draft.cta),
+        hashtags: sanitizeEditorialText(draft.hashtags),
+        image_ideas: sanitizeEditorialText(draft.image_ideas),
         is_full_draft: true,
         status: "draft",
         sort_order: 100,

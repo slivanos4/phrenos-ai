@@ -8,7 +8,7 @@ import {
 import {
   normalizePresentationHtml,
   plainTextToSummaryHtml,
-  sanitizeDashes,
+  sanitizeEditorialText,
   slugify,
 } from "@/lib/phrenos-updates/sanitize";
 import type { PublishedPost } from "@/lib/phrenos-updates/types";
@@ -69,16 +69,16 @@ async function buildPostFields(
     .eq("id", suggestion.story_id)
     .maybeSingle();
 
-  const title = sanitizeDashes(
+  const title = sanitizeEditorialText(
     String(suggestion.title || story?.title || "Phrenos AI update")
   );
 
   return {
     title,
-    hook: sanitizeDashes(String(suggestion.hook ?? "")),
+    hook: sanitizeEditorialText(String(suggestion.hook ?? "")),
     summary_html: plainTextToSummaryHtml(String(story?.summary_html ?? "")),
     body_html: normalizePresentationHtml(String(suggestion.body_html ?? "")),
-    cta: sanitizeDashes(String(suggestion.cta ?? "")),
+    cta: sanitizeEditorialText(String(suggestion.cta ?? "")),
   };
 }
 

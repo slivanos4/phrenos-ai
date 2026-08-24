@@ -8,6 +8,7 @@ import {
 } from "@/lib/phrenos-updates/types";
 import {
   sanitizeDashes,
+  sanitizeEditorialText,
   sanitizeSourceFields,
   sanitizeSummaryText,
   summaryToPlainText,
@@ -18,7 +19,7 @@ import {
   extractJsonArray,
   readApiError,
 } from "@/lib/phrenos-updates/anthropic";
-import { SOURCE_INTEGRITY_BLOCK, STORY_SUMMARY_RULES } from "@/lib/phrenos-updates/prompts";
+import { BRITISH_ENGLISH_BLOCK, SOURCE_INTEGRITY_BLOCK, STORY_SUMMARY_RULES } from "@/lib/phrenos-updates/prompts";
 import {
   dedupeSources,
   enrichPoolPublishedDates,
@@ -85,7 +86,7 @@ function inferTopicTags(text: string, provided?: string[]): string[] {
 
 function sanitizeStory(story: GeneratedStory): GeneratedStory {
   const sources = story.sources.map((source) => sanitizeSourceFields(source));
-  const title = sanitizeDashes(story.title ?? "");
+  const title = sanitizeEditorialText(story.title ?? "");
   return {
     ...story,
     title,
@@ -99,12 +100,12 @@ function sanitizeStory(story: GeneratedStory): GeneratedStory {
     sources,
     suggestions: (story.suggestions ?? []).map((suggestion) => ({
       ...suggestion,
-      title: sanitizeDashes(suggestion.title ?? ""),
-      hook: sanitizeDashes(suggestion.hook ?? ""),
-      body_html: sanitizeDashes(suggestion.body_html ?? ""),
-      cta: sanitizeDashes(suggestion.cta ?? ""),
-      hashtags: sanitizeDashes(suggestion.hashtags ?? ""),
-      image_ideas: sanitizeDashes(suggestion.image_ideas ?? ""),
+      title: sanitizeEditorialText(suggestion.title ?? ""),
+      hook: sanitizeEditorialText(suggestion.hook ?? ""),
+      body_html: sanitizeEditorialText(suggestion.body_html ?? ""),
+      cta: sanitizeEditorialText(suggestion.cta ?? ""),
+      hashtags: sanitizeEditorialText(suggestion.hashtags ?? ""),
+      image_ideas: sanitizeEditorialText(suggestion.image_ideas ?? ""),
     })),
   };
 }
@@ -134,6 +135,8 @@ Prefer stories covered by serious AI news desks (for example Artificial Intellig
 Only use articles from this period. Reject older news recycled as if it were new. Do not mention months outside ${input.lookbackStart} to ${input.lookbackEnd}.
 
 ${SOURCE_INTEGRITY_BLOCK}
+
+${BRITISH_ENGLISH_BLOCK}
 
 Generate exactly ${MAX_STORIES_PER_SECTION} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that.
 

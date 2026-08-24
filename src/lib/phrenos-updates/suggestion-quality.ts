@@ -1,4 +1,4 @@
-import { countWords, sanitizeDashes } from "@/lib/phrenos-updates/sanitize";
+import { countWords, sanitizeEditorialText } from "@/lib/phrenos-updates/sanitize";
 import { isLowQualityExcerpt } from "@/lib/phrenos-updates/source-text";
 import type { GeneratedSuggestion } from "@/lib/phrenos-updates/types";
 
@@ -109,7 +109,7 @@ export function isPublishableFullDraft(suggestion: GeneratedSuggestion): boolean
 }
 
 function normalizeCta(value: string): string {
-  const cleaned = sanitizeDashes(value ?? "").trim();
+  const cleaned = sanitizeEditorialText(value ?? "").trim();
   if (!cleaned) return "";
   const parts = cleaned
     .split(/\n+/)
@@ -119,7 +119,7 @@ function normalizeCta(value: string): string {
   return parts.slice(0, 2).join("\n\n");
 }
 
-/** Preserve LLM HTML structure; only reject junk and sanitize dashes. */
+/** Preserve LLM HTML structure; enforce British English and house dash rules. */
 export function cleanSuggestionFields(suggestion: GeneratedSuggestion): GeneratedSuggestion | null {
   const plain = stripHtml(suggestion.body_html);
   if (!plain || plain.length < 40) return null;
@@ -127,12 +127,12 @@ export function cleanSuggestionFields(suggestion: GeneratedSuggestion): Generate
 
   return {
     ...suggestion,
-    title: sanitizeDashes(suggestion.title ?? "").trim(),
-    hook: sanitizeDashes(suggestion.hook ?? "").trim(),
-    body_html: sanitizeDashes(suggestion.body_html).trim(),
+    title: sanitizeEditorialText(suggestion.title ?? "").trim(),
+    hook: sanitizeEditorialText(suggestion.hook ?? "").trim(),
+    body_html: sanitizeEditorialText(suggestion.body_html).trim(),
     cta: normalizeCta(suggestion.cta ?? ""),
-    hashtags: sanitizeDashes(suggestion.hashtags ?? "").trim(),
-    image_ideas: sanitizeDashes(suggestion.image_ideas ?? "").trim(),
+    hashtags: sanitizeEditorialText(suggestion.hashtags ?? "").trim(),
+    image_ideas: sanitizeEditorialText(suggestion.image_ideas ?? "").trim(),
   };
 }
 

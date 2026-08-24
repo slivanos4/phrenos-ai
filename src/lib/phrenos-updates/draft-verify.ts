@@ -84,7 +84,7 @@ Return ONLY JSON:
 }
 
 Rules for revised:
-- Keep Phrenos voice and British English
+- Keep Phrenos voice and mandatory British English spelling
 - Preserve a tension-driven title, concrete executive hook, and two-part cta (primary provocation + supporting nurture line)
 - Remove or rewrite every unsupported claim
 - Do not invent replacement facts

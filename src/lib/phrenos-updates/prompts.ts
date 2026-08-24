@@ -11,8 +11,16 @@ export const SOURCE_INTEGRITY_BLOCK = `SOURCE INTEGRITY (mandatory, no exception
 - Paraphrase source facts in clear prose. If a detail is not in the sources, omit it rather than guessing.
 - Every summary and draft must be traceable to at least one listed source excerpt.`;
 
+/** Mandatory language standard for all Phrenos editorial output. */
+export const BRITISH_ENGLISH_BLOCK = `BRITISH ENGLISH (mandatory, no exceptions):
+- Write all titles, hooks, summaries, drafts, CTAs, hashtags, and image concepts in British English spelling and usage
+- Prefer: organisation, organisational, behaviour, colour, favour, optimise, optimisation, analyse, recognise, centre, defence, judgement, levelled, modelled, travelling, cancelled
+- Never use American spellings such as organization, behavior, color, favor, optimize, analyze, recognize, center, defense, judgment
+- Keep British phrasing natural (for example "whilst" only when it fits; do not force archaic wording)
+- Proper nouns and official product names stay as published by the source (for example "Defense" in a US agency name)`;
+
 /** Doc section 2: voice one-liner for prompt headers. */
-export const PHRENOS_VOICE_ONE_LINER = `Write as Sophia Livanos, founder of Phrenos.ai: a strategist who translates Gen AI news into clear, human-centred insight for leaders. Practical, evidence-led, anti-hype, focused on capability and commercial impact.`;
+export const PHRENOS_VOICE_ONE_LINER = `Write as Sophia Livanos, founder of Phrenos.ai: a strategist who translates Gen AI news into clear, human-centred insight for leaders. Practical, evidence-led, anti-hype, focused on capability and commercial impact. Always use British English.`;
 
 /**
  * Header / hook / CTA conversion formula for every idea and featured draft.
@@ -55,6 +63,7 @@ CTA field (sell the next outcome, not the conversation):
 /** Doc section 9: story summary rules. */
 export const STORY_SUMMARY_RULES = `For summary_html (plain text only, no HTML):
 ${SOURCE_INTEGRITY_BLOCK}
+${BRITISH_ENGLISH_BLOCK}
 - Format as 3-6 bullet points, one per line, each starting with "- "
 - Each bullet must be one distinct fact or trend from the sources (not the story headline repeated)
 - Write for a strategic reader: what changed, who is involved, why it matters for adoption or capability
@@ -67,6 +76,8 @@ ${SOURCE_INTEGRITY_BLOCK}
 
 /** Doc section 10: blog tone of voice. Use in every blog prompt. */
 export const PHRENOS_BLOG_TOV = `${SOURCE_INTEGRITY_BLOCK}
+
+${BRITISH_ENGLISH_BLOCK}
 
 Write in the voice of Sophia Livanos / Phrenos.ai: strategic, human-centred, evidence-led Gen AI thought leadership.
 
@@ -82,7 +93,6 @@ Target roughly 1,500 words (minimum 1,200, maximum 1,700):
 - Include practical implications: what leaders should watch, test, or govern, without inventing stats
 - Personify poor process lightly when it fits (stale playbooks, dashboards nobody trusts)
 - Use <ul><li> sparingly for short checklists only
-- British English spelling (judgement, organisation, levelled)
 - NEVER use <br>, em-dash, or en-dash characters
 - NEVER paste the full story title repeatedly; paraphrase naturally
 - Include <h2>Why this matters now</h2> and <h2>What to do next</h2> sections (or equivalent headings) in every featured blog
@@ -96,6 +106,8 @@ Target roughly 1,500 words (minimum 1,200, maximum 1,700):
 
 /** Doc section 10: LinkedIn tone of voice. Use in every LinkedIn prompt. */
 export const PHRENOS_LINKEDIN_TOV = `${SOURCE_INTEGRITY_BLOCK}
+
+${BRITISH_ENGLISH_BLOCK}
 
 Write in Sophia Livanos's LinkedIn voice for Phrenos.ai.
 
@@ -113,7 +125,6 @@ Voice reference:
 - Include Why this matters now (1-2 paragraphs) and What to do next (1 short paragraph or 3 bullet lines in <p> tags) before the close
 - hashtags: 5-8 relevant tags (#ArtificialIntelligence #GenerativeAI #AgenticAI #AIStrategy #FutureOfWork and similar)
 - image_ideas: creative brief only for a LinkedIn or social visual (composition, mood, brand cues). We do not generate or upload images automatically
-- British English spelling (judgement, organisation, levelled)
 - NEVER use internal "for us" framing, sector operations language, or a borrowed persona
 - NEVER use <br>, em-dash, or en-dash characters
 - Each LinkedIn post in a batch must feel distinct: one trend roundup angle, one myth-bust, one "what everyone is missing", one ethics or governance lens

@@ -113,9 +113,11 @@ export {
   normalizePresentationHtml,
   plainTextToSummaryHtml,
   sanitizeDashes,
+  sanitizeEditorialText,
   sanitizeSummaryText,
   slugify,
   summaryToPlainText,
+  toBritishEnglish,
 } from "@/lib/phrenos-updates/sanitize";
 
 export {
@@ -147,6 +149,7 @@ export {
 } from "@/lib/phrenos-updates/suggestion-quality";
 
 export {
+  BRITISH_ENGLISH_BLOCK,
   PHRENOS_BLOG_TOV,
   PHRENOS_CONVERSION_FORMULA,
   PHRENOS_LINKEDIN_TOV,

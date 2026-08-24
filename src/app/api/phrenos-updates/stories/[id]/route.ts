@@ -5,7 +5,7 @@ import {
   errorResponse,
   plainTextToSummaryHtml,
   requireAdminSession,
-  sanitizeDashes,
+  sanitizeEditorialText,
   sanitizeSummaryText,
 } from "@/lib/phrenos-updates";
 import {
@@ -29,7 +29,7 @@ export async function PATCH(
       updated_at: new Date().toISOString(),
     };
 
-    if (body.title != null) patch.title = sanitizeDashes(body.title);
+    if (body.title != null) patch.title = sanitizeEditorialText(body.title);
     if (body.summary_html != null) {
       patch.summary_html = sanitizeSummaryText(body.summary_html);
     }

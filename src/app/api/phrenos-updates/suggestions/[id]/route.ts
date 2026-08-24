@@ -5,7 +5,7 @@ import {
   errorResponse,
   normalizePresentationHtml,
   requireAdminSession,
-  sanitizeDashes,
+  sanitizeEditorialText,
 } from "@/lib/phrenos-updates";
 import {
   PUBLISHED_POSTS_TABLE,
@@ -33,15 +33,19 @@ export async function PATCH(
       updated_at: new Date().toISOString(),
     };
 
-    if (body.title != null) patch.title = sanitizeDashes(body.title);
-    if (body.hook != null) patch.hook = sanitizeDashes(body.hook);
+    if (body.title != null) patch.title = sanitizeEditorialText(body.title);
+    if (body.hook != null) patch.hook = sanitizeEditorialText(body.hook);
     if (body.body_html != null) {
-      patch.body_html = normalizePresentationHtml(sanitizeDashes(body.body_html));
+      patch.body_html = normalizePresentationHtml(
+        sanitizeEditorialText(body.body_html)
+      );
     }
-    if (body.cta != null) patch.cta = sanitizeDashes(body.cta);
-    if (body.hashtags != null) patch.hashtags = sanitizeDashes(body.hashtags);
+    if (body.cta != null) patch.cta = sanitizeEditorialText(body.cta);
+    if (body.hashtags != null) {
+      patch.hashtags = sanitizeEditorialText(body.hashtags);
+    }
     if (body.image_ideas != null) {
-      patch.image_ideas = sanitizeDashes(body.image_ideas);
+      patch.image_ideas = sanitizeEditorialText(body.image_ideas);
     }
     if (body.status) {
       patch.status = body.status;

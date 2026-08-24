@@ -99,7 +99,7 @@ Rules:
 - body_html is SHORT only (40-120 words), not a full draft
 - Use only facts from story sources
 - Address the reader as you or your organisation, never as an internal team
-- British English spelling
+- Always use British English spelling
 - Never use em-dash or en-dash characters
 - Follow the Phrenos conversion formula for title, hook, and cta (tension title, concrete executive hook, primary provocation + supporting nurture line)
 - image_ideas: short creative brief for a social visual only (no auto-generated image)
@@ -158,7 +158,7 @@ Rules:
       : "The post should feel ready to publish on Sophia Livanos's LinkedIn profile with minimal edits"
   }
 - Use only facts from sources. No em-dash or en-dash characters
-- British English spelling
+- Always use British English spelling
 - Opening must be unique to this story`;
 
   const text = await callAnthropic(prompt, suggestionType === "blog" ? 16000 : 8000);
