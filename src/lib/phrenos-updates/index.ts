@@ -83,6 +83,7 @@ export {
 } from "@/lib/phrenos-updates/publish";
 
 export {
+  ensureAutomaticDeskBrief,
   formatDeskBriefForPrompt,
   getWeeklyBrief,
   ingestWeeklyBrief,

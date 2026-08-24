@@ -952,41 +952,13 @@ function DeskBriefsPanel({
   busy,
   onRefresh,
   onVerify,
-  onIngest,
 }: {
   briefs: WeeklyBriefSummary[];
   busy: boolean;
   onRefresh: () => void;
   onVerify: (id: string) => void;
-  onIngest: (payload: {
-    title: string;
-    research_markdown: string;
-    content_markdown: string;
-  }) => Promise<void>;
 }) {
-  const [title, setTitle] = useState("");
-  const [researchMarkdown, setResearchMarkdown] = useState("");
-  const [contentMarkdown, setContentMarkdown] = useState("");
-  const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(true);
-
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!researchMarkdown.trim() && !contentMarkdown.trim()) return;
-    setSaving(true);
-    try {
-      await onIngest({
-        title: title.trim() || "Desk brief",
-        research_markdown: researchMarkdown,
-        content_markdown: contentMarkdown,
-      });
-      setTitle("");
-      setResearchMarkdown("");
-      setContentMarkdown("");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   return (
     <div className={panelClass}>
@@ -996,7 +968,11 @@ function DeskBriefsPanel({
             Desk briefs
           </p>
           <p className="mt-1 text-sm text-[#f1e8d6]">
-            Cursor weekly GenAI ideas that complement research
+            Generated automatically with each research run
+          </p>
+          <p className="mt-1 max-w-xl text-xs leading-relaxed text-[#a9b0a3]">
+            No paste needed. Running a new week drafts desk angles first, then
+            research uses them automatically.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -1019,119 +995,76 @@ function DeskBriefsPanel({
       </div>
 
       {open ? (
-        <>
-          <form onSubmit={(event) => void handleSubmit(event)} className="mt-4 space-y-3">
-            <label className="block space-y-1.5">
-              <span className={labelClass}>Title</span>
-              <input
-                className={fieldClass}
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="GenAI Content — Week of ..."
-              />
-            </label>
-            <label className="block space-y-1.5">
-              <span className={labelClass}>Research markdown</span>
-              <textarea
-                className={`${fieldClass} min-h-[5.5rem] resize-y font-mono text-[12px]`}
-                value={researchMarkdown}
-                onChange={(event) => setResearchMarkdown(event.target.value)}
-                placeholder="Paste the research log markdown from the weekly automation."
-              />
-            </label>
-            <label className="block space-y-1.5">
-              <span className={labelClass}>Content markdown</span>
-              <textarea
-                className={`${fieldClass} min-h-[5.5rem] resize-y font-mono text-[12px]`}
-                value={contentMarkdown}
-                onChange={(event) => setContentMarkdown(event.target.value)}
-                placeholder="Paste the LinkedIn/blog ideas markdown."
-              />
-            </label>
-            <button
-              type="submit"
-              className={ghostButtonClass}
-              disabled={
-                busy ||
-                saving ||
-                (!researchMarkdown.trim() && !contentMarkdown.trim())
-              }
-            >
-              {saving ? "Logging brief..." : "Log desk brief"}
-            </button>
-          </form>
-
-          <div className="mt-5 space-y-2.5">
-            {briefs.length === 0 ? (
-              <p className="text-sm text-[#a9b0a3]">
-                No desk briefs yet. Log one here, or POST to
-                /api/phrenos-updates/briefs from the weekly automation.
-              </p>
-            ) : (
-              briefs.map((brief) => (
-                <div
-                  key={brief.id}
-                  className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      tone={
-                        brief.status === "verified"
-                          ? statusTone("completed")
-                          : brief.status === "needs_review"
-                            ? statusTone("failed")
-                            : statusTone("running")
-                      }
-                    >
-                      {brief.status.replace(/_/g, " ")}
-                    </Badge>
-                    <span className="text-[11px] text-[#a9b0a3]">
-                      {brief.lookback_start && brief.lookback_end
-                        ? `${brief.lookback_start} → ${brief.lookback_end}`
-                        : formatDateTime(brief.created_at)}
-                    </span>
-                    <span className="text-[11px] text-[#a9b0a3]">
-                      {brief.ideas.length} angle
-                      {brief.ideas.length === 1 ? "" : "s"} ·{" "}
-                      {brief.source_urls.length} source
-                      {brief.source_urls.length === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm font-semibold text-[#f1e8d6]">
-                    {brief.title}
-                  </p>
-                  {brief.verification_notes ? (
-                    <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">
-                      {brief.verification_notes}
-                    </p>
-                  ) : null}
-                  {brief.ideas.length > 0 ? (
-                    <ul className="mt-2 space-y-1 text-xs text-[#c9c6ba]">
-                      {brief.ideas.slice(0, 4).map((idea) => (
-                        <li key={`${brief.id}-${idea.title}`}>
-                          <span className="text-[#d4af5a]">
-                            {idea.suggestion_type === "blog" ? "Blog" : "LinkedIn"}
-                          </span>{" "}
-                          {idea.title}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {brief.status !== "verified" ? (
-                    <button
-                      type="button"
-                      className={`${microButtonClass} mt-3`}
-                      disabled={busy}
-                      onClick={() => onVerify(brief.id)}
-                    >
-                      Verify brief
-                    </button>
-                  ) : null}
+        <div className="mt-5 space-y-2.5">
+          {briefs.length === 0 ? (
+            <p className="text-sm text-[#a9b0a3]">
+              No desk briefs yet. Run a new week and one will appear here
+              automatically.
+            </p>
+          ) : (
+            briefs.map((brief) => (
+              <div
+                key={brief.id}
+                className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    tone={
+                      brief.status === "verified"
+                        ? statusTone("completed")
+                        : brief.status === "needs_review"
+                          ? statusTone("failed")
+                          : statusTone("running")
+                    }
+                  >
+                    {brief.status.replace(/_/g, " ")}
+                  </Badge>
+                  <span className="text-[11px] text-[#a9b0a3]">
+                    {brief.lookback_start && brief.lookback_end
+                      ? `${brief.lookback_start} → ${brief.lookback_end}`
+                      : formatDateTime(brief.created_at)}
+                  </span>
+                  <span className="text-[11px] text-[#a9b0a3]">
+                    {brief.ideas.length} angle
+                    {brief.ideas.length === 1 ? "" : "s"} ·{" "}
+                    {brief.source_urls.length} source
+                    {brief.source_urls.length === 1 ? "" : "s"}
+                  </span>
                 </div>
-              ))
-            )}
-          </div>
-        </>
+                <p className="mt-2 text-sm font-semibold text-[#f1e8d6]">
+                  {brief.title}
+                </p>
+                {brief.verification_notes ? (
+                  <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">
+                    {brief.verification_notes}
+                  </p>
+                ) : null}
+                {brief.ideas.length > 0 ? (
+                  <ul className="mt-2 space-y-1 text-xs text-[#c9c6ba]">
+                    {brief.ideas.slice(0, 4).map((idea) => (
+                      <li key={`${brief.id}-${idea.title}`}>
+                        <span className="text-[#d4af5a]">
+                          {idea.suggestion_type === "blog" ? "Blog" : "LinkedIn"}
+                        </span>{" "}
+                        {idea.title}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {brief.status !== "verified" ? (
+                  <button
+                    type="button"
+                    className={`${microButtonClass} mt-3`}
+                    disabled={busy}
+                    onClick={() => onVerify(brief.id)}
+                  >
+                    Verify brief
+                  </button>
+                ) : null}
+              </div>
+            ))
+          )}
+        </div>
       ) : null}
     </div>
   );
@@ -1441,26 +1374,6 @@ export function AiUpdatesPanel() {
     }
   }
 
-  async function handleIngestBrief(payload: {
-    title: string;
-    research_markdown: string;
-    content_markdown: string;
-  }) {
-    setError(null);
-    setNotice(null);
-    try {
-      await requestJson("/api/phrenos-updates/briefs", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      setNotice("Desk brief logged and checked.");
-      await loadBriefs(true);
-    } catch (cause) {
-      reportError(cause);
-      throw cause;
-    }
-  }
-
   async function handleVerifyBrief(briefId: string) {
     markBusy(briefId, true);
     setError(null);
@@ -1725,7 +1638,6 @@ export function AiUpdatesPanel() {
         busy={anyBusy}
         onRefresh={() => void loadBriefs()}
         onVerify={(id) => void handleVerifyBrief(id)}
-        onIngest={handleIngestBrief}
       />
 
       <div className={panelClass}>

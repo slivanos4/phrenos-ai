@@ -39,6 +39,8 @@ export type IngestBriefInput = {
   content_markdown?: string;
   ideas?: unknown;
   source_urls?: unknown;
+  /** Auto desk angles are search hypotheses — mark verified without source URLs. */
+  auto_generated?: boolean;
 };
 
 function toIsoDate(date: Date) {
@@ -247,12 +249,19 @@ export async function ingestWeeklyBrief(
   }
 
   if (ideas.length > 0) {
-    status = source_urls.length > 0 ? "verified" : "needs_review";
-    if (!verification_notes) {
+    if (input.auto_generated) {
+      status = "verified";
       verification_notes =
-        status === "verified"
-          ? `Accepted ${ideas.length} angles with ${source_urls.length} source URLs.`
-          : `Accepted ${ideas.length} angles but no source URLs were found. Review before relying on claims.`;
+        verification_notes ||
+        `Auto-generated ${ideas.length} desk angles for live research (hypotheses only — not factual claims).`;
+    } else {
+      status = source_urls.length > 0 ? "verified" : "needs_review";
+      if (!verification_notes) {
+        verification_notes =
+          status === "verified"
+            ? `Accepted ${ideas.length} angles with ${source_urls.length} source URLs.`
+            : `Accepted ${ideas.length} angles but no source URLs were found. Review before relying on claims.`;
+      }
     }
   } else if (research_markdown.trim() || content_markdown.trim()) {
     status = "needs_review";
@@ -393,6 +402,76 @@ export async function loadDeskBriefForLookback(input: {
   });
 
   return overlapping ?? briefs.find((brief) => brief.status === "verified") ?? briefs[0] ?? null;
+}
+
+/**
+ * Ensure a desk brief exists for this lookback window.
+ * Uses an existing Cursor-ingested brief when present; otherwise auto-generates one.
+ */
+export async function ensureAutomaticDeskBrief(input: {
+  lookbackStart: string;
+  lookbackEnd: string;
+}): Promise<WeeklyBrief | null> {
+  try {
+    const existing = await loadDeskBriefForLookback(input);
+    if (existing && existing.ideas.length > 0) {
+      return existing;
+    }
+
+    const prompt = `You are the Phrenos.ai weekly desk. Propose complementary Gen AI editorial angles for the research window ${input.lookbackStart} to ${input.lookbackEnd}.
+
+${SOURCE_INTEGRITY_BLOCK}
+${BRITISH_ENGLISH_BLOCK}
+
+Return ONLY JSON:
+{
+  "title": "Desk brief — week of ${input.lookbackEnd}",
+  "research_markdown": "Short research log (bullet points of themes to chase, no invented stats)",
+  "content_markdown": "Short notes on blog and LinkedIn angles",
+  "ideas": [
+    {
+      "suggestion_type": "blog"|"linkedin",
+      "title": "tension-led title",
+      "hook": "concrete executive hook",
+      "body": "what to investigate",
+      "source_urls": []
+    }
+  ]
+}
+
+Rules:
+- Exactly 6 ideas: 3 blog + 3 LinkedIn
+- Focus on generative AI models, products, industry, governance, agents, and enterprise adoption
+- Titles should create strategic tension (not news-wire headlines)
+- Do not invent statistics, dates, company announcements, or URLs
+- British English only
+- These angles are hypotheses for live search to confirm — keep bodies cautious`;
+
+    const text = await callAnthropicSafe(prompt, 4500);
+    const json = text ? extractJsonObject(text) : null;
+    if (!json) return existing;
+
+    const parsed = JSON.parse(json) as {
+      title?: string;
+      research_markdown?: string;
+      content_markdown?: string;
+      ideas?: unknown;
+    };
+
+    return await ingestWeeklyBrief({
+      title: parsed.title || `Desk brief — week of ${input.lookbackEnd}`,
+      lookback_start: input.lookbackStart,
+      lookback_end: input.lookbackEnd,
+      research_markdown: parsed.research_markdown ?? "",
+      content_markdown: parsed.content_markdown ?? "",
+      ideas: parsed.ideas,
+      source_urls: [],
+      auto_generated: true,
+    });
+  } catch (error) {
+    console.warn("Automatic desk brief skipped:", error);
+    return null;
+  }
 }
 
 /** Compact prompt block so research/discovery can lean on desk angles. */

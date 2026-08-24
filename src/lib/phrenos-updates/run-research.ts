@@ -340,10 +340,10 @@ export async function executeResearchRun(options: {
       let deskBriefUrls: string[] | undefined;
       try {
         const {
+          ensureAutomaticDeskBrief,
           formatDeskBriefForPrompt,
-          loadDeskBriefForLookback,
         } = await import("@/lib/phrenos-updates/weekly-briefs");
-        const brief = await loadDeskBriefForLookback({
+        const brief = await ensureAutomaticDeskBrief({
           lookbackStart: window.start,
           lookbackEnd: window.end,
         });
