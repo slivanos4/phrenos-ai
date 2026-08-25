@@ -37,6 +37,7 @@ import {
   polishSummary,
 } from "@/lib/phrenos-updates/story-summary";
 import { enrichSourcesWithFirecrawl } from "@/lib/phrenos-updates/source-enrichment";
+import { isExaConfigured, searchExaArticles } from "@/lib/phrenos-updates/exa-search";
 import {
   discoveryQueriesForSection,
   tavilyBodyForQuery,
@@ -235,6 +236,43 @@ function mapTavilyRows(
   );
 }
 
+async function fetchExaContextDetailed(
+  options: TavilySearchOptions | string,
+  input: ResearchAgentInput
+): Promise<TavilyFetchResult> {
+  if (!isExaConfigured()) {
+    return { sources: [], error: "EXA_API_KEY is not configured." };
+  }
+
+  const search =
+    typeof options === "string"
+      ? ({ query: options, topic: "news", maxResults: 10 } satisfies TavilySearchOptions)
+      : options;
+
+  const result = await searchExaArticles({
+    query: search.query,
+    lookback: input,
+    includeDomains: search.includeDomains,
+    maxResults: search.maxResults ?? 10,
+    preferNews: search.topic !== "general",
+  });
+
+  if (result.error && result.sources.length === 0) {
+    console.error(`Exa fallback failed for "${search.query}": ${result.error}`);
+    return { sources: [], error: result.error };
+  }
+
+  const sources = mapTavilyRows(result.sources, input);
+  if (sources.length === 0) {
+    return {
+      sources: [],
+      error: result.error ?? `Exa returned no usable article URLs for: ${search.query}`,
+    };
+  }
+
+  return { sources };
+}
+
 async function fetchTavilyContextDetailed(
   options: TavilySearchOptions | string,
   input: ResearchAgentInput
@@ -305,11 +343,50 @@ async function fetchTavilyContextDetailed(
   };
 }
 
+/** Prefer Tavily; fall back to Exa when Tavily is empty, missing, or failing. */
+async function fetchDiscoveryContextDetailed(
+  options: TavilySearchOptions | string,
+  input: ResearchAgentInput
+): Promise<TavilyFetchResult> {
+  const hasTavily = Boolean(process.env.TAVILY_API_KEY?.trim());
+  const hasExa = isExaConfigured();
+
+  if (!hasTavily && !hasExa) {
+    return {
+      sources: [],
+      error: "Neither TAVILY_API_KEY nor EXA_API_KEY is configured.",
+    };
+  }
+
+  if (hasTavily) {
+    const tavily = await fetchTavilyContextDetailed(options, input);
+    if (tavily.sources.length > 0) return tavily;
+
+    if (hasExa) {
+      console.warn(
+        `Tavily returned no sources; trying Exa fallback for "${
+          typeof options === "string" ? options : options.query
+        }"`
+      );
+      const exa = await fetchExaContextDetailed(options, input);
+      if (exa.sources.length > 0) return exa;
+      return {
+        sources: [],
+        error: [tavily.error, exa.error].filter(Boolean).join(" | ") || undefined,
+      };
+    }
+
+    return tavily;
+  }
+
+  return fetchExaContextDetailed(options, input);
+}
+
 async function fetchTavilyContext(
   options: TavilySearchOptions | string,
   input: ResearchAgentInput
 ): Promise<GeneratedSource[]> {
-  const result = await fetchTavilyContextDetailed(options, input);
+  const result = await fetchDiscoveryContextDetailed(options, input);
   return result.sources;
 }
 
@@ -362,7 +439,7 @@ async function fetchSectionSources(
   }
 
   const batches = await Promise.all(
-    queries.map((query) => fetchTavilyContextDetailed(query, input))
+    queries.map((query) => fetchDiscoveryContextDetailed(query, input))
   );
   const sources = dedupeSources(batches.flatMap((batch) => batch.sources));
   const errors = batches
@@ -465,11 +542,12 @@ async function generateSectionStories(
 
 export async function runResearchAgent(input: ResearchAgentInput): Promise<GeneratedStory[]> {
   const hasLlm = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
-  const hasSearch = Boolean(process.env.TAVILY_API_KEY?.trim());
+  const hasSearch =
+    Boolean(process.env.TAVILY_API_KEY?.trim()) || isExaConfigured();
 
   if (!hasLlm || !hasSearch) {
     throw new Error(
-      "Research requires both ANTHROPIC_API_KEY and TAVILY_API_KEY. Add both to your environment, redeploy, then re-run."
+      "Research requires ANTHROPIC_API_KEY and at least one of TAVILY_API_KEY or EXA_API_KEY. Add them to your environment, redeploy, then re-run."
     );
   }
 
@@ -487,7 +565,7 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
     );
     throw new Error(
       authError ??
-        "Tavily returned no recent article URLs. Check TAVILY_API_KEY is valid on Vercel, redeploy, then re-run."
+        "Search returned no recent article URLs. Check TAVILY_API_KEY / EXA_API_KEY on Vercel, redeploy, then re-run."
     );
   }
 
