@@ -10,6 +10,130 @@ type UpdatesSubscribeFormProps = {
 const fieldClass =
   "min-w-0 flex-1 rounded-full border border-[#d4af5a]/55 bg-[#101c14]/55 px-5 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-sage/55 focus:border-[#e0c078] focus:bg-[#101c14]/75";
 
+function SubscribeSuccessMark({ compact }: { compact: boolean }) {
+  const size = compact ? "h-16 w-16" : "h-24 w-24";
+  return (
+    <div className={`relative mx-auto ${size}`} aria-hidden>
+      <div className="absolute inset-0 rounded-full bg-[#d4af5a]/15 blur-md animate-pulse-soft" />
+      <svg
+        viewBox="0 0 96 96"
+        className="relative h-full w-full animate-fade-up"
+        fill="none"
+      >
+        <circle
+          cx="48"
+          cy="48"
+          r="44"
+          stroke="#d4af5a"
+          strokeOpacity="0.35"
+          strokeWidth="1.5"
+        />
+        <circle
+          cx="48"
+          cy="48"
+          r="34"
+          stroke="#e0c078"
+          strokeOpacity="0.55"
+          strokeWidth="1.25"
+          className="origin-center animate-orrery"
+          style={{ transformOrigin: "48px 48px" }}
+          strokeDasharray="8 10"
+        />
+        {/* Envelope */}
+        <path
+          d="M28 40h40v24H28V40Z"
+          stroke="#e0c078"
+          strokeWidth="1.75"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M28 40l20 14 20-14"
+          stroke="#e0c078"
+          strokeWidth="1.75"
+          strokeLinejoin="round"
+        />
+        {/* Phi spark */}
+        <path
+          d="M48 28v12M44 34c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5-1.8 4.5-4 4.5"
+          stroke="#f1e8d6"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        {/* Signal arcs */}
+        <path
+          d="M62 30c4 3 6.5 7.5 6.5 12.5"
+          stroke="#d4af5a"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.85"
+        />
+        <path
+          d="M67 26c6 4.5 9.5 11 9.5 18"
+          stroke="#d4af5a"
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          opacity="0.45"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function SubscribeSuccess({
+  already,
+  compact,
+}: {
+  already: boolean;
+  compact: boolean;
+}) {
+  const [acknowledged, setAcknowledged] = useState(false);
+
+  return (
+    <div
+      className={`animate-fade-up text-center ${compact ? "max-w-md" : "max-w-xl"}`}
+      role="status"
+    >
+      <SubscribeSuccessMark compact={compact} />
+
+      <p className="mt-5 text-xs font-semibold tracking-[0.28em] text-gold uppercase animate-fade-up-delay-1">
+        {already ? "Already tuned in" : "You're on the list"}
+      </p>
+
+      <h2
+        className={`mt-3 font-serif leading-snug text-ivory animate-fade-up-delay-1 ${
+          compact ? "text-2xl" : "text-3xl sm:text-[2.15rem]"
+        }`}
+      >
+        {already ? "Still with us. Good." : "You're in."}
+      </h2>
+
+      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-sage animate-fade-up-delay-2 sm:text-base">
+        {already
+          ? "Your place is saved. The next AI Update will land in your inbox the moment it goes live."
+          : "Fresh intelligence, straight to you when we publish. Sharp minds get first look."}
+      </p>
+
+      <div className="mt-7 animate-fade-up-delay-3">
+        <button
+          type="button"
+          onClick={() => setAcknowledged(true)}
+          className={`inline-flex items-center justify-center rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition-all ${
+            acknowledged
+              ? "border border-[#d4af5a]/50 bg-[#d4af5a]/15 text-[#e0c078]"
+              : "border border-gold bg-gold text-forest hover:bg-[#e0c078] hover:scale-[1.02] active:scale-[0.98]"
+          }`}
+        >
+          {acknowledged
+            ? "You're all set"
+            : already
+              ? "Nice one"
+              : "Congratulations"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function UpdatesSubscribeForm({
   source = "ai-updates",
   compact = false,
@@ -67,13 +191,7 @@ export function UpdatesSubscribeForm({
   }
 
   if (done) {
-    return (
-      <p className="text-sm leading-relaxed text-sage" role="status">
-        {already
-          ? "You are already on the list. We will email you when the next article goes live."
-          : "You are on the list. We will email you when a new AI Update is published."}
-      </p>
-    );
+    return <SubscribeSuccess already={already} compact={compact} />;
   }
 
   return (
