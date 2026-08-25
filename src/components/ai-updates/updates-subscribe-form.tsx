@@ -11,69 +11,51 @@ const fieldClass =
   "min-w-0 flex-1 rounded-full border border-[#d4af5a]/55 bg-[#101c14]/55 px-5 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-sage/55 focus:border-[#e0c078] focus:bg-[#101c14]/75";
 
 function SubscribeSuccessMark({ compact }: { compact: boolean }) {
-  const size = compact ? "h-16 w-16" : "h-24 w-24";
+  const size = compact ? "h-20 w-20" : "h-28 w-28";
   return (
     <div className={`relative mx-auto ${size}`} aria-hidden>
-      <div className="absolute inset-0 rounded-full bg-[#d4af5a]/15 blur-md animate-pulse-soft" />
+      <div className="absolute inset-[-12%] rounded-full bg-[radial-gradient(circle,rgba(212,175,90,0.28)_0%,rgba(212,175,90,0.08)_45%,transparent_70%)] animate-pulse-soft" />
       <svg
-        viewBox="0 0 96 96"
+        viewBox="0 0 120 120"
         className="relative h-full w-full animate-fade-up"
         fill="none"
       >
         <circle
-          cx="48"
-          cy="48"
-          r="44"
+          cx="60"
+          cy="60"
+          r="52"
           stroke="#d4af5a"
-          strokeOpacity="0.35"
-          strokeWidth="1.5"
+          strokeOpacity="0.28"
+          strokeWidth="1"
         />
         <circle
-          cx="48"
-          cy="48"
-          r="34"
+          cx="60"
+          cy="60"
+          r="42"
           stroke="#e0c078"
-          strokeOpacity="0.55"
-          strokeWidth="1.25"
-          className="origin-center animate-orrery"
-          style={{ transformOrigin: "48px 48px" }}
-          strokeDasharray="8 10"
+          strokeOpacity="0.7"
+          strokeWidth="1.5"
         />
-        {/* Envelope */}
+        {/* Soft fill disc */}
+        <circle cx="60" cy="60" r="34" fill="#d4af5a" fillOpacity="0.1" />
+        {/* Phi monogram */}
         <path
-          d="M28 40h40v24H28V40Z"
-          stroke="#e0c078"
-          strokeWidth="1.75"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M28 40l20 14 20-14"
-          stroke="#e0c078"
-          strokeWidth="1.75"
-          strokeLinejoin="round"
-        />
-        {/* Phi spark */}
-        <path
-          d="M48 28v12M44 34c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5-1.8 4.5-4 4.5"
+          d="M60 28v52M48 42c0-8 5.4-14 12-14s12 6 12 14-5.4 14-12 14c-4.2 0-7.8-2.4-9.8-6"
           stroke="#f1e8d6"
-          strokeWidth="1.5"
+          strokeWidth="2.4"
           strokeLinecap="round"
-        />
-        {/* Signal arcs */}
-        <path
-          d="M62 30c4 3 6.5 7.5 6.5 12.5"
-          stroke="#d4af5a"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          opacity="0.85"
+          strokeLinejoin="round"
         />
         <path
-          d="M67 26c6 4.5 9.5 11 9.5 18"
-          stroke="#d4af5a"
-          strokeWidth="1.25"
+          d="M48 70c2.2 4.2 6.2 7 12 7s9.8-2.8 12-7"
+          stroke="#e0c078"
+          strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.45"
         />
+        {/* Accent sparks */}
+        <circle cx="86" cy="38" r="2" fill="#e0c078" />
+        <circle cx="34" cy="46" r="1.5" fill="#d4af5a" opacity="0.8" />
+        <circle cx="88" cy="72" r="1.5" fill="#d4af5a" opacity="0.65" />
       </svg>
     </div>
   );
@@ -95,39 +77,37 @@ function SubscribeSuccess({
     >
       <SubscribeSuccessMark compact={compact} />
 
-      <p className="mt-5 text-xs font-semibold tracking-[0.28em] text-gold uppercase animate-fade-up-delay-1">
-        {already ? "Already tuned in" : "You're on the list"}
+      <p className="mt-6 text-xs font-semibold tracking-[0.28em] text-gold uppercase animate-fade-up-delay-1">
+        {already ? "Already with us" : "Subscription confirmed"}
       </p>
 
       <h2
         className={`mt-3 font-serif leading-snug text-ivory animate-fade-up-delay-1 ${
-          compact ? "text-2xl" : "text-3xl sm:text-[2.15rem]"
+          compact ? "text-2xl" : "text-3xl sm:text-[2.25rem]"
         }`}
       >
-        {already ? "Still with us. Good." : "You're in."}
+        {already
+          ? "Your curiosity is already on record."
+          : "Curiosity looks good on you."}
       </h2>
 
-      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-sage animate-fade-up-delay-2 sm:text-base">
+      <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-sage animate-fade-up-delay-2 sm:text-base">
         {already
-          ? "Your place is saved. The next AI Update will land in your inbox the moment it goes live."
-          : "Fresh intelligence, straight to you when we publish. Sharp minds get first look."}
+          ? "You're set. The next AI Update will arrive in your inbox the moment we publish."
+          : "We'll write when there is something worth your attention. Intelligence over noise, every time."}
       </p>
 
-      <div className="mt-7 animate-fade-up-delay-3">
+      <div className="mt-8 animate-fade-up-delay-3">
         <button
           type="button"
           onClick={() => setAcknowledged(true)}
-          className={`inline-flex items-center justify-center rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition-all ${
+          className={`inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold tracking-wide transition-all ${
             acknowledged
-              ? "border border-[#d4af5a]/50 bg-[#d4af5a]/15 text-[#e0c078]"
-              : "border border-gold bg-gold text-forest hover:bg-[#e0c078] hover:scale-[1.02] active:scale-[0.98]"
+              ? "border border-[#d4af5a]/55 bg-[#d4af5a]/18 text-[#e0c078]"
+              : "border border-gold bg-gold text-forest shadow-[0_0_28px_rgba(212,175,90,0.28)] hover:bg-[#e0c078] hover:scale-[1.03] active:scale-[0.98]"
           }`}
         >
-          {acknowledged
-            ? "You're all set"
-            : already
-              ? "Nice one"
-              : "Congratulations"}
+          {acknowledged ? "Welcome to Phrenos." : "Congratulations!"}
         </button>
       </div>
     </div>
