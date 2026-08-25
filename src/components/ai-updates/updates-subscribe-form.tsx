@@ -70,7 +70,7 @@ export function UpdatesSubscribeForm({
     return (
       <p className="text-sm leading-relaxed text-sage" role="status">
         {already
-          ? "You are already on the list — we will email you when the next article goes live."
+          ? "You are already on the list. We will email you when the next article goes live."
           : "You are on the list. We will email you when a new AI Update is published."}
       </p>
     );
@@ -87,7 +87,7 @@ export function UpdatesSubscribeForm({
             Get new articles by email
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-sage">
-            Occasional notes when we publish — no weekly noise, unsubscribe any
+            Occasional notes when we publish. No weekly noise, unsubscribe any
             time.
           </p>
         </>
