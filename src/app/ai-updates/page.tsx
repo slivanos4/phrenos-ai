@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { UpdatesSubscribeForm } from "@/components/ai-updates/updates-subscribe-form";
 import { PageHero } from "@/components/page-hero";
 import {
   isServiceRoleConfigured,
@@ -15,6 +16,10 @@ export const metadata: Metadata = {
 
 // Always read the latest published posts (avoid a stale empty ISR shell after publish).
 export const dynamic = "force-dynamic";
+
+type AiUpdatesPageProps = {
+  searchParams: Promise<{ unsubscribed?: string }>;
+};
 
 function formatPublishedDate(value: string): string {
   const date = new Date(value);
@@ -32,8 +37,10 @@ async function loadPosts(): Promise<PublishedPost[]> {
   }
 }
 
-export default async function AiUpdatesPage() {
+export default async function AiUpdatesPage({ searchParams }: AiUpdatesPageProps) {
   const posts = await loadPosts();
+  const params = await searchParams;
+  const unsubscribed = params.unsubscribed === "1";
 
   return (
     <>
@@ -48,6 +55,15 @@ export default async function AiUpdatesPage() {
 
       <section className="bg-forest pt-10 pb-16 lg:pt-14 lg:pb-24">
         <div className="mx-auto max-w-5xl px-6 lg:px-8">
+          {unsubscribed ? (
+            <p
+              className="mb-10 rounded-2xl border border-[#d4af5a]/25 bg-[#101c14]/60 px-5 py-4 text-sm text-sage"
+              role="status"
+            >
+              You have been unsubscribed from AI Updates emails.
+            </p>
+          ) : null}
+
           {posts.length > 0 ? (
             <>
               <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
@@ -100,6 +116,10 @@ export default async function AiUpdatesPage() {
               </Link>
             </div>
           )}
+
+          <div className="mt-16 border-t border-[#d4af5a]/20 pt-12">
+            <UpdatesSubscribeForm source="ai-updates" />
+          </div>
         </div>
       </section>
     </>

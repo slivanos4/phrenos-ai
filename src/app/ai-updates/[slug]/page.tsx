@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { PostFeedback } from "@/components/ai-updates/post-feedback";
+import { UpdatesSubscribeForm } from "@/components/ai-updates/updates-subscribe-form";
 import {
   getPublishedPostBySlug,
   isServiceRoleConfigured,
@@ -156,6 +157,10 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
         ) : null}
 
         <PostFeedback postId={post.id} />
+
+        <div className="mt-12 border-t border-[#d4af5a]/20 pt-10">
+          <UpdatesSubscribeForm source="ai-update-article" compact />
+        </div>
 
         <div className="mt-10 border-t border-[#d4af5a]/20 pt-6">
           <Link

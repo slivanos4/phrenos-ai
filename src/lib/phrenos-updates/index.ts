@@ -103,6 +103,16 @@ export {
 } from "@/lib/phrenos-updates/post-feedback";
 
 export {
+  isValidSubscriberEmail,
+  listActiveSubscriberEmails,
+  normalizeSubscriberEmail,
+  notifySubscribersOfNewPost,
+  subscribeToUpdates,
+  unsubscribeByToken,
+  type SubscribeResult,
+} from "@/lib/phrenos-updates/subscribers";
+
+export {
   ADMIN_SESSION_COOKIE,
   AdminAuthError,
   clearAdminSession,

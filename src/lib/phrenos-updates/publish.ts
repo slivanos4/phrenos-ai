@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { notifySubscribersOfNewPost } from "@/lib/phrenos-updates/subscribers";
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import {
   PUBLISHED_POSTS_TABLE,
@@ -171,6 +172,14 @@ export async function publishSuggestionToSite(suggestionId: string): Promise<Pub
     .eq("id", suggestion.id);
 
   refreshAiUpdatesCache(inserted.slug as string);
+
+  void notifySubscribersOfNewPost({
+    title: inserted.title as string,
+    hook: fields.hook,
+    slug: inserted.slug as string,
+  }).catch((error) => {
+    console.warn("Subscriber notify failed after publish:", error);
+  });
 
   return {
     published: 1,
