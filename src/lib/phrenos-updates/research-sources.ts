@@ -195,16 +195,17 @@ function sortArticleSources(
   lookback: SourceLookback
 ): GeneratedSource[] {
   return [...sources].sort((left, right) => {
-    const domainDiff = domainNewsBoost(right.url) - domainNewsBoost(left.url);
-    if (domainDiff !== 0) return domainDiff;
+    // Recency first: fresher AI news beats domain prestige for weekly curation.
+    const dateDiff = comparePublishedDesc(left.published_at ?? null, right.published_at ?? null);
+    if (dateDiff !== 0) return dateDiff;
     const leftPreferred = isPublishedInPreferredWindow(left.published_at ?? null, lookback) ? 1 : 0;
     const rightPreferred = isPublishedInPreferredWindow(right.published_at ?? null, lookback)
       ? 1
       : 0;
     if (leftPreferred !== rightPreferred) return rightPreferred - leftPreferred;
-    const topicScore = scoreSourceForTopic(right, topic) - scoreSourceForTopic(left, topic);
-    if (topicScore !== 0) return topicScore;
-    return comparePublishedDesc(left.published_at ?? null, right.published_at ?? null);
+    const domainDiff = domainNewsBoost(right.url) - domainNewsBoost(left.url);
+    if (domainDiff !== 0) return domainDiff;
+    return scoreSourceForTopic(right, topic) - scoreSourceForTopic(left, topic);
   });
 }
 

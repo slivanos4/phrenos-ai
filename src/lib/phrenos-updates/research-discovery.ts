@@ -72,28 +72,28 @@ export function discoveryQueriesForSection(
   if (section === "models_research") {
     return [
       {
-        query: `generative AI model release benchmark LLM reasoning multimodal ${lookbackEnd}`,
+        query: `generative AI model release this week LLM OpenAI Anthropic Google DeepMind`,
         topic: "news",
         maxResults: 12,
       },
       {
-        query: `OpenAI Anthropic Google DeepMind Meta new AI model research`,
+        query: `new AI model launch benchmark reasoning multimodal past week`,
         topic: "news",
         maxResults: 10,
       },
       {
-        query: `open source LLM Mistral Llama Qwen benchmark`,
+        query: `open source LLM release Mistral Llama Qwen ${lookbackEnd}`,
         topic: "news",
         maxResults: 8,
       },
       {
-        query: `AI model research benchmark news`,
+        query: `AI model research news this week`,
         topic: "news",
-        includeDomains: ["artificialintelligence-news.com", "aiweekly.co"],
+        includeDomains: ["artificialintelligence-news.com", "aiweekly.co", "techcrunch.com"],
         maxResults: 10,
       },
       {
-        query: `generative AI research breakthrough agentic multimodal`,
+        query: `generative AI research breakthrough agentic multimodal ${lookbackEnd}`,
         topic: "general",
         includeDomains: [
           "artificialintelligence-news.com",
@@ -110,8 +110,8 @@ export function discoveryQueriesForSection(
         maxResults: 12,
       },
       {
-        query: `latest generative AI news models research last two weeks`,
-        topic: "general",
+        query: `latest generative AI model news last two weeks`,
+        topic: "news",
         maxResults: 12,
       },
     ];
@@ -119,28 +119,33 @@ export function discoveryQueriesForSection(
 
   return [
     {
-      query: `generative AI product launch enterprise agentic OpenAI Anthropic Google ${lookbackEnd}`,
+      query: `generative AI product launch enterprise agents this week OpenAI Anthropic Google`,
       topic: "news",
       maxResults: 12,
     },
     {
-      query: `AI business strategy regulation enterprise adoption security`,
+      query: `AI regulation enterprise adoption security product news past week`,
       topic: "news",
       maxResults: 10,
     },
     {
-      query: `AI agents enterprise workflow automation product launch`,
+      query: `AI agents enterprise workflow automation launch ${lookbackEnd}`,
       topic: "news",
       maxResults: 8,
     },
     {
-      query: `AI business strategy product launch agents`,
+      query: `AI business strategy product launch agents this week`,
       topic: "news",
-      includeDomains: ["artificialintelligence-news.com", "aiweekly.co"],
+      includeDomains: [
+        "artificialintelligence-news.com",
+        "aiweekly.co",
+        "techcrunch.com",
+        "reuters.com",
+      ],
       maxResults: 10,
     },
     {
-      query: `AI industry news product launch regulation enterprise`,
+      query: `AI industry news product launch regulation enterprise ${lookbackEnd}`,
       topic: "general",
       includeDomains: [
         "artificialintelligence-news.com",
@@ -155,8 +160,8 @@ export function discoveryQueriesForSection(
       maxResults: 12,
     },
     {
-      query: `latest generative AI industry news product launches last two weeks`,
-      topic: "general",
+      query: `latest generative AI industry news last two weeks`,
+      topic: "news",
       maxResults: 12,
     },
   ];
@@ -164,7 +169,8 @@ export function discoveryQueriesForSection(
 
 /**
  * Build a Tavily request body.
- * Prefer start_date/end_date. Avoid stacking deprecated/conflicting date knobs.
+ * Use either start_date/end_date OR time_range/days — never stack them
+ * (Tavily docs: conflicting date knobs return weak or empty results).
  */
 export function tavilyBodyForQuery(
   options: TavilySearchOptions,
@@ -183,10 +189,12 @@ export function tavilyBodyForQuery(
   };
 
   if (mode === "full") {
-    body.start_date = input.lookbackStart;
-    body.end_date = input.lookbackEnd;
-    if (topic === "general") {
-      body.time_range = "week";
+    if (topic === "news") {
+      // News topic supports precise day lookback — matches our 14-day window.
+      body.days = LOOKBACK_DAYS;
+    } else {
+      body.start_date = input.lookbackStart;
+      body.end_date = input.lookbackEnd;
     }
     if (options.includeDomains?.length) {
       body.include_domains = [...options.includeDomains];
@@ -205,10 +213,10 @@ export function tavilyMinimalBody(
     api_key: apiKey,
     query,
     search_depth: "basic",
-    max_results: 10,
+    max_results: 12,
     include_answer: false,
-    topic: "general",
-    time_range: "week",
+    topic: "news",
+    days: LOOKBACK_DAYS,
   };
 }
 

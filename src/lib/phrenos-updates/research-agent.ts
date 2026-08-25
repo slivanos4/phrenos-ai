@@ -29,7 +29,7 @@ import {
   filterSourcesByLookback,
   isSpecificArticleUrl,
 } from "@/lib/phrenos-updates/research-sources";
-import { resolveSourcePublishedDate, textClaimsDateOutsideLookback } from "@/lib/phrenos-updates/source-dates";
+import { resolveSourcePublishedDate, isPublishedWithinLookback } from "@/lib/phrenos-updates/source-dates";
 import {
   buildSummaryFromExcerpts,
   ensurePolishedSummaries,
@@ -162,29 +162,29 @@ ${JSON.stringify(webSources.slice(0, 12), null, 2)}
 Return ONLY valid JSON array, no markdown fences or commentary.`;
 }
 
-function storyClaimsStalePeriod(story: GeneratedStory, input: ResearchAgentInput): boolean {
-  const haystack = `${story.title}\n${story.summary_html}\n${story.sources
-    .map((source) => `${source.title} ${source.excerpt}`)
-    .join("\n")}`;
-  return textClaimsDateOutsideLookback(haystack, input);
-}
-
 function keepInPeriodStories(
   stories: GeneratedStory[],
   input: ResearchAgentInput
 ): GeneratedStory[] {
   return stories.filter((story) => {
-    if (storyClaimsStalePeriod(story, input)) {
-      console.warn(`Dropping out-of-period story: ${story.title}`);
-      return false;
-    }
-    const datedSources = story.sources.filter(
+    // Require at least one real source with an in-window publish date.
+    // Do NOT scan excerpts for older month names — AI news routinely references
+    // prior releases ("since Llama 4", "July benchmark") without being stale.
+    const inWindowSources = story.sources.filter(
       (source) =>
         !source.is_synthesis &&
-        source.published_at &&
-        !textClaimsDateOutsideLookback(source.published_at, input)
+        Boolean(source.published_at) &&
+        isPublishedWithinLookback(source.published_at ?? null, input)
     );
-    return datedSources.length > 0 || story.sources.every((source) => source.is_synthesis);
+
+    if (inWindowSources.length > 0) return true;
+
+    if (story.sources.length > 0 && story.sources.every((source) => source.is_synthesis)) {
+      return true;
+    }
+
+    console.warn(`Dropping story with no in-window dated sources: ${story.title}`);
+    return false;
   });
 }
 
