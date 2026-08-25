@@ -175,29 +175,75 @@ export function UpdatesSubscribeForm({
   }
 
   return (
-    <div className={compact ? "" : "max-w-xl"}>
+    <div className={compact ? "max-w-md" : "max-w-xl"}>
       {!compact ? (
-        <>
-          <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
-            Stay informed
-          </p>
-          <h2 className="mt-3 font-serif text-2xl leading-snug text-ivory sm:text-3xl">
-            Get new articles by email
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-sage">
-            Occasional notes when we publish. No weekly noise, unsubscribe any
-            time.
-          </p>
-        </>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-7">
+          <div className="shrink-0 self-start sm:pt-1" aria-hidden>
+            <div className="relative h-16 w-16">
+              <div className="absolute inset-[-10%] rounded-full bg-[radial-gradient(circle,rgba(212,175,90,0.22)_0%,transparent_70%)] animate-pulse-soft" />
+              <svg viewBox="0 0 64 64" className="relative h-full w-full" fill="none">
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  stroke="#d4af5a"
+                  strokeOpacity="0.4"
+                  strokeWidth="1"
+                />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="22"
+                  stroke="#e0c078"
+                  strokeOpacity="0.75"
+                  strokeWidth="1.25"
+                />
+                <path
+                  d="M32 14v28M25 22c0-4.5 3.1-8 7-8s7 3.5 7 8-3.1 8-7 8c-2.4 0-4.5-1.4-5.7-3.5"
+                  stroke="#f1e8d6"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M25 38c1.3 2.4 3.6 4 7 4s5.7-1.6 7-4"
+                  stroke="#e0c078"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
+              For curious minds
+            </p>
+            <h2 className="mt-3 font-serif text-2xl leading-snug text-ivory sm:text-3xl">
+              Don&apos;t miss the next insight.
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-sage sm:text-base">
+              One note when we publish something worth your attention. No weekly
+              clutter. Unsubscribe whenever you like.
+            </p>
+          </div>
+        </div>
       ) : (
-        <p className="text-sm leading-relaxed text-sage">
-          Want the next update by email?
-        </p>
+        <div>
+          <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
+            Stay in the loop
+          </p>
+          <h2 className="mt-2 font-serif text-xl leading-snug text-ivory">
+            Want the next update first?
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-sage">
+            Drop your email and we&apos;ll send it the moment it goes live.
+          </p>
+        </div>
       )}
 
       <form
         onSubmit={(event) => void handleSubmit(event)}
-        className={compact ? "mt-4" : "mt-6"}
+        className={compact ? "mt-5" : "mt-7"}
       >
         <input
           type="text"
@@ -226,9 +272,9 @@ export function UpdatesSubscribeForm({
           <button
             type="submit"
             disabled={sending}
-            className="inline-flex shrink-0 items-center justify-center rounded-full border border-gold px-6 py-3 text-sm font-semibold tracking-wide text-ivory transition-colors hover:bg-gold hover:text-forest disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex shrink-0 items-center justify-center rounded-full border border-gold bg-gold px-7 py-3 text-sm font-semibold tracking-wide text-forest shadow-[0_0_24px_rgba(212,175,90,0.22)] transition-all hover:bg-[#e0c078] hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
           >
-            {sending ? "Saving..." : "Subscribe"}
+            {sending ? "Joining..." : "Count me in!"}
           </button>
         </div>
         {error ? (
