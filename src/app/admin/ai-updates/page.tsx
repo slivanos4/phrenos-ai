@@ -33,9 +33,8 @@ export default function AdminAiUpdatesPage() {
           AI Updates Portal
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#a9b0a3] sm:text-base">
-          Log Cursor desk briefs, research the week, auto-draft the strongest
-          featured blog and LinkedIn pack, then approve and publish the blog on
-          its own.
+          Research the week, auto-draft the strongest featured blog and LinkedIn
+          pack, then approve and publish the blog on its own.
         </p>
         <div className="mt-10 max-w-3xl">
           <AiUpdatesPanel />

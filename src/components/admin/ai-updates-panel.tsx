@@ -1633,6 +1633,17 @@ export function AiUpdatesPanel() {
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-[#a9b0a3]">Signed in to the portal</p>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className={ghostButtonClass}
+        >
+          Log out
+        </button>
+      </div>
+
       <DeskBriefsPanel
         briefs={briefs}
         busy={anyBusy}
@@ -1652,13 +1663,6 @@ export function AiUpdatesPanel() {
                 : "No batches yet"}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className={ghostButtonClass}
-          >
-            Sign out
-          </button>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
