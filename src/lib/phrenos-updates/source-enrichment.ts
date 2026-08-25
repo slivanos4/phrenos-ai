@@ -52,8 +52,8 @@ export async function enrichSourcesWithFirecrawl(
               .slice(0, 600)
           : scraped.markdown.slice(0, 600);
 
-        // Prefer Firecrawl/meta publish dates. Only fall back to body text when meta is missing,
-        // and always constrain to the lookback window when one is provided.
+        // Prefer URL / Firecrawl meta dates by trust. Lookback must not invent
+        // an in-window date over a stronger out-of-window publish date.
         const published_at = resolveSourcePublishedDate(
           source.url,
           scraped.published_at ?? source.published_at,

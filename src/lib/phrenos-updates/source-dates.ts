@@ -220,9 +220,17 @@ export function extractPublishedDateFromHtml(html: string): string | null {
 }
 
 /**
- * Resolve a publish date from API metadata, URL, and text hints.
- * When lookback is provided, prefer an in-window candidate. If every candidate is
- * outside the window, still return the best true date so callers can reject the article.
+ * Resolve a publish date from URL, API/meta, and text hints.
+ *
+ * Trust order (highest first):
+ * 1. Date embedded in the article URL (e.g. fortune.com/2026/04/08/...)
+ * 2. API / scraper metadata date
+ * 3. Explicit publish cues or dates in page/excerpt text
+ * 4. Previously stored value
+ *
+ * Lookback must NEVER promote a weaker in-window guess over a stronger
+ * out-of-window date (that was letting August invent dates for April articles).
+ * Callers should reject sources whose resolved date falls outside the window.
  */
 export function resolveSourcePublishedDate(
   url: string,
@@ -231,20 +239,44 @@ export function resolveSourcePublishedDate(
   textHints?: string | null,
   lookback?: SourceLookback | null
 ): string | null {
-  const candidates = [
-    normalizePublishedDate(publishedDateFromApi),
-    extractPublishedDateFromUrl(url),
-    textHints ? extractPublishedDateFromText(textHints) : null,
-    normalizePublishedDate(existing),
-  ].filter((value): value is string => Boolean(value));
+  type Candidate = { date: string; trust: number };
+  const byDate = new Map<string, number>();
 
-  if (candidates.length === 0) return null;
+  const consider = (value: string | null | undefined, trust: number) => {
+    const date = normalizePublishedDate(value);
+    if (!date) return;
+    const previous = byDate.get(date) ?? 0;
+    if (trust > previous) byDate.set(date, trust);
+  };
 
-  if (!lookback) return candidates[0];
+  consider(extractPublishedDateFromUrl(url), 100);
+  consider(publishedDateFromApi, 70);
+  if (textHints) {
+    consider(extractPublishedDateFromText(textHints), 55);
+  }
+  consider(existing, 40);
 
-  return (
-    candidates.find((date) => isPublishedWithinLookback(date, lookback)) ?? candidates[0]
-  );
+  if (byDate.size === 0) return null;
+
+  const candidates: Candidate[] = [...byDate.entries()].map(([date, trust]) => ({
+    date,
+    trust,
+  }));
+  candidates.sort((left, right) => right.trust - left.trust || right.date.localeCompare(left.date));
+
+  const bestTrust = candidates[0].trust;
+  const topTier = candidates.filter((item) => item.trust === bestTrust);
+
+  if (lookback) {
+    const inWindow = topTier.find((item) =>
+      isPublishedWithinLookback(item.date, lookback)
+    );
+    // Only break ties inside the same trust tier. Never demote a URL/meta date
+    // in favour of a weaker invented date that happens to fall in-window.
+    return inWindow?.date ?? topTier[0].date;
+  }
+
+  return topTier[0].date;
 }
 
 /** Strict: publish date must fall inside lookbackStart..lookbackEnd (inclusive), with one-day end grace for timezone skew. */
@@ -286,6 +318,7 @@ export function getDisplayPublishedDate(source: {
   snapshot_excerpt?: string | null;
 }): string | null {
   if (source.is_synthesis || !source.url) return null;
+  // Prefer structural URL dates over a previously stored (possibly invented) value.
   return resolveSourcePublishedDate(
     source.url,
     null,

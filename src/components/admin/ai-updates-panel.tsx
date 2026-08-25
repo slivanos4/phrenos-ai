@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatSourcePublishedDate } from "@/lib/phrenos-updates/source-dates";
+import { formatSourcePublishedDate, getDisplayPublishedDate } from "@/lib/phrenos-updates/source-dates";
 import {
   hasFeaturedBlogDraft,
   isWeekHeroStory,
@@ -309,6 +309,14 @@ function ProgressBanner({
 }
 
 function SourceRow({ source }: { source: ResearchSource }) {
+  const displayDate = getDisplayPublishedDate({
+    url: source.url,
+    published_at: source.published_at,
+    is_synthesis: source.is_synthesis,
+    title: source.title,
+    snapshot_excerpt: source.snapshot_excerpt,
+  });
+
   return (
     <li className="rounded-lg border border-[#d4af5a]/15 bg-[#0a100c]/60 px-3 py-2.5">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -321,7 +329,7 @@ function SourceRow({ source }: { source: ResearchSource }) {
           {source.title || source.url}
         </a>
         <span className="text-[11px] text-[#a9b0a3]">
-          {formatSourcePublishedDate(source.published_at)}
+          {formatSourcePublishedDate(displayDate)}
         </span>
       </div>
       <p className="mt-1 truncate text-[11px] text-[#a9b0a3]/80">{source.url}</p>
