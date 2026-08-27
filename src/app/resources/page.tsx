@@ -80,8 +80,7 @@ export default function ResourcesPage() {
             </div>
 
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-sage">
-              Free for personal or internal business use. If you use it on real
-              work, tell us where it broke:{" "}
+              Take it. Use it. Stress-test it. If it breaks, tell us where:{" "}
               <a
                 href="mailto:hello@phrenosai.com?subject=Brief%20AI%20feedback"
                 className="text-[#e0c078] underline-offset-4 hover:underline"
