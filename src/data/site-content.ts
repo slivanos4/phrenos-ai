@@ -16,7 +16,7 @@ export const navigation = [
   { label: "AI Updates", href: "/ai-updates" },
   { label: "Resources", href: "/resources" },
   { label: "About", href: "/about" },
-  { label: "Contact Us", href: "/contact" },
+  { label: "Contact", href: "/contact" },
 ] as const;
 
 export const headerCta = {
@@ -319,6 +319,6 @@ export const footer = {
     { label: "AI Updates", href: "/ai-updates" },
     { label: "Resources", href: "/resources" },
     { label: "About", href: "/about" },
-    { label: "Contact Us", href: "/contact" },
+    { label: "Contact", href: "/contact" },
   ],
 } as const;

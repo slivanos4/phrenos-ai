@@ -12,9 +12,9 @@ function isActivePath(pathname: string, href: string) {
 }
 
 const navIdle =
-  "rounded-full border border-sage/70 px-3.5 py-1.5 text-sm font-medium tracking-wide text-ivory/80 transition-colors hover:border-sage hover:bg-sage/10 hover:text-ivory";
+  "rounded-full border border-sage/70 px-2.5 py-1 text-[11px] font-medium tracking-[0.04em] text-ivory/80 transition-colors hover:border-sage hover:bg-sage/10 hover:text-ivory xl:px-3 xl:text-xs";
 const navActive =
-  "rounded-full border border-gold bg-gold/15 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-gold transition-colors";
+  "rounded-full border border-gold bg-gold/15 px-2.5 py-1 text-[11px] font-semibold tracking-[0.04em] text-gold transition-colors xl:px-3 xl:text-xs";
 
 const mobileIdle =
   "inline-flex w-fit rounded-full border border-sage/70 px-4 py-2 font-serif text-xl text-ivory transition-colors hover:border-sage hover:bg-sage/10";
@@ -52,7 +52,7 @@ export function SiteHeader() {
         <BrandLockup priority size="md" />
 
         <nav
-          className="hidden items-center gap-2 xl:gap-2.5 lg:flex"
+          className="hidden items-center gap-1.5 xl:gap-2 lg:flex"
           aria-label="Primary"
         >
           {navigation.map((item) => {
@@ -73,7 +73,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-3">
           <Link
             href={headerCta.href}
-            className={`hidden rounded-full border px-4 py-2 text-sm font-medium tracking-wide transition-colors sm:inline-flex ${
+            className={`hidden rounded-full border px-3.5 py-1.5 text-xs font-medium tracking-[0.04em] transition-colors sm:inline-flex ${
               isActivePath(pathname, headerCta.href)
                 ? "border-gold bg-gold text-forest"
                 : "border-gold text-ivory hover:bg-gold/10"

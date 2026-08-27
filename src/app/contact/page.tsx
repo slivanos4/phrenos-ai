@@ -4,7 +4,7 @@ import { PageHero } from "@/components/page-hero";
 import { contactPage } from "@/data/site-content";
 
 export const metadata: Metadata = {
-  title: "Contact Us",
+  title: "Contact",
   description:
     "Build your AI strategy with Phrenos.ai. A short note is enough to begin finding where AI, data or automation can create real leverage.",
 };
