@@ -14,6 +14,7 @@ export const navigation = [
   { label: "Approach", href: "/approach" },
   { label: "Work", href: "/work" },
   { label: "AI Updates", href: "/ai-updates" },
+  { label: "Resources", href: "/resources" },
   { label: "About", href: "/about" },
   { label: "Contact Us", href: "/contact" },
 ] as const;
@@ -316,6 +317,7 @@ export const footer = {
     { label: "Work", href: "/work" },
     { label: "Approach", href: "/approach" },
     { label: "AI Updates", href: "/ai-updates" },
+    { label: "Resources", href: "/resources" },
     { label: "About", href: "/about" },
     { label: "Contact Us", href: "/contact" },
   ],
