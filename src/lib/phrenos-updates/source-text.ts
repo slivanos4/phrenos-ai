@@ -75,6 +75,10 @@ const GENAI_SIGNAL_PATTERN =
 function hasConcatenatedTokens(text: string): boolean {
   // Scrape junk like openingsSources / NewsAI, not normal words such as WhatsApp or ChatGPT.
   if (/[a-z]{5,}[A-Z][a-z]{4,}/.test(text)) return true;
+  // Below is a raw density fallback, only reliable on short excerpts. Full-length
+  // generated drafts legitimately repeat brand names (OpenAI, ChatGPT, DeepMind...)
+  // often enough to trip this on their own without being scrape junk.
+  if (text.length > 300) return false;
   return (text.match(/[a-z][A-Z]/g)?.length ?? 0) >= 4;
 }
 

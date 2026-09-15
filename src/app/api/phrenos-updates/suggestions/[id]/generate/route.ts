@@ -36,7 +36,7 @@ export async function POST(
       return NextResponse.json({ error: "Story not found." }, { status: 404 });
     }
 
-    const draft = await generateFullDraftFromIdea(story, {
+    const result = await generateFullDraftFromIdea(story, {
       suggestion_type: idea.suggestion_type,
       title: idea.title,
       hook: idea.hook,
@@ -47,12 +47,17 @@ export async function POST(
       is_full_draft: false,
     });
 
-    if (!draft) {
+    if (!result.draft) {
+      console.error(
+        `Expand idea failed for suggestion ${id} ("${story.title}"): ${result.reason}`,
+      );
       return NextResponse.json(
-        { error: "Could not expand this idea into a full draft." },
+        { error: `Could not expand this idea into a full draft: ${result.reason}` },
         { status: 422 },
       );
     }
+
+    const draft = result.draft;
 
     const { data: inserted, error: insertError } = await supabase
       .from(SUGGESTIONS_TABLE)

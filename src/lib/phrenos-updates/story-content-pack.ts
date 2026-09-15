@@ -120,12 +120,17 @@ ${tovDigest(tovFor(suggestionType), 12)}`;
   }
 }
 
-/** Doc section 10: featured draft prompt. */
-async function generateFeaturedDraft(
+type DraftAttempt =
+  | { draft: GeneratedSuggestion; reason?: undefined }
+  | { draft: null; reason: string };
+
+/** Doc section 10: featured draft prompt. Returns why it failed, not just null, so callers can retry or report the real cause. */
+async function attemptFeaturedDraft(
   story: GeneratedStory,
   suggestionType: SuggestionType,
-  seedIdea: GeneratedSuggestion
-): Promise<GeneratedSuggestion | null> {
+  seedIdea: GeneratedSuggestion,
+  retryNote?: string
+): Promise<DraftAttempt> {
   const target = suggestionType === "blog" ? BLOG_TARGET_WORDS : LINKEDIN_TARGET_WORDS;
   const minimum = suggestionType === "blog" ? BLOG_MIN_WORDS : LINKEDIN_MIN_WORDS;
   const label = labelFor(suggestionType);
@@ -149,7 +154,7 @@ Rules:
 - Primary draft for the week: most relevant, engaging, and strategically useful for a global Phrenos audience. It must convert through title → hook → article → cta
 - title must create strategic tension (not a news wire headline). Prefer "[Development]. [Consequence/question]." Aim for roughly 8-14 words
 - hook must be concrete and executive-focused (what happened → what changed → why leaders should care). Do not restate the title
-- cta must be two paragraphs: (1) punchy problem-specific provocation, (2) supporting nurture line with the logical next step. Never soft contact CTAs
+- cta must be two paragraphs: (1) punchy problem-specific provocation, (2) supporting nurture line with the logical next step. Never soft contact CTAs, and never use the words "contact us", "get in touch", "book a call", "schedule a call", "reach out", or "learn more"
 - image_ideas is a creative brief for social artwork only; do not invent that an image file will be attached
 - Target ${target} words (minimum ${minimum})
 - ${
@@ -159,40 +164,91 @@ Rules:
   }
 - Use only facts from sources. No em-dash or en-dash characters
 - Always use British English spelling
-- Opening must be unique to this story`;
+- Opening must be unique to this story${
+    retryNote
+      ? `\n\nA previous attempt at this exact draft was rejected for this reason: ${retryNote}\nFix that specific problem and rewrite the full draft; do not repeat the same mistake.`
+      : ""
+  }`;
 
   const text = await callAnthropic(prompt, suggestionType === "blog" ? 16000 : 8000);
   const json = extractJsonObject(text);
-  if (!json) return null;
+  if (!json) return { draft: null, reason: "The model did not return a parseable draft." };
 
+  let parsed: GeneratedSuggestion;
   try {
-    const parsed = JSON.parse(json) as GeneratedSuggestion;
-    const cleaned = cleanSuggestionFields({
-      ...parsed,
-      suggestion_type: suggestionType,
-      is_full_draft: true,
-    });
-    if (!cleaned) return null;
-    if (hasOffVoiceMarkers(cleaned)) return null;
-    if (hasWeakCta(cleaned)) return null;
-    if (hasNewsWireTitle(cleaned)) return null;
-    if (isLowQualitySuggestionBody(cleaned.body_html)) return null;
-    if (!meetsLengthTarget(cleaned)) return null;
-
-    // Blog drafts get a hard source fact-check pass; LinkedIn too when it is a full draft.
-    const { enforceSourceVerifiedDraft } = await import("@/lib/phrenos-updates/draft-verify");
-    return await enforceSourceVerifiedDraft(story, cleaned);
+    parsed = JSON.parse(json) as GeneratedSuggestion;
   } catch {
-    return null;
+    return { draft: null, reason: "The model's response was not valid JSON." };
   }
+
+  const cleaned = cleanSuggestionFields({
+    ...parsed,
+    suggestion_type: suggestionType,
+    is_full_draft: true,
+  });
+  if (!cleaned) {
+    return { draft: null, reason: "The draft body was too short or too low quality after cleanup." };
+  }
+  if (hasOffVoiceMarkers(cleaned)) {
+    return { draft: null, reason: "The draft contained off-voice language that doesn't match the Phrenos persona." };
+  }
+  if (hasWeakCta(cleaned)) {
+    return {
+      draft: null,
+      reason: `The call to action was too generic ("${cleaned.cta.slice(0, 120)}"). It must sell a specific next outcome from this story, not a soft "contact us" line.`,
+    };
+  }
+  if (hasNewsWireTitle(cleaned)) {
+    return { draft: null, reason: "The title read like a plain news headline instead of a tension-driven title." };
+  }
+  if (isLowQualitySuggestionBody(cleaned.body_html)) {
+    return { draft: null, reason: "The body content was flagged as low quality or boilerplate." };
+  }
+  if (!meetsLengthTarget(cleaned)) {
+    return {
+      draft: null,
+      reason: `The draft was only ${countWords(cleaned.body_html)} words; it needs at least ${minimum}.`,
+    };
+  }
+
+  // Blog drafts get a hard source fact-check pass; LinkedIn too when it is a full draft.
+  const { enforceSourceVerifiedDraft } = await import("@/lib/phrenos-updates/draft-verify");
+  const verified = await enforceSourceVerifiedDraft(story, cleaned);
+  if (!verified) {
+    return {
+      draft: null,
+      reason: "The fact-check pass rejected the draft: it made claims that aren't supported by the stored sources.",
+    };
+  }
+  return { draft: verified };
 }
 
-/** Expand a saved idea snippet into a full blog or LinkedIn draft. */
+/** Doc section 10: featured draft prompt. */
+async function generateFeaturedDraft(
+  story: GeneratedStory,
+  suggestionType: SuggestionType,
+  seedIdea: GeneratedSuggestion
+): Promise<GeneratedSuggestion | null> {
+  return (await attemptFeaturedDraft(story, suggestionType, seedIdea)).draft;
+}
+
+/**
+ * Expand a saved idea snippet into a full blog or LinkedIn draft.
+ * Retries once, telling the model exactly why the first attempt was rejected, before giving up.
+ */
 export async function generateFullDraftFromIdea(
   story: GeneratedStory,
   idea: GeneratedSuggestion
-): Promise<GeneratedSuggestion | null> {
-  return generateFeaturedDraft(story, idea.suggestion_type, idea);
+): Promise<DraftAttempt> {
+  const first = await attemptFeaturedDraft(story, idea.suggestion_type, idea);
+  if (first.draft) return first;
+
+  console.warn(`Full draft attempt 1 failed for "${story.title}" (${idea.suggestion_type}): ${first.reason}`);
+  const second = await attemptFeaturedDraft(story, idea.suggestion_type, idea, first.reason);
+  if (!second.draft) {
+    console.warn(`Full draft attempt 2 failed for "${story.title}" (${idea.suggestion_type}): ${second.reason}`);
+  }
+  return second;
 }
 
 /** Fast pass: four blog ideas and four LinkedIn ideas (snippets only). */

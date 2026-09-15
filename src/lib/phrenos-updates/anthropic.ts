@@ -1,4 +1,4 @@
-export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
