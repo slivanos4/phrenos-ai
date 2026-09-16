@@ -58,7 +58,20 @@ CTA field (sell the next outcome, not the conversation):
 - Supporting line (second paragraph): nurture copy that states the logical next step for that problem (permissions, accountability, oversight, risk, capability, etc.).
   Good: "If your organisation is deploying or evaluating AI agents, identify gaps in permissions, accountability, oversight and operational risk before autonomous systems are connected to critical workflows."
 - Format cta as two short paragraphs separated by a blank line (primary, then supporting). No URLs required in the cta field.
-- Site-wide "Build Your AI Strategy" is the brand CTA only; do not put that phrase in the article cta field unless the piece is literally about building a full AI strategy.`;
+- Site-wide "Build Your AI Strategy" is the brand CTA only; do not put that phrase in the article cta field unless the piece is literally about building a full AI strategy.
+- The cta is a conversion moment, not a third body paragraph. Say plainly what Phrenos helps organisations do about the specific problem this story exposes. Where the story has a memorable detail (a number, a name, a scale), callback to it directly so the ask feels concrete rather than generic.
+  Good example (Navier-Stokes multi-agent story): "The question isn't whether to deploy 10,000 agents. It's whether your organisation knows where ten would create meaningful leverage."`;
+
+/** Learned from Sophia's post-publish editorial review notes. Apply to every featured draft. */
+export const EDITORIAL_PRECISION_BLOCK = `EDITORIAL PRECISION (mandatory, learned from prior review notes):
+- Distinguish machine or formal verification (for example a Lean-checked proof) from independent human or community acceptance. A result can be machine-verified without being settled or accepted by the field. Say which one the sources actually support, and if an authority on the claim (a standards body, prize committee, or research institute) has not confirmed it, say so plainly.
+- Never assert the piece's thesis as settled fact in the hook or the opening. Present it as a signal or an open question the article then earns through evidence. Save firm concluding language for after the reasoning has been shown.
+- Avoid totalising absolutes drawn from a single example: "no longer", "now measured in days not years", "the constraint is no longer X". Prefer "increasingly", "in this case", "this instance suggests", so one data point does not read as a universal rule.
+- Prefer precise, technically accurate distinctions over neat-sounding but imprecise rhetorical binaries (for example, avoid "asking is retrieval, doing is discovery" when the more accurate framing is "responding to individual prompts" versus "executing extended research workflows", or "AI as an interface for answers" versus "AI as infrastructure for sustained work").
+- Frame implications as operational or strategic signals, not ominous warnings. Avoid phrases like "not reassuring"; instead name what frontier labs or leaders are now treating as an operational question.
+- State each recurring theme (scale, speed, verification, governance, human judgement, etc.) once, crisply, rather than circling back to the same two or three ideas across multiple sections. If several forces are converging, name them together in one line ("three things are changing at once: X, Y, Z") and explain each briefly rather than re-treading them in a separate section.
+- Closing statements can be confident but should not overreach: prefer "may find" or "risk" over flat predictions like "will find".
+- If the piece has one sentence that crystallises the whole argument, make it stand out as its own short paragraph rather than burying it inside a longer one.`;
 
 /** Doc section 9: story summary rules. */
 export const STORY_SUMMARY_RULES = `For summary_html (plain text only, no HTML):
@@ -83,9 +96,12 @@ Write in the voice of Sophia Livanos / Phrenos.ai: strategic, human-centred, evi
 
 ${PHRENOS_CONVERSION_FORMULA}
 
+${EDITORIAL_PRECISION_BLOCK}
+
 Target roughly 1,500 words (minimum 1,200, maximum 1,700):
 - Open the body by extending the hook's consequence, not by repeating the title or re-announcing the news
 - Connect the news to organisational impact: capability, workflow, ROI, risk, ethics, trust, search and discovery, team enablement
+- Tight over exhaustive: if you catch yourself listing more than two or three supporting examples for the same point, cut to the strongest one or two. A reader should never feel a section restating a point an earlier section already made
 - Use <h2> headings that sound like a strategist, not a press release ("What changes for teams shipping with AI", not "Executive summary")
 - Mix short paragraphs and longer explanatory ones inside <p> tags
 - Explain technical developments in plain language; assume an intelligent business reader, not a researcher only
@@ -112,6 +128,8 @@ ${BRITISH_ENGLISH_BLOCK}
 Write in Sophia Livanos's LinkedIn voice for Phrenos.ai.
 
 ${PHRENOS_CONVERSION_FORMULA}
+
+${EDITORIAL_PRECISION_BLOCK}
 
 Voice reference:
 - Target length: 280-450 words (minimum 220). Substantive thought leadership, not a teaser.
