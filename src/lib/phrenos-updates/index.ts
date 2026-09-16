@@ -59,6 +59,7 @@ export {
   IDEA_COUNT,
   resizeSuggestionDraft,
   rewriteDraftField,
+  rewriteDraftParagraph,
   rewriteWholeDraft,
   storyContentCounts,
   storyContentIsComplete,

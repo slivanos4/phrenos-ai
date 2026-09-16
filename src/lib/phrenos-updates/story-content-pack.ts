@@ -1,6 +1,7 @@
 import { countWords, sanitizeEditorialText } from "@/lib/phrenos-updates/sanitize";
 import {
   callAnthropic,
+  callAnthropicSafe,
   extractJsonArray,
   extractJsonObject,
 } from "@/lib/phrenos-updates/anthropic";
@@ -606,4 +607,98 @@ Return ONLY JSON: {"${jsonKey}":"..."}`;
   const verified = await enforceSourceVerifiedDraftWithReason(story, cleaned);
   if (!verified.draft) return { value: null, reason: verified.reason };
   return { value: verified.draft.body_html };
+}
+
+/** Rewrite one paragraph/section of a draft's body in place, keeping the rest of the piece as context. */
+export async function rewriteDraftParagraph(
+  story: GeneratedStory,
+  current: GeneratedSuggestion,
+  paragraphHtml: string,
+  instruction?: string
+): Promise<FieldRewriteResult> {
+  const label = labelFor(current.suggestion_type);
+  const guidance = instruction?.trim()
+    ? `Specific instruction to apply: "${instruction.trim()}"`
+    : "Produce a genuinely different, stronger version of this section, not a light paraphrase.";
+
+  const prompt = `Rewrite ONLY this one section of a Phrenos.ai ${label}. Keep it consistent in voice and facts with the rest of the piece (shown below for context), roughly the same length, and the same HTML tag it already uses (keep a <p> as <p>, an <h2> as <h2>, a <ul> as <ul>, etc.).
+
+${tovFor(current.suggestion_type)}
+
+Story:
+${JSON.stringify(storyContext(story), null, 2)}
+
+Full piece for context, only the highlighted section below changes:
+${JSON.stringify(
+  { title: current.title, hook: current.hook, body_html: current.body_html, cta: current.cta },
+  null,
+  2
+)}
+
+The section to rewrite:
+${paragraphHtml}
+
+${guidance}
+
+Return ONLY JSON: {"html":"..."}`;
+
+  const text = await callAnthropic(prompt, 3000);
+  const json = extractJsonObject(text);
+  if (!json) return { value: null, reason: "The model did not return a parseable response." };
+
+  let parsed: { html?: string };
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return { value: null, reason: "The model's response was not valid JSON." };
+  }
+
+  const rawValue = parsed.html;
+  if (!rawValue || !rawValue.trim()) {
+    return { value: null, reason: "The model returned an empty value." };
+  }
+  const value = sanitizeEditorialText(rawValue).trim();
+
+  if (hasOffVoiceMarkers({ ...current, body_html: value })) {
+    return { value: null, reason: "The new section contained off-voice language." };
+  }
+  if (isLowQualitySuggestionBody(value)) {
+    return { value: null, reason: "The new section was flagged as low quality." };
+  }
+
+  // Lightweight fact-check scoped to just this paragraph's own claims, not the whole draft
+  // (the full-draft checker re-flags pre-existing hook/cta issues this edit never touched).
+  // Best-effort: fix what it can, never hard-reject a small edit over an unrelated part of the piece.
+  const factCheckPrompt = `You are a strict fact-checker for a Phrenos.ai article paragraph.
+
+${SOURCE_INTEGRITY_BLOCK}
+
+Sources:
+${JSON.stringify(storyContext(story).sources, null, 2)}
+
+Paragraph:
+${value}
+
+Flag any claim (numbers, dates, names, causality, quotes) not explicitly supported by the sources.
+Return ONLY JSON: {"supported": true|false, "revised": "the paragraph including its original HTML tag, e.g. <p>...</p>, with any unsupported claim removed or softened if supported is false, otherwise the same paragraph unchanged"}`;
+
+  const openingTag = value.match(/^<(\w+)[^>]*>/)?.[1] ?? "p";
+
+  const factCheckText = await callAnthropicSafe(factCheckPrompt, 1500);
+  const factCheckJson = factCheckText ? extractJsonObject(factCheckText) : null;
+  if (factCheckJson) {
+    try {
+      const parsed = JSON.parse(factCheckJson) as { supported?: boolean; revised?: string };
+      const revisedRaw = parsed.revised?.trim();
+      if (revisedRaw) {
+        const revised = /^<\w+[^>]*>/.test(revisedRaw)
+          ? revisedRaw
+          : `<${openingTag}>${revisedRaw}</${openingTag}>`;
+        return { value: sanitizeEditorialText(revised).trim() };
+      }
+    } catch {
+      // Fall through and use the un-fact-checked value below.
+    }
+  }
+  return { value };
 }

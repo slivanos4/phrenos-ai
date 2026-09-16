@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import {
+  PUBLISHED_POSTS_TABLE,
   RUNS_TABLE,
   SOURCES_TABLE,
   STORIES_TABLE,
@@ -734,6 +735,17 @@ export async function loadRunWithDetails(runId: string) {
     ? await supabase.from(SUGGESTIONS_TABLE).select("*").in("story_id", storyIds)
     : { data: [] };
 
+  const suggestionIds = (suggestions ?? []).map((suggestion) => suggestion.id as string);
+  const { data: publishedPosts } = suggestionIds.length
+    ? await supabase
+        .from(PUBLISHED_POSTS_TABLE)
+        .select("suggestion_id, slug")
+        .in("suggestion_id", suggestionIds)
+    : { data: [] };
+  const slugBySuggestionId = new Map(
+    (publishedPosts ?? []).map((post) => [post.suggestion_id as string, post.slug as string])
+  );
+
   const enrichedStories = await Promise.all(
     (stories ?? []).map(async (story) => {
       const storySources = (sources ?? [])
@@ -816,7 +828,11 @@ export async function loadRunWithDetails(runId: string) {
 
       const storySuggestions = cleanedPairs
         .map((pair, index) => toContentSuggestion(story.id, pair.cleaned, index, pair.row))
-        .filter((suggestion): suggestion is ContentSuggestion => suggestion !== null);
+        .filter((suggestion): suggestion is ContentSuggestion => suggestion !== null)
+        .map((suggestion) => ({
+          ...suggestion,
+          published_slug: slugBySuggestionId.get(suggestion.id) ?? null,
+        }));
 
       return {
         ...story,

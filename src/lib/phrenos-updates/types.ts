@@ -58,6 +58,8 @@ export type ContentSuggestion = {
   image_ideas: string;
   sort_order: number;
   is_full_draft: boolean;
+  /** Slug of the published /ai-updates post for this suggestion's story, if its blog draft is live. */
+  published_slug?: string | null;
 };
 
 export type ResearchStory = {

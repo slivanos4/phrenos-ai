@@ -6,13 +6,14 @@ import {
   loadStoryForContent,
   requireAdminSession,
   rewriteDraftField,
+  rewriteDraftParagraph,
   rewriteWholeDraft,
 } from "@/lib/phrenos-updates";
 import { SUGGESTIONS_TABLE } from "@/lib/phrenos-updates/tables";
 
 export const maxDuration = 300;
 
-const SCOPES = ["all", "title", "hook", "cta", "body"] as const;
+const SCOPES = ["all", "title", "hook", "cta", "body", "paragraph"] as const;
 type Scope = (typeof SCOPES)[number];
 
 export async function POST(
@@ -29,6 +30,7 @@ export async function POST(
       hook?: string;
       body_html?: string;
       cta?: string;
+      paragraphHtml?: string;
     };
 
     const scope: Scope = body.scope && SCOPES.includes(body.scope) ? body.scope : "all";
@@ -76,6 +78,20 @@ export async function POST(
         hashtags: result.draft.hashtags,
         image_ideas: result.draft.image_ideas,
       });
+    }
+
+    if (scope === "paragraph") {
+      if (!body.paragraphHtml?.trim()) {
+        return NextResponse.json({ error: "paragraphHtml is required." }, { status: 400 });
+      }
+      const result = await rewriteDraftParagraph(story, current, body.paragraphHtml, body.instruction);
+      if (!result.value) {
+        console.error(
+          `Rewrite (paragraph) failed for suggestion ${id} ("${story.title}"): ${result.reason}`,
+        );
+        return NextResponse.json({ error: result.reason }, { status: 422 });
+      }
+      return NextResponse.json({ paragraphHtml: result.value });
     }
 
     const result = await rewriteDraftField(story, current, scope, body.instruction);

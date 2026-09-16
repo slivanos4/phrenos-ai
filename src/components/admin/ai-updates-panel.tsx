@@ -140,6 +140,11 @@ function summaryBullets(summary: string): string[] {
     .filter((line) => line.length > 0 && !/^<[a-z]/i.test(line));
 }
 
+function splitBodyBlocks(html: string): string[] {
+  const matches = html.match(/<(p|h2|h3|ul|ol)\b[^>]*>[\s\S]*?<\/\1>/gi);
+  return matches ?? (html.trim() ? [html.trim()] : []);
+}
+
 function htmlToText(html: string): string {
   return html
     .replace(/<[^>]+>/g, " ")
@@ -357,6 +362,7 @@ function SuggestionCard({
   onSave,
   onResize,
   onRewrite,
+  articleUrl,
 }: {
   suggestion: ContentSuggestion;
   busy: boolean;
@@ -381,9 +387,10 @@ function SuggestionCard({
   ) => Promise<{ body_html: string; cta: string }>;
   onRewrite?: (
     id: string,
-    scope: "all" | "title" | "hook" | "cta" | "body",
+    scope: "all" | "title" | "hook" | "cta" | "body" | "paragraph",
     current: { title: string; hook: string; body_html: string; cta: string },
     instruction: string,
+    paragraphHtml?: string,
   ) => Promise<{
     title?: string;
     hook?: string;
@@ -391,12 +398,16 @@ function SuggestionCard({
     cta?: string;
     hashtags?: string;
     image_ideas?: string;
+    paragraphHtml?: string;
   }>;
+  /** URL of the published blog article for this suggestion's story, if live. Shown on LinkedIn cards only. */
+  articleUrl?: string | null;
 }) {
   const [showBody, setShowBody] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [linkCopyState, setLinkCopyState] = useState<"idle" | "copied">("idle");
   const [title, setTitle] = useState(suggestion.title);
   const [hook, setHook] = useState(suggestion.hook);
   const [bodyHtml, setBodyHtml] = useState(suggestion.body_html);
@@ -404,16 +415,7 @@ function SuggestionCard({
   const [hashtags, setHashtags] = useState(suggestion.hashtags);
   const [imageIdeas, setImageIdeas] = useState(suggestion.image_ideas);
   const [instruction, setInstruction] = useState("");
-  const [actionBusy, setActionBusy] = useState<
-    | null
-    | "shorter"
-    | "longer"
-    | "rewrite-all"
-    | "rewrite-title"
-    | "rewrite-hook"
-    | "rewrite-cta"
-    | "rewrite-body"
-  >(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
 
   useEffect(() => {
     if (editing) return;
@@ -426,6 +428,7 @@ function SuggestionCard({
   }, [suggestion, editing]);
 
   const isIdea = !suggestion.is_full_draft;
+  const bodyBlocks = !isIdea && editing ? splitBodyBlocks(bodyHtml) : [];
   const canPublish =
     !isIdea &&
     suggestion.suggestion_type === "blog" &&
@@ -435,6 +438,13 @@ function SuggestionCard({
     const ok = await copyTextToClipboard(formatSuggestionPlainText(suggestion));
     setCopyState(ok ? "copied" : "failed");
     window.setTimeout(() => setCopyState("idle"), 1600);
+  }
+
+  async function handleCopyLink() {
+    if (!articleUrl) return;
+    const ok = await copyTextToClipboard(articleUrl);
+    setLinkCopyState(ok ? "copied" : "idle");
+    window.setTimeout(() => setLinkCopyState("idle"), 1600);
   }
 
   function handleDownload() {
@@ -506,7 +516,7 @@ function SuggestionCard({
 
   async function handleRewriteClick(scope: "all" | "title" | "hook" | "cta" | "body") {
     if (!onRewrite) return;
-    setActionBusy(scope === "all" ? "rewrite-all" : (`rewrite-${scope}` as typeof actionBusy));
+    setActionBusy(scope === "all" ? "rewrite-all" : `rewrite-${scope}`);
     try {
       const result = await onRewrite(suggestion.id, scope, currentFields(), instruction);
       if (result.title != null) setTitle(result.title);
@@ -515,6 +525,31 @@ function SuggestionCard({
       if (result.cta != null) setCta(result.cta);
       if (result.hashtags != null) setHashtags(result.hashtags);
       if (result.image_ideas != null) setImageIdeas(result.image_ideas);
+      setEditing(true);
+      setShowBody(true);
+    } catch {
+      // Error already surfaced by the parent panel.
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function handleRewriteParagraphClick(index: number, blockHtml: string) {
+    if (!onRewrite) return;
+    setActionBusy(`rewrite-para-${index}`);
+    try {
+      const result = await onRewrite(
+        suggestion.id,
+        "paragraph",
+        currentFields(),
+        instruction,
+        blockHtml,
+      );
+      if (result.paragraphHtml) {
+        const blocks = splitBodyBlocks(bodyHtml);
+        blocks[index] = result.paragraphHtml;
+        setBodyHtml(blocks.join(" "));
+      }
       setEditing(true);
       setShowBody(true);
     } catch {
@@ -541,7 +576,7 @@ function SuggestionCard({
         ) : null}
       </div>
 
-      {onRewrite && !isIdea ? (
+      {onRewrite ? (
         <input
           className={`${fieldClass} mt-2.5 text-xs`}
           placeholder='Optional instruction for rewrite/resize, e.g. "make the CTA punchier"'
@@ -555,7 +590,7 @@ function SuggestionCard({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <span className={labelClass}>Title</span>
-              {onRewrite && !isIdea ? (
+              {onRewrite ? (
                 <button
                   type="button"
                   className={microRewriteButtonClass}
@@ -575,7 +610,7 @@ function SuggestionCard({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <span className={labelClass}>Hook</span>
-              {onRewrite && !isIdea ? (
+              {onRewrite ? (
                 <button
                   type="button"
                   className={microRewriteButtonClass}
@@ -597,7 +632,7 @@ function SuggestionCard({
               <span className={labelClass}>
                 {isIdea ? "Idea notes" : "Body (HTML)"}
               </span>
-              {onRewrite && !isIdea ? (
+              {onRewrite ? (
                 <div className="flex gap-1.5">
                   <button
                     type="button"
@@ -631,13 +666,40 @@ function SuggestionCard({
               value={bodyHtml}
               onChange={(event) => setBodyHtml(event.target.value)}
             />
+            {onRewrite && !isIdea && bodyBlocks.length > 0 ? (
+              <div className="space-y-1.5 rounded-lg border border-[#d4af5a]/15 bg-[#0a100c]/40 p-2.5">
+                <span className="text-[10px] font-semibold tracking-[0.16em] text-[#a9b0a3]/80 uppercase">
+                  Rewrite by section
+                </span>
+                <ul className="space-y-1.5">
+                  {bodyBlocks.map((block, index) => (
+                    <li
+                      key={`${index}-${block.slice(0, 24)}`}
+                      className="flex items-center justify-between gap-2 border-t border-[#d4af5a]/10 pt-1.5 first:border-t-0 first:pt-0"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[11px] text-[#c9c6ba]">
+                        {htmlToText(block).slice(0, 90) || "(untitled section)"}
+                      </span>
+                      <button
+                        type="button"
+                        className={microRewriteButtonClass}
+                        disabled={busy}
+                        onClick={() => void handleRewriteParagraphClick(index, block)}
+                      >
+                        {actionBusy === `rewrite-para-${index}` ? "Rewriting..." : "Rewrite"}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <span className={labelClass}>
                 Call to action (primary line, then supporting copy)
               </span>
-              {onRewrite && !isIdea ? (
+              {onRewrite ? (
                 <button
                   type="button"
                   className={microRewriteButtonClass}
@@ -701,6 +763,38 @@ function SuggestionCard({
               {"\n"}
               {suggestion.cta}
             </p>
+          ) : null}
+
+          {suggestion.suggestion_type === "linkedin" ? (
+            <div className="mt-3 rounded-lg border border-[#d4af5a]/20 bg-[#0a100c]/50 px-3 py-2.5">
+              <span className="text-[10px] font-semibold tracking-[0.16em] text-[#a9b0a3] uppercase">
+                Links to full article
+              </span>
+              {articleUrl ? (
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <a
+                    href={articleUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-[#e0c078] hover:underline"
+                  >
+                    {articleUrl}
+                  </a>
+                  <button
+                    type="button"
+                    className={microRewriteButtonClass}
+                    onClick={() => void handleCopyLink()}
+                  >
+                    {linkCopyState === "copied" ? "Copied" : "Copy link"}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-1.5 text-[11px] leading-relaxed text-[#a9b0a3]/80">
+                  The companion blog isn&apos;t published yet. Once it is, its link
+                  will appear here to include with this post.
+                </p>
+              )}
+            </div>
           ) : null}
         </>
       )}
@@ -866,9 +960,10 @@ function StoryCard({
   ) => Promise<{ body_html: string; cta: string }>;
   onRewrite: (
     id: string,
-    scope: "all" | "title" | "hook" | "cta" | "body",
+    scope: "all" | "title" | "hook" | "cta" | "body" | "paragraph",
     current: { title: string; hook: string; body_html: string; cta: string },
     instruction: string,
+    paragraphHtml?: string,
   ) => Promise<{
     title?: string;
     hook?: string;
@@ -876,6 +971,7 @@ function StoryCard({
     cta?: string;
     hashtags?: string;
     image_ideas?: string;
+    paragraphHtml?: string;
   }>;
 }) {
   const [showSources, setShowSources] = useState(false);
@@ -897,6 +993,12 @@ function StoryCard({
   const bullets = summaryBullets(story.summary_html);
   const ideas = story.suggestions.filter((item) => !item.is_full_draft);
   const drafts = story.suggestions.filter((item) => item.is_full_draft);
+  const publishedArticleSlug = story.suggestions.find(
+    (item) => item.suggestion_type === "blog" && item.published_slug,
+  )?.published_slug;
+  const articleUrl = publishedArticleSlug
+    ? `https://phrenosai.com/ai-updates/${publishedArticleSlug}`
+    : null;
   const hasContent = story.suggestions.length > 0;
   const generating = busyIds.has(story.id);
   const isHero = isWeekHeroStory(story);
@@ -1097,6 +1199,7 @@ function StoryCard({
                 onSave={onSaveSuggestion}
                 onResize={onResize}
                 onRewrite={onRewrite}
+                articleUrl={articleUrl}
               />
             ))}
           </div>
@@ -1118,6 +1221,9 @@ function StoryCard({
                 onSetStatus={onSetStatus}
                 onPublish={onPublish}
                 onSave={onSaveSuggestion}
+                onResize={onResize}
+                onRewrite={onRewrite}
+                articleUrl={articleUrl}
               />
             ))}
           </div>
@@ -1758,9 +1864,10 @@ export function AiUpdatesPanel() {
 
   async function handleRewriteSuggestion(
     suggestionId: string,
-    scope: "all" | "title" | "hook" | "cta" | "body",
+    scope: "all" | "title" | "hook" | "cta" | "body" | "paragraph",
     current: { title: string; hook: string; body_html: string; cta: string },
     instruction: string,
+    paragraphHtml?: string,
   ): Promise<{
     title?: string;
     hook?: string;
@@ -1768,6 +1875,7 @@ export function AiUpdatesPanel() {
     cta?: string;
     hashtags?: string;
     image_ideas?: string;
+    paragraphHtml?: string;
   }> {
     markBusy(suggestionId, true);
     setError(null);
@@ -1776,7 +1884,7 @@ export function AiUpdatesPanel() {
         `/api/phrenos-updates/suggestions/${suggestionId}/rewrite`,
         {
           method: "POST",
-          body: JSON.stringify({ scope, instruction, ...current }),
+          body: JSON.stringify({ scope, instruction, paragraphHtml, ...current }),
         },
       );
     } catch (cause) {

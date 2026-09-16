@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
+import { ConditionalFooter } from "@/components/conditional-footer";
 import { SiteAnalytics } from "@/components/site-analytics";
-import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-forest text-ivory font-sans">
         <SiteHeader />
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <ConditionalFooter />
         <Analytics />
         <SiteAnalytics />
       </body>
