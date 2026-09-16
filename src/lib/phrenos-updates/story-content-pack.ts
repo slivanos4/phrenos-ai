@@ -1,4 +1,4 @@
-import { countWords } from "@/lib/phrenos-updates/sanitize";
+import { countWords, sanitizeEditorialText } from "@/lib/phrenos-updates/sanitize";
 import {
   callAnthropic,
   extractJsonArray,
@@ -378,4 +378,232 @@ export function storyContentIsComplete(story: GeneratedStory): boolean {
 export function storyContentSummary(story: GeneratedStory): string {
   const counts = storyContentCounts(story);
   return `${counts.fullBlogs} featured blog, ${counts.blogIdeas} blog ideas, ${counts.fullLinkedins} featured LinkedIn, ${counts.linkedinIdeas} LinkedIn ideas`;
+}
+
+/**
+ * Rewrite an existing full draft from scratch, optionally steered by a free-text instruction.
+ * Reuses the same generation and quality/fact-check pipeline as a fresh idea expansion.
+ */
+export async function rewriteWholeDraft(
+  story: GeneratedStory,
+  current: GeneratedSuggestion,
+  instruction?: string
+): Promise<DraftAttempt> {
+  const note = instruction?.trim()
+    ? `The user has specifically asked for this change: "${instruction.trim()}". Apply it while keeping the piece consistent with the source facts and required structure.`
+    : "Produce a genuinely different take (structure, opening, or emphasis) rather than a light paraphrase of the current draft.";
+
+  const first = await attemptFeaturedDraft(story, current.suggestion_type, current, note);
+  if (first.draft) return first;
+
+  console.warn(`Rewrite attempt 1 failed for "${story.title}" (${current.suggestion_type}): ${first.reason}`);
+  const second = await attemptFeaturedDraft(
+    story,
+    current.suggestion_type,
+    current,
+    `${note} A previous attempt was rejected for this reason: ${first.reason}. Fix that specific problem.`
+  );
+  if (!second.draft) {
+    console.warn(`Rewrite attempt 2 failed for "${story.title}" (${current.suggestion_type}): ${second.reason}`);
+  }
+  return second;
+}
+
+type ResizeResult =
+  | { body_html: string; cta: string; reason?: undefined }
+  | { body_html: null; cta: null; reason: string };
+
+async function attemptResize(
+  story: GeneratedStory,
+  current: GeneratedSuggestion,
+  direction: "shorter" | "longer",
+  retryNote?: string
+): Promise<ResizeResult> {
+  const label = labelFor(current.suggestion_type);
+  const currentWords = countWords(current.body_html);
+  const targetWords =
+    direction === "shorter"
+      ? Math.max(150, Math.round(currentWords * 0.7))
+      : Math.round(currentWords * 1.3);
+
+  const lengthInstruction =
+    direction === "shorter"
+      ? `Cut it to roughly ${targetWords} words (about 25-30% shorter than the current ${currentWords} words). Tighten and remove redundancy or the weakest supporting material first. Keep the "Why this matters now" and "What to do next" sections, just tighter. Do not drop any load-bearing fact, and keep the closing line.`
+      : `Expand it to roughly ${targetWords} words (about 25-30% longer than the current ${currentWords} words) by developing the existing points with more depth or an additional practical implication drawn from the sources. Do not pad with repetition, generic filler, or invented facts.`;
+
+  const prompt = `Rewrite the body of this Phrenos.ai ${label} to be ${direction === "shorter" ? "meaningfully shorter" : "meaningfully longer"}. Keep the same title, hook, argument, voice, and factual claims.
+
+${tovFor(current.suggestion_type)}
+
+Story:
+${JSON.stringify(storyContext(story), null, 2)}
+
+Current draft:
+${JSON.stringify(
+  { title: current.title, hook: current.hook, body_html: current.body_html, cta: current.cta },
+  null,
+  2
+)}
+
+${lengthInstruction}
+
+Return ONLY JSON: {"body_html":"...","cta":"..."}
+- Only change the cta if the new length genuinely requires a small adjustment for flow; otherwise return it unchanged.
+- Preserve the existing HTML structure (<p>, <h2>, <ul><li>) already used in the draft.
+- No em-dash or en-dash characters. Always use British English spelling.${
+    retryNote
+      ? `\n\nA previous attempt was rejected for this reason: ${retryNote}\nFix that specific problem (for example, tighten or remove the flagged claim rather than just shortening around it) while still meeting the length goal above.`
+      : ""
+  }`;
+
+  const text = await callAnthropic(prompt, current.suggestion_type === "blog" ? 16000 : 8000);
+  const json = extractJsonObject(text);
+  if (!json) return { body_html: null, cta: null, reason: "The model did not return a parseable draft." };
+
+  let parsed: { body_html?: string; cta?: string };
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return { body_html: null, cta: null, reason: "The model's response was not valid JSON." };
+  }
+  if (!parsed.body_html) {
+    return { body_html: null, cta: null, reason: "The model did not return a body." };
+  }
+
+  const merged: GeneratedSuggestion = {
+    ...current,
+    body_html: parsed.body_html,
+    cta: parsed.cta?.trim() || current.cta,
+    is_full_draft: true,
+  };
+  const cleaned = cleanSuggestionFields(merged);
+  if (!cleaned) {
+    return { body_html: null, cta: null, reason: "The resized body was too short or too low quality after cleanup." };
+  }
+  if (hasOffVoiceMarkers(cleaned)) {
+    return { body_html: null, cta: null, reason: "The resized body contained off-voice language." };
+  }
+  if (hasWeakCta(cleaned)) {
+    return { body_html: null, cta: null, reason: "The resized call to action was too generic." };
+  }
+  if (isLowQualitySuggestionBody(cleaned.body_html)) {
+    return { body_html: null, cta: null, reason: "The resized body was flagged as low quality." };
+  }
+
+  const { enforceSourceVerifiedDraftWithReason } = await import("@/lib/phrenos-updates/draft-verify");
+  const verified = await enforceSourceVerifiedDraftWithReason(story, cleaned);
+  if (!verified.draft) {
+    return { body_html: null, cta: null, reason: verified.reason };
+  }
+  return { body_html: verified.draft.body_html, cta: verified.draft.cta };
+}
+
+/** Rewrite a draft's body (and cta only if the length change genuinely requires it) to be meaningfully shorter or longer. Retries once on rejection. */
+export async function resizeSuggestionDraft(
+  story: GeneratedStory,
+  current: GeneratedSuggestion,
+  direction: "shorter" | "longer"
+): Promise<ResizeResult> {
+  const first = await attemptResize(story, current, direction);
+  if (first.body_html) return first;
+
+  console.warn(`Resize attempt 1 (${direction}) failed for "${story.title}": ${first.reason}`);
+  const second = await attemptResize(story, current, direction, first.reason);
+  if (!second.body_html) {
+    console.warn(`Resize attempt 2 (${direction}) failed for "${story.title}": ${second.reason}`);
+  }
+  return second;
+}
+
+type FieldRewriteResult =
+  | { value: string; reason?: undefined }
+  | { value: null; reason: string };
+
+/** Rewrite a single field of an existing draft (title, hook, cta, or body only), optionally steered by an instruction. */
+export async function rewriteDraftField(
+  story: GeneratedStory,
+  current: GeneratedSuggestion,
+  field: "title" | "hook" | "cta" | "body",
+  instruction?: string
+): Promise<FieldRewriteResult> {
+  const label = labelFor(current.suggestion_type);
+  const guidance = instruction?.trim()
+    ? `Specific instruction to apply: "${instruction.trim()}"`
+    : "Produce a genuinely different, stronger alternative to the current version, not a light paraphrase of it.";
+
+  const jsonKey = field === "body" ? "body_html" : field;
+  const contextFields: Record<string, unknown> = {
+    title: current.title,
+    hook: current.hook,
+    cta: current.cta,
+  };
+  if (field !== "body") contextFields.body_html = current.body_html;
+  else contextFields.current_word_count = countWords(current.body_html);
+
+  const prompt = `Rewrite ONLY the ${field === "body" ? "body" : field} of this Phrenos.ai ${label}. The rest of the piece (shown below for context) stays as is; you are only producing a replacement for the "${jsonKey}" field.
+
+${tovFor(current.suggestion_type)}
+
+Story:
+${JSON.stringify(storyContext(story), null, 2)}
+
+Rest of the current draft, for context:
+${JSON.stringify(contextFields, null, 2)}
+
+${guidance}
+${field === "body" ? "Aim for a similar overall length to the current word count shown above unless the instruction says otherwise." : ""}
+
+Return ONLY JSON: {"${jsonKey}":"..."}`;
+
+  const maxTokens =
+    field === "body" ? (current.suggestion_type === "blog" ? 16000 : 8000) : 1200;
+  const text = await callAnthropic(prompt, maxTokens);
+  const json = extractJsonObject(text);
+  if (!json) return { value: null, reason: "The model did not return a parseable response." };
+
+  let parsed: Record<string, string>;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return { value: null, reason: "The model's response was not valid JSON." };
+  }
+
+  const rawValue = parsed[jsonKey];
+  if (!rawValue || !rawValue.trim()) {
+    return { value: null, reason: "The model returned an empty value." };
+  }
+  const value = sanitizeEditorialText(rawValue).trim();
+
+  if (field === "title") {
+    const check = { ...current, title: value };
+    if (hasOffVoiceMarkers(check)) return { value: null, reason: "The new title contained off-voice language." };
+    if (hasNewsWireTitle(check)) return { value: null, reason: "The new title read like a plain news headline." };
+    return { value };
+  }
+
+  if (field === "hook") {
+    const check = { ...current, hook: value };
+    if (hasOffVoiceMarkers(check)) return { value: null, reason: "The new hook contained off-voice language." };
+    return { value };
+  }
+
+  if (field === "cta") {
+    const check = { ...current, cta: value };
+    if (hasOffVoiceMarkers(check)) return { value: null, reason: "The new call to action contained off-voice language." };
+    if (hasWeakCta(check)) return { value: null, reason: "The new call to action was too generic." };
+    return { value };
+  }
+
+  const merged: GeneratedSuggestion = { ...current, body_html: value, is_full_draft: true };
+  const cleaned = cleanSuggestionFields(merged);
+  if (!cleaned) return { value: null, reason: "The new body was too short or too low quality after cleanup." };
+  if (hasOffVoiceMarkers(cleaned)) return { value: null, reason: "The new body contained off-voice language." };
+  if (isLowQualitySuggestionBody(cleaned.body_html)) {
+    return { value: null, reason: "The new body was flagged as low quality." };
+  }
+
+  const { enforceSourceVerifiedDraftWithReason } = await import("@/lib/phrenos-updates/draft-verify");
+  const verified = await enforceSourceVerifiedDraftWithReason(story, cleaned);
+  if (!verified.draft) return { value: null, reason: verified.reason };
+  return { value: verified.draft.body_html };
 }

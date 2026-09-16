@@ -166,3 +166,29 @@ export async function enforceSourceVerifiedDraft(
   );
   return null;
 }
+
+function summarizeClaims(claims: string[], maxChars = 220): string {
+  const joined = claims.join(" | ");
+  return joined.length > maxChars ? `${joined.slice(0, maxChars)}...` : joined;
+}
+
+/** Same as enforceSourceVerifiedDraft, but surfaces the specific unsupported claim(s) on rejection. */
+export async function enforceSourceVerifiedDraftWithReason(
+  story: GeneratedStory,
+  draft: GeneratedSuggestion
+): Promise<{ draft: GeneratedSuggestion; reason?: undefined } | { draft: null; reason: string }> {
+  const result = await verifyDraftAgainstSources(story, draft);
+  if (result.supported && result.revised) return { draft: result.revised };
+  if (result.revised) {
+    console.warn(
+      `Draft for "${story.title}" revised after fact-check:`,
+      result.unsupported_claims.join("; ")
+    );
+    return { draft: result.revised };
+  }
+  const reason = result.unsupported_claims.length
+    ? `The fact-check pass flagged an unsupported claim: ${summarizeClaims(result.unsupported_claims)}`
+    : "The fact-check pass rejected the draft.";
+  console.warn(`Draft for "${story.title}" failed fact-check:`, result.unsupported_claims.join("; ") || reason);
+  return { draft: null, reason };
+}

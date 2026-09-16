@@ -65,6 +65,8 @@ const ghostButtonClass =
   "inline-flex items-center justify-center rounded-full border border-[#d4af5a]/55 px-4 py-2 text-xs font-semibold tracking-wide text-[#f1e8d6] transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10 disabled:cursor-not-allowed disabled:opacity-50";
 const microButtonClass =
   "inline-flex items-center justify-center rounded-full border border-[#d4af5a]/45 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#e0c078] transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10 disabled:cursor-not-allowed disabled:opacity-50";
+const microRewriteButtonClass =
+  "inline-flex items-center justify-center rounded-full border border-[#d4af5a]/35 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-[#e0c078]/90 transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10 disabled:cursor-not-allowed disabled:opacity-50";
 const inputClass =
   "w-full rounded-full border border-[#d4af5a]/55 bg-[#0a100c]/70 px-5 py-3 text-sm text-[#f1e8d6] outline-none transition-colors placeholder:text-[#a9b0a3]/60 focus:border-[#e0c078]";
 const fieldClass =
@@ -353,6 +355,8 @@ function SuggestionCard({
   onSetStatus,
   onPublish,
   onSave,
+  onResize,
+  onRewrite,
 }: {
   suggestion: ContentSuggestion;
   busy: boolean;
@@ -370,6 +374,24 @@ function SuggestionCard({
       image_ideas: string;
     },
   ) => Promise<void>;
+  onResize?: (
+    id: string,
+    direction: "shorter" | "longer",
+    current: { title: string; hook: string; body_html: string; cta: string },
+  ) => Promise<{ body_html: string; cta: string }>;
+  onRewrite?: (
+    id: string,
+    scope: "all" | "title" | "hook" | "cta" | "body",
+    current: { title: string; hook: string; body_html: string; cta: string },
+    instruction: string,
+  ) => Promise<{
+    title?: string;
+    hook?: string;
+    body_html?: string;
+    cta?: string;
+    hashtags?: string;
+    image_ideas?: string;
+  }>;
 }) {
   const [showBody, setShowBody] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -381,6 +403,17 @@ function SuggestionCard({
   const [cta, setCta] = useState(suggestion.cta);
   const [hashtags, setHashtags] = useState(suggestion.hashtags);
   const [imageIdeas, setImageIdeas] = useState(suggestion.image_ideas);
+  const [instruction, setInstruction] = useState("");
+  const [actionBusy, setActionBusy] = useState<
+    | null
+    | "shorter"
+    | "longer"
+    | "rewrite-all"
+    | "rewrite-title"
+    | "rewrite-hook"
+    | "rewrite-cta"
+    | "rewrite-body"
+  >(null);
 
   useEffect(() => {
     if (editing) return;
@@ -451,6 +484,46 @@ function SuggestionCard({
     }
   }
 
+  function currentFields() {
+    return { title, hook, body_html: bodyHtml, cta };
+  }
+
+  async function handleResizeClick(direction: "shorter" | "longer") {
+    if (!onResize) return;
+    setActionBusy(direction);
+    try {
+      const result = await onResize(suggestion.id, direction, currentFields());
+      setBodyHtml(result.body_html);
+      setCta(result.cta);
+      setEditing(true);
+      setShowBody(true);
+    } catch {
+      // Error already surfaced by the parent panel.
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function handleRewriteClick(scope: "all" | "title" | "hook" | "cta" | "body") {
+    if (!onRewrite) return;
+    setActionBusy(scope === "all" ? "rewrite-all" : (`rewrite-${scope}` as typeof actionBusy));
+    try {
+      const result = await onRewrite(suggestion.id, scope, currentFields(), instruction);
+      if (result.title != null) setTitle(result.title);
+      if (result.hook != null) setHook(result.hook);
+      if (result.body_html != null) setBodyHtml(result.body_html);
+      if (result.cta != null) setCta(result.cta);
+      if (result.hashtags != null) setHashtags(result.hashtags);
+      if (result.image_ideas != null) setImageIdeas(result.image_ideas);
+      setEditing(true);
+      setShowBody(true);
+    } catch {
+      // Error already surfaced by the parent panel.
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -468,44 +541,119 @@ function SuggestionCard({
         ) : null}
       </div>
 
+      {onRewrite && !isIdea ? (
+        <input
+          className={`${fieldClass} mt-2.5 text-xs`}
+          placeholder='Optional instruction for rewrite/resize, e.g. "make the CTA punchier"'
+          value={instruction}
+          onChange={(event) => setInstruction(event.target.value)}
+        />
+      ) : null}
+
       {editing ? (
         <div className="mt-3 space-y-3">
-          <label className="block space-y-1.5">
-            <span className={labelClass}>Title</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className={labelClass}>Title</span>
+              {onRewrite && !isIdea ? (
+                <button
+                  type="button"
+                  className={microRewriteButtonClass}
+                  disabled={busy}
+                  onClick={() => void handleRewriteClick("title")}
+                >
+                  {actionBusy === "rewrite-title" ? "Rewriting..." : "Rewrite"}
+                </button>
+              ) : null}
+            </div>
             <input
               className={fieldClass}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
             />
-          </label>
-          <label className="block space-y-1.5">
-            <span className={labelClass}>Hook</span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className={labelClass}>Hook</span>
+              {onRewrite && !isIdea ? (
+                <button
+                  type="button"
+                  className={microRewriteButtonClass}
+                  disabled={busy}
+                  onClick={() => void handleRewriteClick("hook")}
+                >
+                  {actionBusy === "rewrite-hook" ? "Rewriting..." : "Rewrite"}
+                </button>
+              ) : null}
+            </div>
             <textarea
               className={`${fieldClass} min-h-[4.5rem] resize-y`}
               value={hook}
               onChange={(event) => setHook(event.target.value)}
             />
-          </label>
-          <label className="block space-y-1.5">
-            <span className={labelClass}>
-              {isIdea ? "Idea notes" : "Body (HTML)"}
-            </span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className={labelClass}>
+                {isIdea ? "Idea notes" : "Body (HTML)"}
+              </span>
+              {onRewrite && !isIdea ? (
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    className={microRewriteButtonClass}
+                    disabled={busy}
+                    onClick={() => void handleResizeClick("shorter")}
+                  >
+                    {actionBusy === "shorter" ? "Shortening..." : "Shorter"}
+                  </button>
+                  <button
+                    type="button"
+                    className={microRewriteButtonClass}
+                    disabled={busy}
+                    onClick={() => void handleResizeClick("longer")}
+                  >
+                    {actionBusy === "longer" ? "Lengthening..." : "Longer"}
+                  </button>
+                  <button
+                    type="button"
+                    className={microRewriteButtonClass}
+                    disabled={busy}
+                    onClick={() => void handleRewriteClick("body")}
+                  >
+                    {actionBusy === "rewrite-body" ? "Rewriting..." : "Rewrite"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <textarea
               className={`${fieldClass} min-h-[10rem] resize-y font-mono text-[12px] leading-relaxed`}
               value={bodyHtml}
               onChange={(event) => setBodyHtml(event.target.value)}
             />
-          </label>
-          <label className="block space-y-1.5">
-            <span className={labelClass}>
-              Call to action (primary line, then supporting copy)
-            </span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className={labelClass}>
+                Call to action (primary line, then supporting copy)
+              </span>
+              {onRewrite && !isIdea ? (
+                <button
+                  type="button"
+                  className={microRewriteButtonClass}
+                  disabled={busy}
+                  onClick={() => void handleRewriteClick("cta")}
+                >
+                  {actionBusy === "rewrite-cta" ? "Rewriting..." : "Rewrite"}
+                </button>
+              ) : null}
+            </div>
             <textarea
               className={`${fieldClass} min-h-[5.5rem] resize-y`}
               value={cta}
               onChange={(event) => setCta(event.target.value)}
             />
-          </label>
+          </div>
           <label className="block space-y-1.5">
             <span className={labelClass}>Hashtags</span>
             <input
@@ -621,6 +769,16 @@ function SuggestionCard({
                 {showBody ? "Hide draft" : "Read draft"}
               </button>
             ) : null}
+            {onRewrite ? (
+              <button
+                type="button"
+                className={microButtonClass}
+                disabled={busy}
+                onClick={() => void handleRewriteClick("all")}
+              >
+                {actionBusy === "rewrite-all" ? "Rewriting..." : "Rewrite"}
+              </button>
+            ) : null}
             <button
               type="button"
               className={microButtonClass}
@@ -675,6 +833,8 @@ function StoryCard({
   onPublish,
   onSaveSuggestion,
   onSaveStory,
+  onResize,
+  onRewrite,
 }: {
   story: ResearchStory;
   index: number;
@@ -699,6 +859,24 @@ function StoryCard({
     id: string,
     fields: { title: string; summary_html: string },
   ) => Promise<void>;
+  onResize: (
+    id: string,
+    direction: "shorter" | "longer",
+    current: { title: string; hook: string; body_html: string; cta: string },
+  ) => Promise<{ body_html: string; cta: string }>;
+  onRewrite: (
+    id: string,
+    scope: "all" | "title" | "hook" | "cta" | "body",
+    current: { title: string; hook: string; body_html: string; cta: string },
+    instruction: string,
+  ) => Promise<{
+    title?: string;
+    hook?: string;
+    body_html?: string;
+    cta?: string;
+    hashtags?: string;
+    image_ideas?: string;
+  }>;
 }) {
   const [showSources, setShowSources] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -917,6 +1095,8 @@ function StoryCard({
                 onSetStatus={onSetStatus}
                 onPublish={onPublish}
                 onSave={onSaveSuggestion}
+                onResize={onResize}
+                onRewrite={onRewrite}
               />
             ))}
           </div>
@@ -1553,6 +1733,60 @@ export function AiUpdatesPanel() {
     }
   }
 
+  async function handleResizeSuggestion(
+    suggestionId: string,
+    direction: "shorter" | "longer",
+    current: { title: string; hook: string; body_html: string; cta: string },
+  ): Promise<{ body_html: string; cta: string }> {
+    markBusy(suggestionId, true);
+    setError(null);
+    try {
+      return await requestJson<{ body_html: string; cta: string }>(
+        `/api/phrenos-updates/suggestions/${suggestionId}/resize`,
+        {
+          method: "POST",
+          body: JSON.stringify({ direction, ...current }),
+        },
+      );
+    } catch (cause) {
+      reportError(cause);
+      throw cause;
+    } finally {
+      markBusy(suggestionId, false);
+    }
+  }
+
+  async function handleRewriteSuggestion(
+    suggestionId: string,
+    scope: "all" | "title" | "hook" | "cta" | "body",
+    current: { title: string; hook: string; body_html: string; cta: string },
+    instruction: string,
+  ): Promise<{
+    title?: string;
+    hook?: string;
+    body_html?: string;
+    cta?: string;
+    hashtags?: string;
+    image_ideas?: string;
+  }> {
+    markBusy(suggestionId, true);
+    setError(null);
+    try {
+      return await requestJson(
+        `/api/phrenos-updates/suggestions/${suggestionId}/rewrite`,
+        {
+          method: "POST",
+          body: JSON.stringify({ scope, instruction, ...current }),
+        },
+      );
+    } catch (cause) {
+      reportError(cause);
+      throw cause;
+    } finally {
+      markBusy(suggestionId, false);
+    }
+  }
+
   async function handleSaveStory(
     storyId: string,
     fields: { title: string; summary_html: string },
@@ -1865,6 +2099,8 @@ export function AiUpdatesPanel() {
             onPublish={handlePublishSuggestion}
             onSaveSuggestion={handleSaveSuggestion}
             onSaveStory={handleSaveStory}
+            onResize={handleResizeSuggestion}
+            onRewrite={handleRewriteSuggestion}
           />
         </section>
       ) : null}
@@ -1888,6 +2124,8 @@ export function AiUpdatesPanel() {
                 onPublish={handlePublishSuggestion}
                 onSaveSuggestion={handleSaveSuggestion}
                 onSaveStory={handleSaveStory}
+                onResize={handleResizeSuggestion}
+                onRewrite={handleRewriteSuggestion}
               />
             ))}
           </div>
