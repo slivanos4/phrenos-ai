@@ -416,6 +416,9 @@ function SuggestionCard({
   const [imageIdeas, setImageIdeas] = useState(suggestion.image_ideas);
   const [instruction, setInstruction] = useState("");
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
+  const [blockDraft, setBlockDraft] = useState("");
+  const [showRawHtml, setShowRawHtml] = useState(false);
 
   useEffect(() => {
     if (editing) return;
@@ -559,6 +562,18 @@ function SuggestionCard({
     }
   }
 
+  function startBlockEdit(index: number, blockHtml: string) {
+    setEditingBlockIndex(index);
+    setBlockDraft(blockHtml);
+  }
+
+  function saveBlockEdit(index: number) {
+    const blocks = splitBodyBlocks(bodyHtml);
+    blocks[index] = blockDraft;
+    setBodyHtml(blocks.join(" "));
+    setEditingBlockIndex(null);
+  }
+
   return (
     <div className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -661,38 +676,92 @@ function SuggestionCard({
                 </div>
               ) : null}
             </div>
-            <textarea
-              className={`${fieldClass} min-h-[10rem] resize-y font-mono text-[12px] leading-relaxed`}
-              value={bodyHtml}
-              onChange={(event) => setBodyHtml(event.target.value)}
-            />
             {onRewrite && !isIdea && bodyBlocks.length > 0 ? (
-              <div className="space-y-1.5 rounded-lg border border-[#d4af5a]/15 bg-[#0a100c]/40 p-2.5">
+              <div className="space-y-3 rounded-lg border border-[#d4af5a]/15 bg-[#0a100c]/40 p-3">
                 <span className="text-[10px] font-semibold tracking-[0.16em] text-[#a9b0a3]/80 uppercase">
-                  Rewrite by section
+                  Sections
                 </span>
-                <ul className="space-y-1.5">
+                <ul className="space-y-3">
                   {bodyBlocks.map((block, index) => (
                     <li
                       key={`${index}-${block.slice(0, 24)}`}
-                      className="flex items-center justify-between gap-2 border-t border-[#d4af5a]/10 pt-1.5 first:border-t-0 first:pt-0"
+                      className="border-t border-[#d4af5a]/10 pt-3 first:border-t-0 first:pt-0"
                     >
-                      <span className="min-w-0 flex-1 truncate text-[11px] text-[#c9c6ba]">
-                        {htmlToText(block).slice(0, 90) || "(untitled section)"}
-                      </span>
-                      <button
-                        type="button"
-                        className={microRewriteButtonClass}
-                        disabled={busy}
-                        onClick={() => void handleRewriteParagraphClick(index, block)}
-                      >
-                        {actionBusy === `rewrite-para-${index}` ? "Rewriting..." : "Rewrite"}
-                      </button>
+                      {editingBlockIndex === index ? (
+                        <div className="space-y-1.5">
+                          <textarea
+                            className={`${fieldClass} min-h-[7rem] resize-y font-mono text-[12px] leading-relaxed`}
+                            value={blockDraft}
+                            onChange={(event) => setBlockDraft(event.target.value)}
+                            autoFocus
+                          />
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              className={microRewriteButtonClass}
+                              onClick={() => saveBlockEdit(index)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className={microRewriteButtonClass}
+                              onClick={() => setEditingBlockIndex(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[12px] leading-relaxed whitespace-pre-wrap text-[#c9c6ba]">
+                            {htmlToText(block) || "(empty section)"}
+                          </p>
+                          <div className="mt-2 flex gap-1.5">
+                            <button
+                              type="button"
+                              className={microRewriteButtonClass}
+                              disabled={busy}
+                              onClick={() => startBlockEdit(index, block)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className={microRewriteButtonClass}
+                              disabled={busy}
+                              onClick={() => void handleRewriteParagraphClick(index, block)}
+                            >
+                              {actionBusy === `rewrite-para-${index}` ? "Rewriting..." : "Rewrite"}
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </li>
                   ))}
                 </ul>
+                <button
+                  type="button"
+                  className="text-[10px] tracking-wide text-[#a9b0a3]/70 underline-offset-2 hover:text-[#e0c078] hover:underline"
+                  onClick={() => setShowRawHtml((current) => !current)}
+                >
+                  {showRawHtml ? "Hide raw HTML" : "Edit raw HTML instead"}
+                </button>
+                {showRawHtml ? (
+                  <textarea
+                    className={`${fieldClass} min-h-[10rem] resize-y font-mono text-[12px] leading-relaxed`}
+                    value={bodyHtml}
+                    onChange={(event) => setBodyHtml(event.target.value)}
+                  />
+                ) : null}
               </div>
-            ) : null}
+            ) : (
+              <textarea
+                className={`${fieldClass} min-h-[10rem] resize-y font-mono text-[12px] leading-relaxed`}
+                value={bodyHtml}
+                onChange={(event) => setBodyHtml(event.target.value)}
+              />
+            )}
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
@@ -844,14 +913,26 @@ function SuggestionCard({
           Download
         </button>
         {isIdea ? (
-          <button
-            type="button"
-            className={microButtonClass}
-            disabled={busy || editing}
-            onClick={() => onExpandIdea(suggestion.id)}
-          >
-            {busy ? "Expanding..." : "Expand into featured post"}
-          </button>
+          <>
+            <button
+              type="button"
+              className={microButtonClass}
+              disabled={busy || editing}
+              onClick={() => onExpandIdea(suggestion.id)}
+            >
+              {busy ? "Expanding..." : "Expand into featured post"}
+            </button>
+            {onRewrite ? (
+              <button
+                type="button"
+                className={microButtonClass}
+                disabled={busy}
+                onClick={() => void handleRewriteClick("all")}
+              >
+                {actionBusy === "rewrite-all" ? "Rewriting..." : "Rewrite"}
+              </button>
+            ) : null}
+          </>
         ) : (
           <>
             {!editing ? (
