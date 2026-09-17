@@ -94,12 +94,14 @@ ${JSON.stringify(storyContext(story), null, 2)}
 
 Return ONLY a JSON array of exactly ${IDEA_COUNT} objects. These are IDEA SNIPPETS, not full posts.
 Each object:
-{"suggestion_type":"${suggestionType}","title":"...","hook":"one-line hook","body_html":"<p>2-3 sentence snippet describing the angle and key facts from sources</p>","cta":"...","hashtags":"...","image_ideas":"..."}
+{"suggestion_type":"${suggestionType}","title":"...","hook":"one-line hook","body_html":"<p>punchy 2-3 sentence note, one fact plus one implication, not a chained-facts paragraph</p>","cta":"...","hashtags":"...","image_ideas":"..."}
 
 Rules:
 - Each idea must use a different angle: ${angles}
 - Rotate the editorial lens across the four ideas: Creation (what your organisation can now build or generate), Optimisation (what changes for search, planning, or workflow speed), Validity (what leaders must change for trust, verification, and governance)
-- body_html is SHORT only (40-120 words), not a full draft
+- body_html is a punchy note, not a mini-essay: 2-3 short sentences, 30-70 words. Pick the single sharpest fact plus the one implication. Do not chain three or four facts together into an informational paragraph, that reads as a briefing, not a hook.
+  Bad (essay-like, chains facts): "OpenAI coordinated roughly 10,000 AI agents on the Navier-Stokes Millennium Prize Problem. The agents exchanged 2.7 million messages and generated approximately 130 billion output tokens. GPT-6 Astra then spent a further 17 hours formalising and verifying the proof in Lean. Fields Medal winner Terence Tao warned that this pace of AI-driven discovery risks losing the valuable ramifications of the work along the way."
+  Good (one fact, one tension): "10,000 AI agents just solved a 90-year maths problem in 88 hours. Terence Tao says the real cost is not the proof. It is everything the agents did not stop to notice along the way."
 - Use only facts from story sources
 - Address the reader as you or your organisation, never as an internal team
 - Always use British English spelling
