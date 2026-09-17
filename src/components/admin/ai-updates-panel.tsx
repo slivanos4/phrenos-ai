@@ -877,7 +877,7 @@ function SuggestionCard({
 
           {!isIdea && showBody ? (
             <div
-              className="mt-3 space-y-3 border-t border-[#d4af5a]/15 pt-3 text-xs leading-relaxed text-[#c9c6ba] [&_a]:text-[#e0c078] [&_h2]:mt-4 [&_h2]:font-serif [&_h2]:text-base [&_h2]:text-[#f1e8d6] [&_h3]:mt-3 [&_h3]:font-serif [&_h3]:text-sm [&_h3]:text-[#f1e8d6] [&_li]:ml-4 [&_li]:list-disc [&_strong]:text-[#f1e8d6]"
+              className="mt-3 space-y-3 border-t border-[#d4af5a]/15 pt-3 text-xs leading-relaxed text-[#c9c6ba] [&_a]:text-[#e0c078] [&_h2]:mt-4 [&_h2]:font-serif [&_h2]:text-base [&_h2]:text-[#f1e8d6] [&_h3]:mt-3 [&_h3]:font-serif [&_h3]:text-sm [&_h3]:text-[#f1e8d6] [&_li]:ml-4 [&_li]:list-disc [&_strong]:font-sans [&_strong]:text-[#e0c078]"
               dangerouslySetInnerHTML={{ __html: suggestion.body_html }}
             />
           ) : null}
