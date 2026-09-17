@@ -8,6 +8,7 @@ import {
 import {
   BLOG_IDEA_ANGLES,
   LINKEDIN_IDEA_ANGLES,
+  LINKEDIN_VOICE_PATTERNS_BLOCK,
   PHRENOS_BLOG_TOV,
   PHRENOS_CONVERSION_FORMULA,
   PHRENOS_LINKEDIN_TOV,
@@ -107,7 +108,8 @@ Rules:
 
 ${PHRENOS_CONVERSION_FORMULA}
 
-${PUNCHY_OPENING_BLOCK}`;
+${PUNCHY_OPENING_BLOCK}
+${suggestionType === "linkedin" ? `\n${LINKEDIN_VOICE_PATTERNS_BLOCK}` : ""}`;
 
   const text = await callAnthropic(prompt, suggestionType === "blog" ? 4000 : 2500);
   const json = extractJsonArray(text);

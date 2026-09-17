@@ -81,6 +81,18 @@ export const PUNCHY_OPENING_BLOCK = `PUNCHY OPENING (mandatory, especially for L
 - Good (short, concrete, immediate stakes): "AI just solved a 90-year maths problem in 88 hours. What does your research roadmap assume that no longer holds?"
 - A CTA question must be specific to this story's own detail (a number, a name, a scale), not a generic prompt that could sit under any AI story.`;
 
+/** Distilled from Sophia's own published LinkedIn posts, supplied as style references (2026-09-17). */
+export const LINKEDIN_VOICE_PATTERNS_BLOCK = `LINKEDIN VOICE PATTERNS (mandatory, matches Sophia's own published posts):
+- Open with one short, punchy line: a vivid metaphor, a contrarian claim, or an emoji-led question. No throat-clearing, no "In today's fast-changing AI landscape".
+- Write in short, line-broken beats (1-2 sentences per paragraph), not dense blocks. Visual breathing room is part of the voice, not just formatting.
+- Include one sharp reframe line, alone on its own line, in the pattern "[assumed cause] isn't the problem. [real cause] is." (for example: "AI isn't the problem. The brief is." / "AI isn't the future. It's the foundation."). Use this device once, where it earns its place, not in every post.
+- Where it fits, use a short parallel-structure triad: either three short declarative lines building to a payoff ("Vague briefs produce generic outputs. Clever prompts don't fix unclear thinking. Clear briefs do.") or a short imperative action triad ("Take it. Use it. Stress-test it.").
+- This overrides the generic cta field guidance above for LinkedIn specifically: the cta field must END on a genuine, specific question mark, not a statement. Make the practical point first, then ask the reader something tied to this story's own detail. Not a sales pitch, not a generic "what do you think about AI" line. The goal is engagement (comments), not a lead-gen ask.
+  Bad (ends on a statement, reads as a pitch): "Map the long-standing bottlenecks in your knowledge workflows, the problems that have sat unsolved not because people lack intelligence but because they lack time and coordination. That is where coordinated agent systems produce measurable returns."
+  Good (makes the point, then asks): "The question isn't whether to deploy 10,000 agents. It's whether your organisation knows where ten would create meaningful leverage. What's the first process you'd point them at?"
+- When referencing the companion article, use the exact phrasing "Read the full article here: [link]" (or "Read the full update here:" if it scans better) on its own line, placed before the closing question.
+- Confident and contraction-friendly ("isn't", "don't"). Minimal hedging language in the body copy itself; save precision/attribution for where a specific claim needs it. Sentence fragments are fine when the rhythm calls for it.`;
+
 /** Doc section 9: story summary rules. */
 export const STORY_SUMMARY_RULES = `For summary_html (plain text only, no HTML):
 ${SOURCE_INTEGRITY_BLOCK}
@@ -141,22 +153,19 @@ ${EDITORIAL_PRECISION_BLOCK}
 
 ${PUNCHY_OPENING_BLOCK}
 
+${LINKEDIN_VOICE_PATTERNS_BLOCK}
+
 Voice reference:
 - Target length: 280-450 words (minimum 220). Substantive thought leadership, not a teaser.
-- Open with the hook's consequence; an alert emoji or insight line is optional when it fits the story
-- Frame the news as a strategic shift: what changed, why it matters now, what leaders should pay attention to
-- Use structured beats: short <p> paragraphs and optional labelled sections as plain text inside a paragraph, not markdown bold
+- Structure it like a real post, not an essay: short line-broken beats building to the reframe line, then a concrete detail or practical takeaway, then the closing question. Do not force labelled "Why this matters now" / "What to do next" sections onto it.
 - Connect to themes Sophia covers: agentic AI, reasoning models, multimodal workflows, open source, regulation, AI search, ROI, ethics and trust, human judgement
 - Confident and accessible, a consultant who builds systems rather than a hype merchant
-- Include 2-5 purposeful emojis in total, placed naturally
-- Close with a punchy line that is unique to this story
-- Include Why this matters now (1-2 paragraphs) and What to do next (1 short paragraph or 3 bullet lines in <p> tags) before the close
+- Include 1-3 purposeful emojis at most (an opening emoji, occasionally a mid-post marker), placed naturally, never decorating every line
 - hashtags: 5-8 relevant tags (#ArtificialIntelligence #GenerativeAI #AgenticAI #AIStrategy #FutureOfWork and similar)
 - image_ideas: creative brief only for a LinkedIn or social visual (composition, mood, brand cues). We do not generate or upload images automatically
 - NEVER use internal "for us" framing, sector operations language, or a borrowed persona
 - NEVER use <br>, em-dash, or en-dash characters
-- Each LinkedIn post in a batch must feel distinct: one trend roundup angle, one myth-bust, one "what everyone is missing", one ethics or governance lens
-- Mention phrenosai.com/ai-updates for the full breakdown in the closing paragraph when useful, not as a soft contact invite`;
+- Each LinkedIn post in a batch must feel distinct: one trend roundup angle, one myth-bust, one "what everyone is missing", one ethics or governance lens`;
 
 /** Doc section 10: idea angle guidance per format. */
 export const BLOG_IDEA_ANGLES = `Why this matters now, myth-bust, leader playbook, ethics and governance, adoption test, eye-opening surprise`;
