@@ -73,6 +73,14 @@ export const EDITORIAL_PRECISION_BLOCK = `EDITORIAL PRECISION (mandatory, learne
 - Closing statements can be confident but should not overreach: prefer "may find" or "risk" over flat predictions like "will find".
 - If the piece has one sentence that crystallises the whole argument, make it stand out as its own short paragraph rather than burying it inside a longer one.`;
 
+/** Learned from Sophia's review: idea/hook openings were reading as vague and hedge-heavy. */
+export const PUNCHY_OPENING_BLOCK = `PUNCHY OPENING (mandatory, especially for LinkedIn and idea hooks):
+- The opening line is a scroll-stopper: short, concrete, immediate stakes. Model it on how a strong closing line reads, short declarative sentences, not one long qualified sentence.
+- Do not stack hedges or qualifiers into the first sentence. Precision about a claim belongs in attribution ("OpenAI says...", "According to..."), not in cautious, vague framing that dilutes the hook.
+- Bad (vague, all qualifiers, no stakes): "The pace of AI-driven discovery just shifted in a way that should change how your leadership team thinks about what is possible."
+- Good (short, concrete, immediate stakes): "AI just solved a 90-year maths problem in 88 hours. What does your research roadmap assume that no longer holds?"
+- A CTA question must be specific to this story's own detail (a number, a name, a scale), not a generic prompt that could sit under any AI story.`;
+
 /** Doc section 9: story summary rules. */
 export const STORY_SUMMARY_RULES = `For summary_html (plain text only, no HTML):
 ${SOURCE_INTEGRITY_BLOCK}
@@ -131,6 +139,8 @@ ${PHRENOS_CONVERSION_FORMULA}
 
 ${EDITORIAL_PRECISION_BLOCK}
 
+${PUNCHY_OPENING_BLOCK}
+
 Voice reference:
 - Target length: 280-450 words (minimum 220). Substantive thought leadership, not a teaser.
 - Open with the hook's consequence; an alert emoji or insight line is optional when it fits the story
@@ -170,11 +180,3 @@ Rules:
 - If the article is thin, return fewer bullets rather than guessing.`;
 }
 
-/** Take the leading lines of a tone-of-voice block for compact prompts. */
-export function tovDigest(tov: string, lines = 8): string {
-  return tov
-    .split("\n")
-    .filter((line) => line.trim().length > 0)
-    .slice(0, lines)
-    .join("\n");
-}

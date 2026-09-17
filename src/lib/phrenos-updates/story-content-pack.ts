@@ -9,9 +9,10 @@ import {
   BLOG_IDEA_ANGLES,
   LINKEDIN_IDEA_ANGLES,
   PHRENOS_BLOG_TOV,
+  PHRENOS_CONVERSION_FORMULA,
   PHRENOS_LINKEDIN_TOV,
+  PUNCHY_OPENING_BLOCK,
   SOURCE_INTEGRITY_BLOCK,
-  tovDigest,
 } from "@/lib/phrenos-updates/prompts";
 import { sourceFactsForPrompt } from "@/lib/phrenos-updates/source-enrichment";
 import {
@@ -102,9 +103,11 @@ Rules:
 - Address the reader as you or your organisation, never as an internal team
 - Always use British English spelling
 - Never use em-dash or en-dash characters
-- Follow the Phrenos conversion formula for title, hook, and cta (tension title, concrete executive hook, primary provocation + supporting nurture line)
 - image_ideas: short creative brief for a social visual only (no auto-generated image)
-${tovDigest(tovFor(suggestionType), 12)}`;
+
+${PHRENOS_CONVERSION_FORMULA}
+
+${PUNCHY_OPENING_BLOCK}`;
 
   const text = await callAnthropic(prompt, suggestionType === "blog" ? 4000 : 2500);
   const json = extractJsonArray(text);

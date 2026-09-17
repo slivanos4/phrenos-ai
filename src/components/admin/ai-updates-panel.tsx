@@ -168,12 +168,19 @@ function slugifyFilename(value: string): string {
   );
 }
 
-function formatSuggestionPlainText(suggestion: ContentSuggestion): string {
+function formatSuggestionPlainText(
+  suggestion: ContentSuggestion,
+  articleUrl?: string | null,
+): string {
   const kind = suggestion.suggestion_type === "blog" ? "Blog" : "LinkedIn";
   const tier = suggestion.is_full_draft ? "Featured draft" : "Idea";
   const body = suggestion.is_full_draft
     ? htmlToText(suggestion.body_html)
     : htmlToText(suggestion.body_html || suggestion.hook || "");
+  const readMoreLine =
+    suggestion.suggestion_type === "linkedin" && articleUrl
+      ? `Read the full article here: ${articleUrl}`
+      : null;
 
   return [
     `${kind} · ${tier}`,
@@ -184,6 +191,8 @@ function formatSuggestionPlainText(suggestion: ContentSuggestion): string {
     body,
     suggestion.cta ? "" : null,
     suggestion.cta ? `CTA: ${suggestion.cta}` : null,
+    readMoreLine ? "" : null,
+    readMoreLine,
     suggestion.hashtags ? `Hashtags: ${suggestion.hashtags}` : null,
     suggestion.image_ideas ? `Image ideas: ${suggestion.image_ideas}` : null,
   ]
@@ -438,7 +447,7 @@ function SuggestionCard({
     (suggestion.status === "approved" || suggestion.status === "published");
 
   async function handleCopy() {
-    const ok = await copyTextToClipboard(formatSuggestionPlainText(suggestion));
+    const ok = await copyTextToClipboard(formatSuggestionPlainText(suggestion, articleUrl));
     setCopyState(ok ? "copied" : "failed");
     window.setTimeout(() => setCopyState("idle"), 1600);
   }
@@ -455,7 +464,7 @@ function SuggestionCard({
     const tier = suggestion.is_full_draft ? "draft" : "idea";
     downloadTextFile(
       `${slugifyFilename(suggestion.title || kind)}-${kind}-${tier}.txt`,
-      formatSuggestionPlainText(suggestion),
+      formatSuggestionPlainText(suggestion, articleUrl),
     );
   }
 
@@ -903,7 +912,7 @@ function SuggestionCard({
                     rel="noreferrer"
                     className="text-[11px] text-[#e0c078] hover:underline"
                   >
-                    {articleUrl}
+                    Read the full article here
                   </a>
                   <button
                     type="button"
