@@ -6,9 +6,9 @@ import type { GeneratedSuggestion } from "@/lib/phrenos-updates/types";
 export const BLOG_MIN_WORDS = 1200;
 export const BLOG_TARGET_WORDS = 1500;
 export const BLOG_MAX_WORDS = 1700;
-export const LINKEDIN_MIN_WORDS = 220;
-export const LINKEDIN_TARGET_WORDS = 360;
-export const LINKEDIN_MAX_WORDS = 450;
+export const LINKEDIN_MIN_WORDS = 150;
+export const LINKEDIN_TARGET_WORDS = 220;
+export const LINKEDIN_MAX_WORDS = 320;
 export const IDEA_MIN_WORDS = 20;
 
 function stripHtml(text: string): string {

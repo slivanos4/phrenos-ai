@@ -172,18 +172,34 @@ function formatSuggestionPlainText(
   suggestion: ContentSuggestion,
   articleUrl?: string | null,
 ): string {
-  const kind = suggestion.suggestion_type === "blog" ? "Blog" : "LinkedIn";
+  if (suggestion.suggestion_type === "linkedin") {
+    // Clean, paste-ready text: no title line, no "Hook:"/"CTA:" labels, real LinkedIn
+    // posts don't have either, it's one continuous post.
+    const body = htmlToText(suggestion.body_html || "");
+    return [
+      suggestion.hook || null,
+      suggestion.hook ? "" : null,
+      body || null,
+      suggestion.cta ? "" : null,
+      suggestion.cta || null,
+      articleUrl ? "" : null,
+      articleUrl ? "Read the full article here 👇" : null,
+      articleUrl || null,
+      suggestion.hashtags ? "" : null,
+      suggestion.hashtags || null,
+    ]
+      .filter((line) => line != null)
+      .join("\n")
+      .trim();
+  }
+
   const tier = suggestion.is_full_draft ? "Featured draft" : "Idea";
   const body = suggestion.is_full_draft
     ? htmlToText(suggestion.body_html)
     : htmlToText(suggestion.body_html || suggestion.hook || "");
-  const readMoreLine =
-    suggestion.suggestion_type === "linkedin" && articleUrl
-      ? `Read the full article here: ${articleUrl}`
-      : null;
 
   return [
-    `${kind} · ${tier}`,
+    `Blog · ${tier}`,
     suggestion.title,
     "",
     suggestion.hook ? `Hook: ${suggestion.hook}` : null,
@@ -191,8 +207,6 @@ function formatSuggestionPlainText(
     body,
     suggestion.cta ? "" : null,
     suggestion.cta ? `CTA: ${suggestion.cta}` : null,
-    readMoreLine ? "" : null,
-    readMoreLine,
     suggestion.hashtags ? `Hashtags: ${suggestion.hashtags}` : null,
     suggestion.image_ideas ? `Image ideas: ${suggestion.image_ideas}` : null,
   ]
@@ -905,22 +919,27 @@ function SuggestionCard({
                 Links to full article
               </span>
               {articleUrl ? (
-                <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                  <a
-                    href={articleUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] text-[#e0c078] hover:underline"
-                  >
-                    Read the full article here
-                  </a>
-                  <button
-                    type="button"
-                    className={microRewriteButtonClass}
-                    onClick={() => void handleCopyLink()}
-                  >
-                    {linkCopyState === "copied" ? "Copied" : "Copy link"}
-                  </button>
+                <div className="mt-1.5">
+                  <p className="text-[11px] text-[#c9c6ba]">
+                    Read the full article here 👇
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <a
+                      href={articleUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] text-[#e0c078] hover:underline"
+                    >
+                      {articleUrl}
+                    </a>
+                    <button
+                      type="button"
+                      className={microRewriteButtonClass}
+                      onClick={() => void handleCopyLink()}
+                    >
+                      {linkCopyState === "copied" ? "Copied" : "Copy link"}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <p className="mt-1.5 text-[11px] leading-relaxed text-[#a9b0a3]/80">

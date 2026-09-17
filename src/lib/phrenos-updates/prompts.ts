@@ -81,16 +81,32 @@ export const PUNCHY_OPENING_BLOCK = `PUNCHY OPENING (mandatory, especially for L
 - Good (short, concrete, immediate stakes): "AI just solved a 90-year maths problem in 88 hours. What does your research roadmap assume that no longer holds?"
 - A CTA question must be specific to this story's own detail (a number, a name, a scale), not a generic prompt that could sit under any AI story.`;
 
-/** Distilled from Sophia's own published LinkedIn posts, supplied as style references (2026-09-17). */
-export const LINKEDIN_VOICE_PATTERNS_BLOCK = `LINKEDIN VOICE PATTERNS (mandatory, matches Sophia's own published posts):
-- Open with one short, punchy line: a vivid metaphor, a contrarian claim, or an emoji-led question. No throat-clearing, no "In today's fast-changing AI landscape".
-- Write in short, line-broken beats (1-2 sentences per paragraph), not dense blocks. Visual breathing room is part of the voice, not just formatting.
-- Include one sharp reframe line, alone on its own line, in the pattern "[assumed cause] isn't the problem. [real cause] is." (for example: "AI isn't the problem. The brief is." / "AI isn't the future. It's the foundation."). Use this device once, where it earns its place, not in every post.
-- Where it fits, use a short parallel-structure triad: either three short declarative lines building to a payoff ("Vague briefs produce generic outputs. Clever prompts don't fix unclear thinking. Clear briefs do.") or a short imperative action triad ("Take it. Use it. Stress-test it.").
-- This overrides the generic cta field guidance above for LinkedIn specifically: the cta field must END on a genuine, specific question mark, not a statement. Make the practical point first, then ask the reader something tied to this story's own detail. Not a sales pitch, not a generic "what do you think about AI" line. The goal is engagement (comments), not a lead-gen ask.
-  Bad (ends on a statement, reads as a pitch): "Map the long-standing bottlenecks in your knowledge workflows, the problems that have sat unsolved not because people lack intelligence but because they lack time and coordination. That is where coordinated agent systems produce measurable returns."
-  Good (makes the point, then asks): "The question isn't whether to deploy 10,000 agents. It's whether your organisation knows where ten would create meaningful leverage. What's the first process you'd point them at?"
-- When referencing the companion article, use the exact phrasing "Read the full article here: [link]" (or "Read the full update here:" if it scans better) on its own line, placed before the closing question.
+/** Distilled from Sophia's own published LinkedIn posts, supplied as style references (2026-09-17 and 2026-09-18). */
+export const LINKEDIN_VOICE_PATTERNS_BLOCK = `LINKEDIN POST STRUCTURE (mandatory template, matches Sophia's actual published format):
+There is no separate "title" in a real LinkedIn post. The hook IS the opening of the post itself, not a headline sitting above it. Never write a news-headline-style title into the hook; open straight into the cascade below.
+
+The load-bearing skeleton (a post does not need every beat, but this is the shape):
+1. Cold open: a rapid stat cascade in short fragments separated by periods, ending in one fuller clause for context. Shape: "[Number]. [Number]. [Number]. And roughly [timeframe] to [what happened]."
+   Example: "10,000 AI agents. 2.7 million messages. 130 billion output tokens. And roughly 88 hours to produce a proposed solution to a mathematical problem that had resisted proof for around 90 years."
+2. A one-line pivot: "The interesting part isn't just that [X]. It's [Y]." (or a close variant of "isn't just X, it's Y").
+3. One short elaboration sentence on Y, standing alone.
+4. A short transition ending in an ellipsis that sets up a reframed question: "For organisations, that creates a different kind of question..."
+5. A "wrong question vs. right question" contrast, each marker on its own line:
+   🚫 Not: [the obvious, surface-level question]
+
+   But:
+
+   ✅ [the sharper question that actually matters]
+6. A short principle statement, one sentence.
+7. An isolated one-line punch standing completely alone, sometimes a fragment (e.g. "They need to scale with the agents.").
+8. One concrete, practical paragraph: what the reader's organisation should actually map, check, or decide. Practical, not a sales pitch.
+9. A closing reframe line, contrastive and declarative, not necessarily ending in a literal question mark: "[old framing]. [The real tension] is whether [X]." (e.g. "The capability is scaling. The question is whether our ability to audit it scales with it.") An explicit question tied to this story's own detail is also fine when it fits better; either way, the close must reframe the point, not pitch a service.
+10. STOP THERE. Do not write "Read the full article here", any link, or hashtags yourself. Those are added automatically by the publishing app straight after your cta field, in that order. If you write them yourself they will appear twice or in the wrong place.
+
+- Write in short, line-broken beats (1-2 sentences per paragraph, sometimes one fragment). Visual breathing room is the voice, not just formatting.
+- This overrides the generic cta field guidance above for LinkedIn specifically: no two-paragraph provocation-plus-nurture pitch. The cta field is step 9 above, a reframe or a specific question, and nothing after it, no link mention, no "read more".
+- The hashtags field still gets its own 5-8 relevant tags as normal; only the "read the full article" line and the link are handled outside the generated fields.
+- Target length is shorter than a blog post: roughly 150-250 words total for the whole post (hook plus body plus cta combined, excluding the app-added link line and hashtags). Do not pad to hit a longer count; a tight post that lands the beats beats a diluted one.
 - Confident and contraction-friendly ("isn't", "don't"). Minimal hedging language in the body copy itself; save precision/attribution for where a specific claim needs it. Sentence fragments are fine when the rhythm calls for it.`;
 
 /** Doc section 9: story summary rules. */
@@ -156,7 +172,7 @@ ${PUNCHY_OPENING_BLOCK}
 ${LINKEDIN_VOICE_PATTERNS_BLOCK}
 
 Voice reference:
-- Target length: 280-450 words (minimum 220). Substantive thought leadership, not a teaser.
+- Target length: 180-250 words (minimum 150). Tight and scannable, not a teaser and not an essay.
 - Structure it like a real post, not an essay: short line-broken beats building to the reframe line, then a concrete detail or practical takeaway, then the closing question. Do not force labelled "Why this matters now" / "What to do next" sections onto it.
 - Connect to themes Sophia covers: agentic AI, reasoning models, multimodal workflows, open source, regulation, AI search, ROI, ethics and trust, human judgement
 - Confident and accessible, a consultant who builds systems rather than a hype merchant
