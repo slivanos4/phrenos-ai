@@ -139,7 +139,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
         ) : null}
 
         <div
-          className="mt-10 text-base leading-relaxed text-[#d5d0c1] [&>*+*]:mt-5 [&_a]:text-[#e0c078] [&_a]:underline-offset-2 [&_a:hover]:underline [&_blockquote]:border-l [&_blockquote]:border-[#d4af5a]/45 [&_blockquote]:pl-4 [&_blockquote]:italic [&_h2]:mt-10 [&_h2]:font-serif [&_h2]:text-2xl [&_h2]:text-ivory [&_h3]:mt-8 [&_h3]:font-serif [&_h3]:text-xl [&_h3]:text-ivory [&_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-sans [&_strong]:text-[#e0c078] [&_ul]:list-disc [&_ul]:pl-5"
+          className="mt-10 text-base leading-relaxed text-[#d5d0c1] [&>*+*]:mt-5 [&_a]:text-[#e0c078] [&_a]:underline-offset-2 [&_a:hover]:underline [&_blockquote]:border-l [&_blockquote]:border-[#d4af5a]/45 [&_blockquote]:pl-4 [&_blockquote]:italic [&_h2]:mt-10 [&_h2]:font-sans [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ivory [&_h3]:mt-8 [&_h3]:font-sans [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-ivory [&_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-sans [&_strong]:text-[#e0c078] [&_ul]:list-disc [&_ul]:pl-5"
           dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
 
