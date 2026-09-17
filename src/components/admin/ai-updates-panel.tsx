@@ -537,15 +537,20 @@ function SuggestionCard({
     }
   }
 
-  async function handleRewriteParagraphClick(index: number, blockHtml: string) {
+  async function handleRewriteParagraphClick(
+    index: number,
+    blockHtml: string,
+    options?: { instruction?: string; busyKey?: string },
+  ) {
     if (!onRewrite) return;
-    setActionBusy(`rewrite-para-${index}`);
+    const busyKey = options?.busyKey ?? `rewrite-para-${index}`;
+    setActionBusy(busyKey);
     try {
       const result = await onRewrite(
         suggestion.id,
         "paragraph",
         currentFields(),
-        instruction,
+        options?.instruction ?? instruction,
         blockHtml,
       );
       if (result.paragraphHtml) {
@@ -560,6 +565,23 @@ function SuggestionCard({
     } finally {
       setActionBusy(null);
     }
+  }
+
+  function paragraphResizeInstruction(direction: "expand" | "reduce"): string {
+    const canned =
+      direction === "expand"
+        ? "Make this section noticeably longer, roughly 30% more words, by adding relevant depth or detail already supported by the sources. Do not invent new facts."
+        : "Make this section noticeably shorter, roughly 30% fewer words, by tightening it without losing the core point.";
+    return instruction.trim() ? `${canned} Also: ${instruction.trim()}` : canned;
+  }
+
+  function handleDeleteBlock(index: number) {
+    if (!window.confirm("Delete this section? You can still Cancel out of editing to undo.")) {
+      return;
+    }
+    const blocks = splitBodyBlocks(bodyHtml);
+    blocks.splice(index, 1);
+    setBodyHtml(blocks.join(" "));
   }
 
   function startBlockEdit(index: number, blockHtml: string) {
@@ -717,7 +739,7 @@ function SuggestionCard({
                           <p className="text-[12px] leading-relaxed whitespace-pre-wrap text-[#c9c6ba]">
                             {htmlToText(block) || "(empty section)"}
                           </p>
-                          <div className="mt-2 flex gap-1.5">
+                          <div className="mt-2 flex flex-wrap gap-1.5">
                             <button
                               type="button"
                               className={microRewriteButtonClass}
@@ -733,6 +755,40 @@ function SuggestionCard({
                               onClick={() => void handleRewriteParagraphClick(index, block)}
                             >
                               {actionBusy === `rewrite-para-${index}` ? "Rewriting..." : "Rewrite"}
+                            </button>
+                            <button
+                              type="button"
+                              className={microRewriteButtonClass}
+                              disabled={busy}
+                              onClick={() =>
+                                void handleRewriteParagraphClick(index, block, {
+                                  instruction: paragraphResizeInstruction("expand"),
+                                  busyKey: `expand-para-${index}`,
+                                })
+                              }
+                            >
+                              {actionBusy === `expand-para-${index}` ? "Expanding..." : "Expand"}
+                            </button>
+                            <button
+                              type="button"
+                              className={microRewriteButtonClass}
+                              disabled={busy}
+                              onClick={() =>
+                                void handleRewriteParagraphClick(index, block, {
+                                  instruction: paragraphResizeInstruction("reduce"),
+                                  busyKey: `reduce-para-${index}`,
+                                })
+                              }
+                            >
+                              {actionBusy === `reduce-para-${index}` ? "Reducing..." : "Reduce"}
+                            </button>
+                            <button
+                              type="button"
+                              className={microRewriteButtonClass}
+                              disabled={busy}
+                              onClick={() => handleDeleteBlock(index)}
+                            >
+                              Delete
                             </button>
                           </div>
                         </>
