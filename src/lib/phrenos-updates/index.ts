@@ -111,6 +111,7 @@ export {
   listActiveSubscriberEmails,
   normalizeSubscriberEmail,
   notifySubscribersOfNewPost,
+  notifySubscribersOfNewResource,
   subscribeToUpdates,
   unsubscribeByToken,
   type SubscribeResult,

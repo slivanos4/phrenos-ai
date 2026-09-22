@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AiUpdatesPanel } from "@/components/admin/ai-updates-panel";
+import { ResourceNotifyForm } from "@/components/admin/resource-notify-form";
 
 export const metadata: Metadata = {
   title: "Admin · AI Updates",
@@ -38,6 +39,10 @@ export default function AdminAiUpdatesPage() {
         </p>
         <div className="mt-10 max-w-3xl">
           <AiUpdatesPanel />
+        </div>
+
+        <div className="mt-8 max-w-3xl">
+          <ResourceNotifyForm />
         </div>
       </div>
     </section>

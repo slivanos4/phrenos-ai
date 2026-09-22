@@ -105,15 +105,22 @@ export async function listActiveSubscriberEmails(): Promise<
   }));
 }
 
+type SubscriberCampaign = {
+  eyebrow: string;
+  subject: string;
+  heading: string;
+  body?: string;
+  ctaLabel: string;
+  ctaUrl: string;
+};
+
 /**
- * Email active subscribers about a newly published article.
+ * Email every active subscriber the same campaign (new post, new resource, ...).
  * No-ops (with a log) when RESEND_API_KEY is not configured.
  */
-export async function notifySubscribersOfNewPost(input: {
-  title: string;
-  hook?: string;
-  slug: string;
-}): Promise<{ sent: number; skipped: boolean }> {
+async function sendSubscriberCampaign(
+  campaign: SubscriberCampaign
+): Promise<{ sent: number; skipped: boolean }> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from =
     process.env.RESEND_FROM_EMAIL?.trim() || "Phrenos.ai <hello@phrenosai.com>";
@@ -138,9 +145,8 @@ export async function notifySubscribersOfNewPost(input: {
   }
 
   const origin = siteOrigin();
-  const articleUrl = `${origin}/ai-updates/${input.slug}`;
-  const hookLine = input.hook?.trim()
-    ? `<p style="margin:0 0 16px;color:#4a5248;font-size:15px;line-height:1.55;">${escapeHtml(input.hook.trim())}</p>`
+  const bodyLine = campaign.body?.trim()
+    ? `<p style="margin:0 0 16px;color:#4a5248;font-size:15px;line-height:1.55;">${escapeHtml(campaign.body.trim())}</p>`
     : "";
 
   let sent = 0;
@@ -156,13 +162,13 @@ export async function notifySubscribersOfNewPost(input: {
         body: JSON.stringify({
           from,
           to: [subscriber.email],
-          subject: `New on Phrenos AI Updates: ${input.title}`,
+          subject: campaign.subject,
           html: `<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;color:#1a221c;">
-  <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#a9893d;">Phrenos.ai · AI Updates</p>
-  <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#101c14;">${escapeHtml(input.title)}</h1>
-  ${hookLine}
+  <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#a9893d;">${escapeHtml(campaign.eyebrow)}</p>
+  <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;color:#101c14;">${escapeHtml(campaign.heading)}</h1>
+  ${bodyLine}
   <p style="margin:0 0 24px;">
-    <a href="${articleUrl}" style="display:inline-block;padding:12px 20px;background:#101c14;color:#f1e8d6;text-decoration:none;border-radius:999px;font-size:14px;">Read the update</a>
+    <a href="${campaign.ctaUrl}" style="display:inline-block;padding:12px 20px;background:#101c14;color:#f1e8d6;text-decoration:none;border-radius:999px;font-size:14px;">${escapeHtml(campaign.ctaLabel)}</a>
   </p>
   <p style="margin:0;font-size:12px;color:#7a8278;line-height:1.5;">
     You are receiving this because you subscribed on phrenosai.com.
@@ -186,6 +192,42 @@ export async function notifySubscribersOfNewPost(input: {
   }
 
   return { sent, skipped: false };
+}
+
+/** Email active subscribers about a newly published AI Updates article. */
+export async function notifySubscribersOfNewPost(input: {
+  title: string;
+  hook?: string;
+  slug: string;
+}): Promise<{ sent: number; skipped: boolean }> {
+  const articleUrl = `${siteOrigin()}/ai-updates/${input.slug}`;
+  return sendSubscriberCampaign({
+    eyebrow: "Phrenos.ai · AI Updates",
+    subject: `New on Phrenos AI Updates: ${input.title}`,
+    heading: input.title,
+    body: input.hook,
+    ctaLabel: "Read the update",
+    ctaUrl: articleUrl,
+  });
+}
+
+/** Email active subscribers about a newly published free resource. */
+export async function notifySubscribersOfNewResource(input: {
+  title: string;
+  description?: string;
+  url: string;
+}): Promise<{ sent: number; skipped: boolean }> {
+  const resourceUrl = input.url.startsWith("http")
+    ? input.url
+    : `${siteOrigin()}${input.url.startsWith("/") ? "" : "/"}${input.url}`;
+  return sendSubscriberCampaign({
+    eyebrow: "Phrenos.ai · Resources",
+    subject: `New free resource from Phrenos.ai: ${input.title}`,
+    heading: input.title,
+    body: input.description,
+    ctaLabel: "Get the resource",
+    ctaUrl: resourceUrl,
+  });
 }
 
 export async function unsubscribeByToken(token: string): Promise<boolean> {
