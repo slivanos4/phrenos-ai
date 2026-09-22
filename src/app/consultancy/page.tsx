@@ -18,7 +18,7 @@ export default function ConsultancyPage() {
         lightWash
         eyebrow="Consultancy"
         title="Capability with commercial intent."
-        description="Each engagement is designed around operational clarity and measurable outcomes, not technology for its own sake."
+        description="Five capabilities. One goal: AI that changes what your business can do, not just how it talks about the future."
       />
       <Services hideIntro />
     </>
