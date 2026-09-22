@@ -15,7 +15,11 @@ const contactHelpItems = [
   },
   {
     label: "Content & Digital Systems",
-    detail: "content engines, AI-assisted websites and digital products.",
+    detail: "governed content engines that scale production without losing brand voice.",
+  },
+  {
+    label: "Website Development",
+    detail: "AI-assisted design and build, from brief to a live site that converts.",
   },
   {
     label: "Competitive Intelligence",
