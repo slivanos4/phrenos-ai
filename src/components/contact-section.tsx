@@ -4,6 +4,29 @@ import { useState } from "react";
 import { ContactForm } from "@/components/contact-form";
 import { contactPage } from "@/data/site-content";
 
+const contactHelpItems = [
+  {
+    label: "AI Strategy & Adoption",
+    detail: "turning ambition into a plan leadership can fund.",
+  },
+  {
+    label: "Workflow Automation",
+    detail: "redesigning manual processes into reliable systems.",
+  },
+  {
+    label: "Content & Digital Systems",
+    detail: "content engines, AI-assisted websites and digital products.",
+  },
+  {
+    label: "Competitive Intelligence",
+    detail: "structured insight instead of scattered research.",
+  },
+  {
+    label: "Training & Enablement",
+    detail: "building AI fluency and judgement across your team.",
+  },
+] as const;
+
 export function ContactSection() {
   const [active, setActive] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -24,8 +47,8 @@ export function ContactSection() {
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-3xl px-6 lg:px-8">
-        <div className="mb-8 max-w-xl">
+      <div className="relative mx-auto max-w-6xl px-6 lg:px-8">
+        <div className="mb-10 max-w-xl">
           <p className="text-xs font-semibold tracking-[0.28em] text-[#e0c078] uppercase">
             Begin
           </p>
@@ -36,11 +59,58 @@ export function ContactSection() {
             {contactPage.formIntro}
           </p>
         </div>
-        <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-8">
-          <ContactForm
-            onActiveChange={setActive}
-            onSubmittedChange={setSubmitted}
-          />
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-8">
+          <div className="flex flex-col gap-6">
+            <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-6">
+              <p className="text-xs font-semibold tracking-[0.22em] text-[#e0c078] uppercase">
+                What we help with
+              </p>
+              <ul className="mt-4 space-y-3 text-sm leading-relaxed text-sage">
+                {contactHelpItems.map((item) => (
+                  <li key={item.label} className="flex gap-3">
+                    <span
+                      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d4af5a]"
+                      aria-hidden
+                    />
+                    <span>
+                      <span className="font-medium text-ivory">
+                        {item.label}:
+                      </span>{" "}
+                      {item.detail}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-6">
+              <p className="text-xs font-semibold tracking-[0.22em] text-[#e0c078] uppercase">
+                Not sure where to start?
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-sage">
+                Tell us where the friction is, and we&rsquo;ll help find the
+                leverage.
+              </p>
+            </div>
+
+            <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-6">
+              <p className="text-xs font-semibold tracking-[0.22em] text-[#e0c078] uppercase">
+                Response time
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-sage">
+                Every message is read personally. Expect a reply within a
+                couple of business days.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-8">
+            <ContactForm
+              onActiveChange={setActive}
+              onSubmittedChange={setSubmitted}
+            />
+          </div>
         </div>
       </div>
     </section>
