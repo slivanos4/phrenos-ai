@@ -19,7 +19,7 @@ const contactHelpItems = [
   },
   {
     label: "Website Development",
-    detail: "designed and built end-to-end, from brief to a live site that converts.",
+    detail: "designed and built end-to-end, with AI features built in wherever they add real value.",
   },
   {
     label: "Competitive Intelligence",
