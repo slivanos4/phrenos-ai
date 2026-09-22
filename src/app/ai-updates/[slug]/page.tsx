@@ -76,6 +76,12 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.published_at,
       url: `/ai-updates/${post.slug}`,
+      images: ["/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description,
     },
   };
 }
@@ -92,8 +98,39 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
   const bodyHtml = sanitizeEditorialText(post.body_html);
   const cta = splitCta(post.cta ?? "");
 
+  const articleUrl = `https://phrenosai.com/ai-updates/${post.slug}`;
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description: hook || toPlainText(summaryHtml).slice(0, 180),
+    datePublished: post.published_at,
+    dateModified: post.published_at,
+    author: {
+      "@type": "Person",
+      name: "Sophia Livanos",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Phrenos.ai",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://phrenosai.com/brand/phrenos_logo_green.png",
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": articleUrl,
+    },
+  };
+
   return (
     <article className="relative isolate bg-forest pt-32 pb-20 lg:pt-40 lg:pb-28">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       {/* Viewport-fixed artwork so the owl stays visible and never stretches with article length. */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="absolute inset-0 bg-forest" />

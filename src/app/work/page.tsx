@@ -1,10 +1,21 @@
 import type { Metadata } from "next";
 import { SelectedWork } from "@/components/selected-work";
 
+const pageTitle = "Work";
+const pageDescription =
+  "Selected Phrenos.ai engagements across competitive intelligence, content systems, governance and knowledge assistants.";
+
 export const metadata: Metadata = {
-  title: "Work",
-  description:
-    "Selected Phrenos.ai engagements across competitive intelligence, content systems, governance and knowledge assistants.",
+  title: pageTitle,
+  description: pageDescription,
+  alternates: { canonical: "/work" },
+  openGraph: {
+    title: pageTitle,
+    description: pageDescription,
+    url: "/work",
+    images: ["/opengraph-image"],
+  },
+  twitter: { card: "summary_large_image", title: pageTitle, description: pageDescription },
 };
 
 export default function WorkPage() {

@@ -3,10 +3,21 @@ import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { ContactCta } from "@/components/contact-cta";
 
+const pageTitle = "Resources";
+const pageDescription =
+  "Free tools from Phrenos.ai for leaders putting Generative AI to work, starting with How to Brief AI Like a Strategist.";
+
 export const metadata: Metadata = {
-  title: "Resources",
-  description:
-    "Free tools from Phrenos.ai for leaders putting Generative AI to work, starting with How to Brief AI Like a Strategist.",
+  title: pageTitle,
+  description: pageDescription,
+  alternates: { canonical: "/resources" },
+  openGraph: {
+    title: pageTitle,
+    description: pageDescription,
+    url: "/resources",
+    images: ["/opengraph-image"],
+  },
+  twitter: { card: "summary_large_image", title: pageTitle, description: pageDescription },
 };
 
 const briefPdfHref = "/products/brief-ai-like-a-strategist.pdf";

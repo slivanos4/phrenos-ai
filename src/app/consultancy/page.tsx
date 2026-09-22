@@ -2,10 +2,21 @@ import type { Metadata } from "next";
 import { PageHero } from "@/components/page-hero";
 import { Services } from "@/components/services";
 
+const pageTitle = "Consultancy";
+const pageDescription =
+  "AI strategy, workflow automation, content and digital systems, intelligence and team enablement from Phrenos.ai.";
+
 export const metadata: Metadata = {
-  title: "Consultancy",
-  description:
-    "AI strategy, workflow automation, content and digital systems, intelligence and team enablement from Phrenos.ai.",
+  title: pageTitle,
+  description: pageDescription,
+  alternates: { canonical: "/consultancy" },
+  openGraph: {
+    title: pageTitle,
+    description: pageDescription,
+    url: "/consultancy",
+    images: ["/opengraph-image"],
+  },
+  twitter: { card: "summary_large_image", title: pageTitle, description: pageDescription },
 };
 
 export default function ConsultancyPage() {

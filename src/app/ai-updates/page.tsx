@@ -8,10 +8,21 @@ import {
   type PublishedPost,
 } from "@/lib/phrenos-updates";
 
+const pageTitle = "AI Updates";
+const pageDescription =
+  "Weekly notes on Generative AI models, products and industry moves, written for leaders putting AI to work.";
+
 export const metadata: Metadata = {
-  title: "AI Updates",
-  description:
-    "Weekly notes on Generative AI models, products and industry moves, written for leaders putting AI to work.",
+  title: pageTitle,
+  description: pageDescription,
+  alternates: { canonical: "/ai-updates" },
+  openGraph: {
+    title: pageTitle,
+    description: pageDescription,
+    url: "/ai-updates",
+    images: ["/opengraph-image"],
+  },
+  twitter: { card: "summary_large_image", title: pageTitle, description: pageDescription },
 };
 
 // Always read the latest published posts (avoid a stale empty ISR shell after publish).
