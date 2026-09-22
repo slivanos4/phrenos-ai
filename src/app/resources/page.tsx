@@ -5,7 +5,7 @@ import { ContactCta } from "@/components/contact-cta";
 
 const pageTitle = "Resources";
 const pageDescription =
-  "Free tools from Phrenos.ai for leaders putting Generative AI to work, starting with How to Brief AI Like a Strategist.";
+  "Free AI tools and cheat sheets from Phrenos.ai for leaders putting Generative AI to work, starting with How to Brief AI Like a Strategist.";
 
 export const metadata: Metadata = {
   title: pageTitle,

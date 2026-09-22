@@ -134,16 +134,24 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
       {/* Viewport-fixed artwork so the owl stays visible and never stretches with article length. */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="absolute inset-0 bg-forest" />
-        <img
-          src="/brand/pages/article-owl.jpg"
-          alt=""
-          className="absolute top-0 right-0 hidden h-full w-[min(58vw,880px)] object-cover object-[72%_42%] opacity-[0.58] lg:block"
-        />
-        <img
-          src="/brand/pages/article-owl.jpg"
-          alt=""
-          className="absolute inset-0 h-[70vh] w-full object-cover object-[78%_30%] opacity-35 lg:hidden"
-        />
+        <picture>
+          <source srcSet="/brand/pages/article-owl.webp" type="image/webp" />
+          <img
+            src="/brand/pages/article-owl.jpg"
+            alt=""
+            className="absolute top-0 right-0 hidden h-full w-[min(58vw,880px)] object-cover object-[72%_42%] opacity-[0.58] lg:block"
+            decoding="async"
+          />
+        </picture>
+        <picture>
+          <source srcSet="/brand/pages/article-owl.webp" type="image/webp" />
+          <img
+            src="/brand/pages/article-owl.jpg"
+            alt=""
+            className="absolute inset-0 h-[70vh] w-full object-cover object-[78%_30%] opacity-35 lg:hidden"
+            decoding="async"
+          />
+        </picture>
         <div className="absolute inset-0 hidden bg-[linear-gradient(90deg,#101C14_0%,#101C14_46%,rgba(16,28,20,0.92)_60%,rgba(16,28,20,0.55)_78%,rgba(16,28,20,0.28)_100%)] lg:block" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,28,20,0.55)_0%,rgba(16,28,20,0.82)_38%,#101C14_72%)] lg:bg-[linear-gradient(180deg,rgba(16,28,20,0.35)_0%,transparent_22%,transparent_70%,rgba(16,28,20,0.55)_100%)]" />
       </div>

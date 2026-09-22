@@ -23,7 +23,7 @@ const manrope = Manrope({
 const siteUrl = "https://phrenosai.com";
 const defaultTitle = "Phrenos.ai | AI Strategy, Automation & Innovation";
 const defaultDescription =
-  "Phrenos.ai helps businesses turn Generative AI, data and automation into measurable operational and commercial impact.";
+  "Phrenos.ai is an independent AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

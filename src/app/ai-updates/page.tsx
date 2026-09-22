@@ -10,7 +10,7 @@ import {
 
 const pageTitle = "AI Updates";
 const pageDescription =
-  "Weekly notes on Generative AI models, products and industry moves, written for leaders putting AI to work.";
+  "Weekly AI news and analysis on Generative AI models, products and industry moves, written for leaders putting AI to work.";
 
 export const metadata: Metadata = {
   title: pageTitle,

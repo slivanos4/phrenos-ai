@@ -5,7 +5,7 @@ import { approach } from "@/data/site-content";
 
 const pageTitle = "Approach";
 const pageDescription =
-  "Understand, prioritise, build and embed: the Phrenos.ai method for responsible AI adoption.";
+  "Understand, prioritise, build and embed: the Phrenos.ai method for AI adoption and implementation, done responsibly.";
 
 export const metadata: Metadata = {
   title: pageTitle,

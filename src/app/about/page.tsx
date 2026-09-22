@@ -5,7 +5,7 @@ import { ContactCta } from "@/components/contact-cta";
 
 const pageTitle = "About";
 const pageDescription =
-  "Sophia Livanos on why she builds Phrenos.ai: helping people move from being impressed by AI to genuinely empowered by it.";
+  "Sophia Livanos, founder of Phrenos.ai and AI strategy consultant, on why she helps people move from being impressed by AI to genuinely empowered by it.";
 
 export const metadata: Metadata = {
   title: pageTitle,
