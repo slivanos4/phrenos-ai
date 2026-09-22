@@ -50,7 +50,7 @@ export default async function AiUpdatesPage({ searchParams }: AiUpdatesPageProps
         mobilePosition="65% center"
         eyebrow="AI Updates"
         title="Intelligence worth paying attention to."
-        description="Notes on Generative AI, automation and the organisational judgement required to put them to work."
+        description="Most AI news is noise dressed as urgency. This is the signal: the moves actually worth changing your roadmap for."
       />
 
       <section className="bg-forest pt-10 pb-16 lg:pt-14 lg:pb-24">

@@ -121,7 +121,7 @@ export const services = [
 
 export const approach = {
   intro:
-    "Phrenos.ai identifies high-value opportunities, designs practical systems, implements them responsibly and helps teams adopt them successfully.",
+    "Four stages. One standard: still running, and still paying off, long after the engagement ends.",
   stages: [
     {
       number: "I",

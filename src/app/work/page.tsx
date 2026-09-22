@@ -42,8 +42,8 @@ export default function WorkPage() {
           Systems that turn intelligence into action.
         </h1>
         <p className="animate-fade-up-delay-2 mt-5 max-w-xl text-base leading-relaxed text-sage sm:text-lg">
-          Five AI systems from the portfolio: competitive intelligence, brand
-          governance, knowledge, content hubs and reporting.
+          Five systems, one job each: take what was slow, scattered or
+          manual, and make it automatic enough to trust.
         </p>
       </section>
 
