@@ -5,7 +5,7 @@ import { Services } from "@/components/services";
 export const metadata: Metadata = {
   title: "Consultancy",
   description:
-    "AI strategy, workflow automation, content systems, intelligence and team enablement from Phrenos.ai.",
+    "AI strategy, workflow automation, content and digital systems, intelligence and team enablement from Phrenos.ai.",
 };
 
 export default function ConsultancyPage() {

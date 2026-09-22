@@ -82,15 +82,15 @@ export const services = [
     ],
   },
   {
-    title: "AI-Powered Content Systems",
+    title: "AI-Powered Content & Digital Systems",
     short: "Content",
     description:
-      "Design governed content engines that scale production, preserve brand voice and keep human judgement in the loop where it matters.",
+      "Design governed content engines and build the digital products that carry them, from AI-assisted websites to bespoke publishing platforms, so your brand scales across every channel without losing craft, voice or control.",
     points: [
-      "Scalable content factories with built-in governance.",
-      "Brand-aligned outputs across formats, channels and markets.",
-      "Human-in-the-loop workflows that elevate judgement.",
-      "Measurable impact through content intelligence and feedback loops.",
+      "Scalable content engines with built-in governance and human oversight.",
+      "AI-assisted websites and digital products, designed and shipped end-to-end.",
+      "Brand-aligned systems across content, product and every channel.",
+      "Measurable impact through analytics, feedback loops and continuous iteration.",
     ],
   },
   {
