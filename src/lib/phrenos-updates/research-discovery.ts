@@ -42,7 +42,38 @@ export const AI_NEWS_DOMAIN_BOOST = [
   "blogs.microsoft.com",
   "nvidia.com",
   "arxiv.org",
+  "apnews.com",
+  "cnbc.com",
+  "nbcnews.com",
+  "fortune.com",
+  "theatlantic.com",
 ] as const;
+
+/**
+ * Major labs/platforms worth a dedicated "what happened to them this week" search,
+ * independent of the model-launch/product-launch framing above. A plain company-name
+ * query surfaces regulatory, security, legal and business news (FTC probes, incidents,
+ * IPOs) that a "product launch" or "model release" query never asks for.
+ */
+export const MAJOR_AI_COMPANIES = [
+  "OpenAI",
+  "Anthropic",
+  "Google",
+  "Microsoft",
+  "Meta",
+  "Nvidia",
+  "Amazon",
+] as const;
+
+/** No includeDomains here on purpose: the point is to catch third-party coverage
+ * (Reuters, CNBC, trade press), not just each company's own blog. */
+function companyWatchQueries(): TavilySearchOptions[] {
+  return MAJOR_AI_COMPANIES.map((company) => ({
+    query: `${company} news this week`,
+    topic: "news",
+    maxResults: 8,
+  }));
+}
 
 export function domainNewsBoost(url: string): number {
   try {
@@ -164,6 +195,7 @@ export function discoveryQueriesForSection(
       topic: "news",
       maxResults: 12,
     },
+    ...companyWatchQueries(),
   ];
 }
 
