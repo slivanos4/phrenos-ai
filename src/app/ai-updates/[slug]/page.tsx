@@ -41,15 +41,31 @@ function toPlainText(html: string): string {
     .trim();
 }
 
-function splitCta(cta: string): { primary: string; supporting: string | null } {
+const DEFAULT_CTA_BUTTON_LABEL = "Build Your AI Strategy";
+
+/** A final CTA line ending in "→" becomes the button label; otherwise the default label is used. */
+function splitCta(cta: string): {
+  primary: string;
+  supporting: string | null;
+  buttonLabel: string;
+} {
   const parts = sanitizeEditorialText(cta)
     .split(/\n+/)
     .map((part) => part.trim())
     .filter(Boolean);
-  if (parts.length === 0) return { primary: "", supporting: null };
+  if (parts.length === 0) {
+    return { primary: "", supporting: null, buttonLabel: DEFAULT_CTA_BUTTON_LABEL };
+  }
+
+  let buttonLabel = DEFAULT_CTA_BUTTON_LABEL;
+  if (parts.length > 1 && parts[parts.length - 1].endsWith("→")) {
+    buttonLabel = parts.pop() as string;
+  }
+
   return {
     primary: parts[0],
     supporting: parts.slice(1).join(" ") || null,
+    buttonLabel,
   };
 }
 
@@ -198,6 +214,12 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
                 {cta.supporting}
               </p>
             ) : null}
+            <Link
+              href="/contact#contact-form"
+              className="mt-7 inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
+            >
+              {cta.buttonLabel}
+            </Link>
           </div>
         ) : null}
 
