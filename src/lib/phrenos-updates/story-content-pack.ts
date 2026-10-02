@@ -161,8 +161,13 @@ Return ONLY one JSON object:
 Rules:
 - Primary draft for the week: most relevant, engaging, and strategically useful for a global Phrenos audience. It must convert through title → hook → article → cta
 - title must create strategic tension (not a news wire headline). Prefer "[Development]. [Consequence/question]." Aim for roughly 8-14 words
-- hook must be concrete and executive-focused (what happened → what changed → why leaders should care). Do not restate the title
-- cta must be two paragraphs: (1) punchy problem-specific provocation, (2) supporting nurture line with the logical next step. Never soft contact CTAs, and never use the words "contact us", "get in touch", "book a call", "schedule a call", "reach out", or "learn more"
+${
+    suggestionType === "linkedin"
+      ? `- LinkedIn: follow the LINKEDIN POST STRUCTURE above exactly. hook = the opening lines only (do not restate the title). body_html = the signpost through the final [link] paragraph. cta = ONE closing question (ideally a binary choice) and nothing else, never a two-part pitch and never a service ask. Use only the seed idea's own angle as the single theme and leave the story's other angles for the blog. HARD MAXIMUM 250 words for the whole post (hook, body, cta), so cut rather than cover more ground
+- Never use the words "contact us", "get in touch", "book a call", "schedule a call", "reach out", or "learn more"`
+      : `- hook must be concrete and executive-focused (what happened → what changed → why leaders should care). Do not restate the title
+- cta must be two paragraphs: (1) punchy problem-specific provocation, (2) supporting nurture line with the logical next step. Never soft contact CTAs, and never use the words "contact us", "get in touch", "book a call", "schedule a call", "reach out", or "learn more"`
+  }
 - image_ideas is a creative brief for social artwork only; do not invent that an image file will be attached
 - Target ${target} words (minimum ${minimum})
 - ${

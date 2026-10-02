@@ -153,6 +153,19 @@ function htmlToText(html: string): string {
     .trim();
 }
 
+/** Like htmlToText but keeps paragraph breaks, for text people copy or download. */
+function htmlToParagraphText(html: string): string {
+  return html
+    .replace(/<\/(p|h[1-6]|li|ul|ol|blockquote)>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function countWords(html: string): number {
   const text = htmlToText(html);
   return text ? text.split(" ").length : 0;
@@ -175,16 +188,21 @@ function formatSuggestionPlainText(
   if (suggestion.suggestion_type === "linkedin") {
     // Clean, paste-ready text: no title line, no "Hook:"/"CTA:" labels, real LinkedIn
     // posts don't have either, it's one continuous post.
-    const body = htmlToText(suggestion.body_html || "");
+    const body = htmlToParagraphText(suggestion.body_html || "");
+    // A [link] token marks where the article link goes (before the closing question).
+    // Posts without one keep the older format: closing line, then "Read the full article here".
+    const hasLinkToken = /\[link\]/i.test(`${suggestion.hook} ${body} ${suggestion.cta}`);
+    const fillLink = (text: string) =>
+      text.replace(/\[link\]/gi, articleUrl || "[link]");
     return [
-      suggestion.hook || null,
+      suggestion.hook ? fillLink(suggestion.hook) : null,
       suggestion.hook ? "" : null,
-      body || null,
+      body ? fillLink(body) : null,
       suggestion.cta ? "" : null,
-      suggestion.cta || null,
-      articleUrl ? "" : null,
-      articleUrl ? "Read the full article here 👇" : null,
-      articleUrl || null,
+      suggestion.cta ? fillLink(suggestion.cta) : null,
+      articleUrl && !hasLinkToken ? "" : null,
+      articleUrl && !hasLinkToken ? "Read the full article here 👇" : null,
+      articleUrl && !hasLinkToken ? articleUrl : null,
       suggestion.hashtags ? "" : null,
       suggestion.hashtags || null,
     ]
@@ -195,8 +213,8 @@ function formatSuggestionPlainText(
 
   const tier = suggestion.is_full_draft ? "Featured draft" : "Idea";
   const body = suggestion.is_full_draft
-    ? htmlToText(suggestion.body_html)
-    : htmlToText(suggestion.body_html || suggestion.hook || "");
+    ? htmlToParagraphText(suggestion.body_html)
+    : htmlToParagraphText(suggestion.body_html || suggestion.hook || "");
 
   return [
     `Blog · ${tier}`,

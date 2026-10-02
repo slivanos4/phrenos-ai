@@ -85,7 +85,9 @@ Return ONLY JSON:
 
 Rules for revised:
 - Keep Phrenos voice and mandatory British English spelling
-- Preserve a tension-driven title, concrete executive hook, and two-part cta (primary provocation + supporting nurture line)
+${draft.suggestion_type === "linkedin"
+  ? `- LinkedIn post: keep the structure exactly as written. The hook is the opening lines, the final two body paragraphs (the first-person pointer line ending in a colon, then the literal token [link]) must stay unchanged and in place, and the cta must stay a single closing question. Do NOT turn the cta into a two-part pitch or add a service ask. Do not add paragraphs or length; only remove or soften unsupported claims.`
+  : `- Preserve a tension-driven title, concrete executive hook, and two-part cta (primary provocation + supporting nurture line)`}
 - Remove or rewrite every unsupported claim
 - Do not invent replacement facts
 - Keep Why this matters now and What to do next for blog drafts
