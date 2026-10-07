@@ -17,6 +17,9 @@ import {
 } from "@/lib/phrenos-updates/week-hero-shared";
 import {
   isCustomRun,
+  isReviewReportSource,
+  parseReviewReport,
+  reviewStatusLine,
   SECTION_LABELS,
   type ContentSuggestion,
   type DraftReviewReport,
@@ -984,6 +987,15 @@ function SuggestionCard({
         </>
       )}
 
+      {proofreadApi?.reports[suggestion.id] ? (
+        <ProofreadStatus
+          report={proofreadApi.reports[suggestion.id]}
+          current={{ title: suggestion.title, hook: suggestion.hook, body_html: suggestion.body_html, cta: suggestion.cta }}
+          busy={busy}
+          onUndo={() => proofreadApi.undo(suggestion.id)}
+        />
+      ) : null}
+
       <div className="mt-3 flex flex-wrap gap-2">
         {editing ? (
           <>
@@ -1366,15 +1378,17 @@ function StoryCard({
           className="text-[11px] font-semibold tracking-[0.16em] text-[#e0c078] uppercase"
           onClick={() => setShowSources((current) => !current)}
         >
-          {showSources ? "Hide" : "Show"} sources ({story.sources.length})
+          {showSources ? "Hide" : "Show"} sources ({story.sources.filter((source) => !isReviewReportSource(source)).length})
         </button>
       </div>
 
       {showSources ? (
         <ul className="mt-3 space-y-2">
-          {story.sources.map((source) => (
-            <SourceRow key={source.id} source={source} />
-          ))}
+          {story.sources
+            .filter((source) => !isReviewReportSource(source))
+            .map((source) => (
+              <SourceRow key={source.id} source={source} />
+            ))}
         </ul>
       ) : null}
 
@@ -1572,10 +1586,116 @@ function DeskBriefsPanel({
   );
 }
 
-/** Lets any draft card start a ChatGPT proofread without threading props through every layer. */
-const ProofreadContext = createContext<{ proofread: (suggestionId: string) => void } | null>(null);
+/** Lets any draft card start a ChatGPT proofread and read its saved report without threading props through every layer. */
+const ProofreadContext = createContext<{
+  proofread: (suggestionId: string) => void;
+  undo: (suggestionId: string) => void;
+  reports: Record<string, DraftReviewReport>;
+} | null>(null);
 
-type ReviewReportView = DraftReviewReport & { undone?: boolean };
+/** The lasting "Proofread · 5 suggestions · 2 edits made" line under a draft, with the details behind it. */
+function ProofreadStatus({
+  report,
+  current,
+  busy,
+  onUndo,
+}: {
+  report: DraftReviewReport;
+  current: { title: string; hook: string; body_html: string; cta: string };
+  busy: boolean;
+  onUndo: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const plain = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const sameAsProofread =
+    plain(current.title) === plain(report.current.title) &&
+    plain(current.hook) === plain(report.current.hook) &&
+    plain(current.body_html) === plain(report.current.body_html) &&
+    plain(current.cta) === plain(report.current.cta);
+  const canUndo = report.applied && !report.undone && sameAsProofread;
+
+  return (
+    <div className="mt-3 rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/40 px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-semibold tracking-wide text-[#8fbf9f]">
+          {reviewStatusLine(report)}
+          {report.undone ? <span className="text-[#e0c078]"> · changes undone</span> : null}
+          <span className="font-normal text-[#a9b0a3]"> · {formatDateTime(report.reviewedAt)}</span>
+        </p>
+        <div className="flex gap-2">
+          {canUndo ? (
+            <button type="button" className={microRewriteButtonClass} disabled={busy} onClick={onUndo}>
+              Undo changes
+            </button>
+          ) : null}
+          <button type="button" className={microRewriteButtonClass} onClick={() => setOpen((v) => !v)}>
+            {open ? "Hide details" : "Read suggestions and edits"}
+          </button>
+        </div>
+      </div>
+
+      {open ? (
+        <div className="mt-3 space-y-4 text-sm">
+          {report.overall ? (
+            <p className="text-[#cfd3c8]">
+              <span className="text-[#a9b0a3]">ChatGPT ({report.model}): </span>
+              {report.overall}
+            </p>
+          ) : null}
+
+          <div>
+            <p className={labelClass}>Suggestions ({report.items.length})</p>
+            {report.items.length === 0 ? (
+              <p className="mt-1 text-[#a9b0a3]">ChatGPT found nothing to change.</p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {report.items.map((item) => (
+                  <li key={item.id} className="flex gap-2">
+                    <span
+                      className={`mt-0.5 w-14 shrink-0 text-[10px] font-semibold tracking-wide uppercase ${
+                        item.decision === "rejected" ? "text-[#a9b0a3]" : "text-[#8fbf9f]"
+                      }`}
+                    >
+                      {item.decision === "accepted" ? "Applied" : item.decision === "adapted" ? "Adapted" : "Kept"}
+                    </span>
+                    <span className="text-[#cfd3c8]">
+                      {item.issue}
+                      {item.fix ? <span className="text-[#a9b0a3]"> Suggested: {item.fix}</span> : null}
+                      <span className="block text-xs text-[#a9b0a3]">Claude: {item.reason}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <p className={labelClass}>
+              Edits made ({report.applied ? report.items.filter((i) => i.decision !== "rejected").length : 0})
+            </p>
+            {report.edits.length === 0 ? (
+              <p className="mt-1 text-[#a9b0a3]">The draft was left exactly as it was.</p>
+            ) : (
+              <ul className="mt-2 space-y-3">
+                {report.edits.map((edit, index) => (
+                  <li key={`${edit.where}-${index}`}>
+                    <p className="text-[10px] font-semibold tracking-wide text-[#e0c078] uppercase">{edit.where}</p>
+                    <p className="mt-0.5 text-[#a9b0a3] line-through decoration-[#a9b0a3]/50">{edit.before}</p>
+                    <p className="mt-0.5 text-[#cfd3c8]">{edit.after}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {!sameAsProofread && !report.undone ? (
+            <p className="text-xs text-[#a9b0a3]">This draft has been edited since the proofread, so Undo is off.</p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 type BriefClaimCheck = {
   claim: string;
@@ -1606,7 +1726,6 @@ export function AiUpdatesPanel() {
   const [rerunning, setRerunning] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
-  const [reviewReports, setReviewReports] = useState<ReviewReportView[]>([]);
   const [proofreading, setProofreading] = useState(false);
 
   const [customBrief, setCustomBrief] = useState("");
@@ -1749,6 +1868,18 @@ export function AiUpdatesPanel() {
     }, POLL_MS);
     return () => clearInterval(timer);
   }, [runActive, selectedRunId, loadRun, loadRuns]);
+
+  const reviewReports = useMemo(() => {
+    const map: Record<string, DraftReviewReport> = {};
+    for (const story of run?.stories ?? []) {
+      for (const source of story.sources ?? []) {
+        if (!isReviewReportSource(source)) continue;
+        const report = parseReviewReport(source);
+        if (report) map[report.suggestionId] = report;
+      }
+    }
+    return map;
+  }, [run]);
 
   const heroStory = useMemo(() => {
     return (run?.stories ?? []).find((story) => isWeekHeroStory(story)) ?? null;
@@ -1931,21 +2062,14 @@ export function AiUpdatesPanel() {
     });
   }
 
+  /** Reports are saved on the server and shown under each draft; here we only surface problems. */
   function collectReviewResults(
     items: { suggestionId: string; result?: DraftReviewResult; error?: string }[],
   ) {
-    const reports: ReviewReportView[] = [];
     const messages: string[] = [];
     for (const item of items) {
       if (item.error) messages.push(`Proofreading problem: ${item.error}`);
       else if (item.result?.skipped) messages.push(item.result.reason);
-      else if (item.result) reports.push(item.result.report);
-    }
-    if (reports.length > 0) {
-      setReviewReports((current) => [
-        ...reports,
-        ...current.filter((existing) => !reports.some((r) => r.suggestionId === existing.suggestionId)),
-      ]);
     }
     const unique = [...new Set(messages)];
     if (unique.length > 0) setNotice(unique.join(" "));
@@ -1991,24 +2115,18 @@ export function AiUpdatesPanel() {
     }
   }
 
-  async function handleUndoReview(report: ReviewReportView) {
-    markBusy(report.suggestionId, true);
+  async function handleUndoReview(suggestionId: string) {
+    markBusy(suggestionId, true);
     setError(null);
     try {
-      await requestJson(`/api/phrenos-updates/suggestions/${report.suggestionId}`, {
-        method: "PATCH",
-        body: JSON.stringify(report.previous),
+      await requestJson(`/api/phrenos-updates/suggestions/${suggestionId}/review/undo`, {
+        method: "POST",
       });
-      setReviewReports((current) =>
-        current.map((item) =>
-          item.suggestionId === report.suggestionId ? { ...item, undone: true } : item,
-        ),
-      );
       if (selectedRunId) await loadRun(selectedRunId, true);
     } catch (cause) {
       reportError(cause);
     } finally {
-      markBusy(report.suggestionId, false);
+      markBusy(suggestionId, false);
     }
   }
 
@@ -2344,7 +2462,13 @@ export function AiUpdatesPanel() {
   const anyBusy = startingRun || rerunning || busyIds.size > 0;
 
   return (
-    <ProofreadContext.Provider value={{ proofread: (id) => void handleProofreadSuggestion(id) }}>
+    <ProofreadContext.Provider
+      value={{
+        proofread: (id) => void handleProofreadSuggestion(id),
+        undo: (id) => void handleUndoReview(id),
+        reports: reviewReports,
+      }}
+    >
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-[#a9b0a3]">Signed in to the portal</p>
@@ -2578,78 +2702,6 @@ export function AiUpdatesPanel() {
           role="status"
         >
           ChatGPT is proofreading the drafts, then Claude weighs each suggestion and amends. This can take a minute or two.
-        </div>
-      ) : null}
-
-      {reviewReports.length > 0 ? (
-        <div className="space-y-3">
-          {reviewReports.map((report) => (
-            <div key={report.suggestionId} className={panelClass}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
-                    Proofread by ChatGPT ({report.model}) · {report.kind === "linkedin" ? "LinkedIn post" : "Blog"}
-                  </p>
-                  <p className="mt-1 text-sm text-[#f1e8d6]">{report.title}</p>
-                </div>
-                <div className="flex gap-2">
-                  {report.applied && !report.undone ? (
-                    <button
-                      type="button"
-                      className={microButtonClass}
-                      disabled={anyBusy}
-                      onClick={() => void handleUndoReview(report)}
-                    >
-                      Undo changes
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className={microButtonClass}
-                    onClick={() =>
-                      setReviewReports((current) =>
-                        current.filter((item) => item.suggestionId !== report.suggestionId),
-                      )
-                    }
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-              <p className="mt-2 text-xs text-[#a9b0a3]">
-                {report.undone
-                  ? "Changes undone. The draft is back to how it was before the proofread."
-                  : `${report.note} ${report.applied ? `${report.wordsBefore} to ${report.wordsAfter} words.` : ""}`}
-              </p>
-              {report.overall ? (
-                <p className="mt-2 text-sm text-[#cfd3c8]">ChatGPT: {report.overall}</p>
-              ) : null}
-              {report.items.length > 0 ? (
-                <ul className="mt-3 space-y-2 text-sm">
-                  {report.items.map((item) => (
-                    <li key={item.id} className="flex gap-2">
-                      <span
-                        className={`mt-0.5 w-16 shrink-0 text-[10px] font-semibold tracking-wide uppercase ${
-                          item.decision === "rejected" ? "text-[#a9b0a3]" : "text-[#8fbf9f]"
-                        }`}
-                      >
-                        {item.decision === "accepted"
-                          ? "Applied"
-                          : item.decision === "adapted"
-                            ? "Adapted"
-                            : "Kept"}
-                      </span>
-                      <span className="text-[#cfd3c8]">
-                        {item.issue}
-                        {item.fix ? <span className="text-[#a9b0a3]"> Suggested: {item.fix}</span> : null}
-                        <span className="block text-xs text-[#a9b0a3]">Claude: {item.reason}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          ))}
         </div>
       ) : null}
 

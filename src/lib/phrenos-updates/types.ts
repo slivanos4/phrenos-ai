@@ -171,9 +171,21 @@ export type ReviewItem = ChatGptSuggestion & {
   reason: string;
 };
 
+/** One passage that changed between the draft before and after the proofread. */
+export type ReviewEdit = {
+  where: string;
+  before: string;
+  after: string;
+};
+
 /** What happened when ChatGPT proofread a draft and Claude studied the feedback. */
 export type DraftReviewReport = {
   suggestionId: string;
+  storyId: string;
+  reviewedAt: string;
+  edits: ReviewEdit[];
+  /** Set after "Undo changes" restores the draft to how it was before the proofread. */
+  undone?: boolean;
   kind: SuggestionType;
   title: string;
   model: string;
@@ -197,3 +209,28 @@ export type StoryReviewOutcome = {
   result?: DraftReviewResult;
   error?: string;
 };
+
+/** Proofread reports are stored on the story as synthesis rows with this title prefix, so they persist. */
+export const REVIEW_REPORT_TITLE_PREFIX = "Proofread report:";
+
+export function isReviewReportSource(source: { title?: string | null; is_synthesis?: boolean }): boolean {
+  return Boolean(source.is_synthesis) && (source.title ?? "").startsWith(REVIEW_REPORT_TITLE_PREFIX);
+}
+
+export function parseReviewReport(source: { extracted_facts?: string | null }): DraftReviewReport | null {
+  if (!source.extracted_facts) return null;
+  try {
+    const report = JSON.parse(source.extracted_facts) as DraftReviewReport;
+    return report && typeof report.suggestionId === "string" ? report : null;
+  } catch {
+    return null;
+  }
+}
+
+/** "Proofread · 5 suggestions · 2 edits made" */
+export function reviewStatusLine(report: DraftReviewReport): string {
+  const suggestions = report.items.length;
+  const edits = report.applied ? report.items.filter((item) => item.decision !== "rejected").length : 0;
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  return `Proofread · ${plural(suggestions, "suggestion")} · ${plural(edits, "edit")} made`;
+}

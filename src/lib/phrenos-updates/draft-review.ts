@@ -11,7 +11,13 @@ import { sourceFactsForPrompt } from "@/lib/phrenos-updates/source-enrichment";
 import { authorBriefFor } from "@/lib/phrenos-updates/story-content-pack";
 import { cleanSuggestionFields, meetsLengthTarget } from "@/lib/phrenos-updates/suggestion-quality";
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
-import { SUGGESTIONS_TABLE } from "@/lib/phrenos-updates/tables";
+import { SOURCES_TABLE, SUGGESTIONS_TABLE } from "@/lib/phrenos-updates/tables";
+import {
+  parseReviewReport,
+  REVIEW_REPORT_TITLE_PREFIX,
+  reviewStatusLine,
+  type ReviewEdit,
+} from "@/lib/phrenos-updates/types";
 import type {
   DraftReviewReport,
   DraftReviewResult,
@@ -59,6 +65,138 @@ function sourcePacket(story: GeneratedStory) {
       published_at: source.published_at ?? null,
       facts: sourceFactsForPrompt(source).slice(0, 1200),
     }));
+}
+
+function textOf(html: string): string {
+  return html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function blocksOf(html: string): string[] {
+  const blocks = [...html.matchAll(/<(p|h[1-6]|li)[^>]*>([\s\S]*?)<\/\1>/gi)].map((m) => textOf(m[2]));
+  return blocks.filter(Boolean);
+}
+
+const clip = (text: string) => (text.length > 500 ? `${text.slice(0, 500)}...` : text);
+
+/** The passages that actually changed, as before and after, for the "edits made" list. */
+export function diffDrafts(before: ReviewableDraft, after: ReviewableDraft): ReviewEdit[] {
+  const edits: ReviewEdit[] = [];
+  const single = (where: string, a: string, b: string) => {
+    const x = textOf(a);
+    const y = textOf(b);
+    if (x !== y) edits.push({ where, before: clip(x), after: clip(y) });
+  };
+  single("Title", before.title, after.title);
+  single("Opening", before.hook, after.hook);
+
+  const a = blocksOf(before.body_html);
+  const b = blocksOf(after.body_html);
+  // Align paragraphs with a longest common subsequence so one edit does not shift every row.
+  const lcs: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i -= 1) {
+    for (let j = b.length - 1; j >= 0; j -= 1) {
+      lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    }
+  }
+  let i = 0;
+  let j = 0;
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) {
+      i += 1;
+      j += 1;
+      continue;
+    }
+    const removed: string[] = [];
+    const added: string[] = [];
+    const startJ = j;
+    while (i < a.length && (j >= b.length || lcs[i][j] === lcs[i + 1][j])) {
+      removed.push(a[i]);
+      i += 1;
+    }
+    while (j < b.length && (i >= a.length || lcs[i][j] === lcs[i][j + 1])) {
+      added.push(b[j]);
+      j += 1;
+    }
+    if (removed.length === 0 && added.length === 0) {
+      i += 1;
+      continue;
+    }
+    edits.push({
+      where: added.length === 0 ? `Removed near paragraph ${startJ + 1}` : `Paragraph ${startJ + 1}`,
+      before: removed.length ? clip(removed.join(" ")) : "(nothing)",
+      after: added.length ? clip(added.join(" ")) : "(removed)",
+    });
+  }
+
+  single("Closing line", before.cta, after.cta);
+  return edits.slice(0, 20);
+}
+
+/** Store the report on the story so the status line and details survive a refresh. */
+async function saveReviewReport(report: DraftReviewReport) {
+  const supabase = createServiceRoleClient();
+  const title = `${REVIEW_REPORT_TITLE_PREFIX} ${report.suggestionId}`;
+  const payload = {
+    story_id: report.storyId,
+    url: "",
+    title,
+    accessed_at: report.reviewedAt,
+    published_at: null,
+    snapshot_excerpt: reviewStatusLine(report),
+    extracted_facts: JSON.stringify(report),
+    is_synthesis: true,
+    sort_order: 900,
+  };
+  const { data: existing } = await supabase
+    .from(SOURCES_TABLE)
+    .select("id")
+    .eq("story_id", report.storyId)
+    .eq("title", title)
+    .maybeSingle();
+  const { error } = existing
+    ? await supabase.from(SOURCES_TABLE).update(payload).eq("id", existing.id)
+    : await supabase.from(SOURCES_TABLE).insert(payload);
+  if (error) console.error("Could not save the proofread report:", error.message);
+}
+
+/** Restore a draft to how it was before its proofread, and note that on the report. */
+export async function undoReviewReport(suggestionId: string) {
+  const supabase = createServiceRoleClient();
+  const { data: row } = await supabase
+    .from(SUGGESTIONS_TABLE)
+    .select("story_id")
+    .eq("id", suggestionId)
+    .maybeSingle();
+  if (!row) throw new Error("Draft not found.");
+
+  const title = `${REVIEW_REPORT_TITLE_PREFIX} ${suggestionId}`;
+  const { data: stored } = await supabase
+    .from(SOURCES_TABLE)
+    .select("id, extracted_facts")
+    .eq("story_id", row.story_id)
+    .eq("title", title)
+    .maybeSingle();
+  const report = stored ? parseReviewReport(stored) : null;
+  if (!stored || !report) throw new Error("There is no proofread to undo for this draft.");
+  if (report.undone) throw new Error("This proofread has already been undone.");
+
+  const previous = {
+    title: sanitizeEditorialText(report.previous.title),
+    hook: sanitizeEditorialText(report.previous.hook),
+    body_html: normalizePresentationHtml(sanitizeEditorialText(report.previous.body_html)),
+    cta: sanitizeEditorialText(report.previous.cta),
+  };
+  const { error } = await supabase
+    .from(SUGGESTIONS_TABLE)
+    .update({ ...previous, updated_at: new Date().toISOString() })
+    .eq("id", suggestionId);
+  if (error) throw new Error(error.message);
+
+  const undone: DraftReviewReport = { ...report, undone: true, current: previous };
+  await supabase
+    .from(SOURCES_TABLE)
+    .update({ extracted_facts: JSON.stringify(undone), snapshot_excerpt: `${reviewStatusLine(undone)} · undone` })
+    .eq("id", stored.id);
 }
 
 /** Claude, the author, studies ChatGPT's feedback and decides what to apply. */
@@ -137,7 +275,7 @@ Return ONLY JSON:
  * Claude writes, ChatGPT proofreads and suggests, Claude studies the feedback and amends.
  * A revision is only saved if it keeps the structure, stays in length and passes the source fact-check.
  */
-export async function reviewAndImproveSuggestion(suggestionId: string): Promise<DraftReviewResult> {
+async function runReview(suggestionId: string): Promise<DraftReviewResult> {
   const startedAt = Date.now();
   const secondsSince = () => (Date.now() - startedAt) / 1000;
 
@@ -177,6 +315,8 @@ export async function reviewAndImproveSuggestion(suggestionId: string): Promise<
   const review = await requestChatGptReview({ kind, draft: previous, sources: story.sources });
   const base = {
     suggestionId: row.id,
+    storyId: row.story_id,
+    reviewedAt: new Date().toISOString(),
     kind,
     title: row.title,
     model: review.model,
@@ -186,7 +326,7 @@ export async function reviewAndImproveSuggestion(suggestionId: string): Promise<
   };
   const unchanged = (note: string, items: ReviewItem[]): DraftReviewResult => ({
     skipped: false,
-    report: { ...base, applied: false, note, items, current: previous, wordsAfter: wordsBefore },
+    report: { ...base, applied: false, note, items, edits: [], current: previous, wordsAfter: wordsBefore },
   });
   const asRejected = (reason: string): ReviewItem[] =>
     review.suggestions.map((item) => ({ ...item, decision: "rejected", reason }));
@@ -281,10 +421,17 @@ export async function reviewAndImproveSuggestion(suggestionId: string): Promise<
       applied: true,
       note: `Claude applied ${applied} of ${items.length} suggestions.`,
       items,
+      edits: diffDrafts(previous, current),
       current,
       wordsAfter: draftWords(kind, current),
     },
   };
+}
+
+export async function reviewAndImproveSuggestion(suggestionId: string): Promise<DraftReviewResult> {
+  const result = await runReview(suggestionId);
+  if (!result.skipped) await saveReviewReport(result.report);
+  return result;
 }
 
 /** Proofread a story's featured blog and LinkedIn drafts in parallel. */
