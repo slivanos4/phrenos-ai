@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import { formatSourcePublishedDate, getDisplayPublishedDate } from "@/lib/phrenos-updates/source-dates";
 import {
   hasFeaturedBlogDraft,
@@ -11,10 +19,13 @@ import {
   isCustomRun,
   SECTION_LABELS,
   type ContentSuggestion,
+  type DraftReviewReport,
+  type DraftReviewResult,
   type ResearchRun,
   type ResearchSection,
   type ResearchSource,
   type ResearchStory,
+  type StoryReviewOutcome,
   type SuggestionStatus,
 } from "@/lib/phrenos-updates/types";
 
@@ -446,6 +457,7 @@ function SuggestionCard({
   /** URL of the published blog article for this suggestion's story, if live. Shown on LinkedIn cards only. */
   articleUrl?: string | null;
 }) {
+  const proofreadApi = useContext(ProofreadContext);
   const [showBody, setShowBody] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1058,6 +1070,17 @@ function SuggestionCard({
                 {actionBusy === "rewrite-all" ? "Rewriting..." : "Rewrite"}
               </button>
             ) : null}
+            {proofreadApi ? (
+              <button
+                type="button"
+                className={microButtonClass}
+                disabled={busy || editing || suggestion.status === "published"}
+                onClick={() => proofreadApi.proofread(suggestion.id)}
+                title="ChatGPT proofreads, Claude decides what to change"
+              >
+                {busy ? "Working..." : "Proofread"}
+              </button>
+            ) : null}
             <button
               type="button"
               className={microButtonClass}
@@ -1549,6 +1572,11 @@ function DeskBriefsPanel({
   );
 }
 
+/** Lets any draft card start a ChatGPT proofread without threading props through every layer. */
+const ProofreadContext = createContext<{ proofread: (suggestionId: string) => void } | null>(null);
+
+type ReviewReportView = DraftReviewReport & { undone?: boolean };
+
 type BriefClaimCheck = {
   claim: string;
   status: "supported" | "unverified" | "contradicted";
@@ -1577,6 +1605,9 @@ export function AiUpdatesPanel() {
   const [startingRun, setStartingRun] = useState(false);
   const [rerunning, setRerunning] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+
+  const [reviewReports, setReviewReports] = useState<ReviewReportView[]>([]);
+  const [proofreading, setProofreading] = useState(false);
 
   const [customBrief, setCustomBrief] = useState("");
   const [customUrls, setCustomUrls] = useState("");
@@ -1900,6 +1931,87 @@ export function AiUpdatesPanel() {
     });
   }
 
+  function collectReviewResults(
+    items: { suggestionId: string; result?: DraftReviewResult; error?: string }[],
+  ) {
+    const reports: ReviewReportView[] = [];
+    const messages: string[] = [];
+    for (const item of items) {
+      if (item.error) messages.push(`Proofreading problem: ${item.error}`);
+      else if (item.result?.skipped) messages.push(item.result.reason);
+      else if (item.result) reports.push(item.result.report);
+    }
+    if (reports.length > 0) {
+      setReviewReports((current) => [
+        ...reports,
+        ...current.filter((existing) => !reports.some((r) => r.suggestionId === existing.suggestionId)),
+      ]);
+    }
+    const unique = [...new Set(messages)];
+    if (unique.length > 0) setNotice(unique.join(" "));
+  }
+
+  /** After content is created: ChatGPT proofreads the featured drafts and Claude amends. Never blocks the content. */
+  async function runStoryReview(storyId: string) {
+    setProofreading(true);
+    try {
+      const result = await requestJson<{ outcomes: StoryReviewOutcome[] }>(
+        `/api/phrenos-updates/stories/${storyId}/review`,
+        { method: "POST" },
+      );
+      collectReviewResults(result.outcomes);
+    } catch (cause) {
+      setNotice(
+        `Content is ready, but ChatGPT proofreading failed: ${
+          cause instanceof Error ? cause.message : "unknown error"
+        }`,
+      );
+    } finally {
+      setProofreading(false);
+    }
+  }
+
+  async function handleProofreadSuggestion(suggestionId: string) {
+    markBusy(suggestionId, true);
+    setError(null);
+    setNotice(null);
+    setProofreading(true);
+    try {
+      const result = await requestJson<DraftReviewResult>(
+        `/api/phrenos-updates/suggestions/${suggestionId}/review`,
+        { method: "POST" },
+      );
+      collectReviewResults([{ suggestionId, result }]);
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      setProofreading(false);
+      markBusy(suggestionId, false);
+    }
+  }
+
+  async function handleUndoReview(report: ReviewReportView) {
+    markBusy(report.suggestionId, true);
+    setError(null);
+    try {
+      await requestJson(`/api/phrenos-updates/suggestions/${report.suggestionId}`, {
+        method: "PATCH",
+        body: JSON.stringify(report.previous),
+      });
+      setReviewReports((current) =>
+        current.map((item) =>
+          item.suggestionId === report.suggestionId ? { ...item, undone: true } : item,
+        ),
+      );
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      markBusy(report.suggestionId, false);
+    }
+  }
+
   async function handleCustomTopic(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -1930,6 +2042,7 @@ export function AiUpdatesPanel() {
         setNotice(`Blog and LinkedIn drafts are ready for "${result.title}".`);
         setCustomBrief("");
         setCustomUrls("");
+        await runStoryReview(result.storyId);
       } finally {
         markBusy(result.storyId, false);
       }
@@ -1986,6 +2099,8 @@ export function AiUpdatesPanel() {
           ? `Featured blog and LinkedIn ready for "${result.title}".`
           : `Content ready for "${result.title}" (${result.suggestionCount} drafts and ideas).`,
       );
+      if (selectedRunId) await loadRun(selectedRunId, true);
+      await runStoryReview(storyId);
       if (selectedRunId) await loadRun(selectedRunId, true);
     } catch (cause) {
       reportError(cause);
@@ -2229,6 +2344,7 @@ export function AiUpdatesPanel() {
   const anyBusy = startingRun || rerunning || busyIds.size > 0;
 
   return (
+    <ProofreadContext.Provider value={{ proofread: (id) => void handleProofreadSuggestion(id) }}>
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-[#a9b0a3]">Signed in to the portal</p>
@@ -2456,6 +2572,87 @@ export function AiUpdatesPanel() {
         </div>
       ) : null}
 
+      {proofreading ? (
+        <div
+          className="rounded-xl border border-[#d4af5a]/30 bg-[#d4af5a]/5 px-4 py-3 text-sm text-[#e0c078]"
+          role="status"
+        >
+          ChatGPT is proofreading the drafts, then Claude weighs each suggestion and amends. This can take a minute or two.
+        </div>
+      ) : null}
+
+      {reviewReports.length > 0 ? (
+        <div className="space-y-3">
+          {reviewReports.map((report) => (
+            <div key={report.suggestionId} className={panelClass}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
+                    Proofread by ChatGPT ({report.model}) · {report.kind === "linkedin" ? "LinkedIn post" : "Blog"}
+                  </p>
+                  <p className="mt-1 text-sm text-[#f1e8d6]">{report.title}</p>
+                </div>
+                <div className="flex gap-2">
+                  {report.applied && !report.undone ? (
+                    <button
+                      type="button"
+                      className={microButtonClass}
+                      disabled={anyBusy}
+                      onClick={() => void handleUndoReview(report)}
+                    >
+                      Undo changes
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={microButtonClass}
+                    onClick={() =>
+                      setReviewReports((current) =>
+                        current.filter((item) => item.suggestionId !== report.suggestionId),
+                      )
+                    }
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-[#a9b0a3]">
+                {report.undone
+                  ? "Changes undone. The draft is back to how it was before the proofread."
+                  : `${report.note} ${report.applied ? `${report.wordsBefore} to ${report.wordsAfter} words.` : ""}`}
+              </p>
+              {report.overall ? (
+                <p className="mt-2 text-sm text-[#cfd3c8]">ChatGPT: {report.overall}</p>
+              ) : null}
+              {report.items.length > 0 ? (
+                <ul className="mt-3 space-y-2 text-sm">
+                  {report.items.map((item) => (
+                    <li key={item.id} className="flex gap-2">
+                      <span
+                        className={`mt-0.5 w-16 shrink-0 text-[10px] font-semibold tracking-wide uppercase ${
+                          item.decision === "rejected" ? "text-[#a9b0a3]" : "text-[#8fbf9f]"
+                        }`}
+                      >
+                        {item.decision === "accepted"
+                          ? "Applied"
+                          : item.decision === "adapted"
+                            ? "Adapted"
+                            : "Kept"}
+                      </span>
+                      <span className="text-[#cfd3c8]">
+                        {item.issue}
+                        {item.fix ? <span className="text-[#a9b0a3]"> Suggested: {item.fix}</span> : null}
+                        <span className="block text-xs text-[#a9b0a3]">Claude: {item.reason}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {runActive ? (
         <ProgressBanner
           label="Research"
@@ -2607,5 +2804,6 @@ export function AiUpdatesPanel() {
         </section>
       ))}
     </div>
+    </ProofreadContext.Provider>
   );
 }

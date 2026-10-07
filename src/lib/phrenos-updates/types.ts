@@ -140,3 +140,60 @@ export function isCustomRun(run: {
 }): boolean {
   return run.trigger_type === "custom" || run.lookback_start === CUSTOM_RUN_LOOKBACK;
 }
+
+export type ReviewSuggestionType =
+  | "proofread"
+  | "clarity"
+  | "structure"
+  | "tone"
+  | "house_rule"
+  | "unsupported_claim";
+
+export type ChatGptSuggestion = {
+  id: string;
+  type: ReviewSuggestionType;
+  severity: "must" | "should" | "could";
+  /** Short quote of the passage the suggestion is about. */
+  location: string;
+  issue: string;
+  fix: string;
+};
+
+export type ReviewableDraft = {
+  title: string;
+  hook: string;
+  body_html: string;
+  cta: string;
+};
+
+export type ReviewItem = ChatGptSuggestion & {
+  decision: "accepted" | "adapted" | "rejected";
+  reason: string;
+};
+
+/** What happened when ChatGPT proofread a draft and Claude studied the feedback. */
+export type DraftReviewReport = {
+  suggestionId: string;
+  kind: SuggestionType;
+  title: string;
+  model: string;
+  overall: string;
+  applied: boolean;
+  note: string;
+  items: ReviewItem[];
+  previous: ReviewableDraft;
+  current: ReviewableDraft;
+  wordsBefore: number;
+  wordsAfter: number;
+};
+
+export type DraftReviewResult =
+  | { skipped: true; reason: string }
+  | { skipped: false; report: DraftReviewReport };
+
+export type StoryReviewOutcome = {
+  suggestionId: string;
+  kind: SuggestionType;
+  result?: DraftReviewResult;
+  error?: string;
+};

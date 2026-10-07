@@ -51,7 +51,7 @@ function labelFor(suggestionType: SuggestionType): string {
 }
 
 /** Sophia's own brief for a custom-topic story, stored on the story as a synthesis source. */
-function authorBriefFor(story: GeneratedStory): string | null {
+export function authorBriefFor(story: GeneratedStory): string | null {
   const row = story.sources.find(
     (source) => source.is_synthesis && source.title === AUTHOR_BRIEF_SOURCE_TITLE
   );
