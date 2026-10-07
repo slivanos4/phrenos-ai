@@ -75,6 +75,28 @@ function companyWatchQueries(): TavilySearchOptions[] {
   }));
 }
 
+/** Stock commentary, aggregators and self-published blogs: fine as extra context, poor as a lead source. */
+const LOW_SIGNAL_DOMAINS = [
+  "zacks.com",
+  "tradingview.com",
+  "simplywall.st",
+  "fool.com",
+  "marketbeat.com",
+  "investing.com",
+  "finance.yahoo.com",
+  "benzinga.com",
+  "medium.com",
+] as const;
+
+export function isLowSignalDomain(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    return LOW_SIGNAL_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+  } catch {
+    return false;
+  }
+}
+
 export function domainNewsBoost(url: string): number {
   try {
     const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();

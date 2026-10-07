@@ -13,7 +13,7 @@ import {
   fetchPublishedDateFromPage,
   verifyArticleSources,
 } from "@/lib/phrenos-updates/source-url-verify";
-import { domainNewsBoost } from "@/lib/phrenos-updates/research-discovery";
+import { domainNewsBoost, isLowSignalDomain } from "@/lib/phrenos-updates/research-discovery";
 
 const GENERIC_SINGLE_SEGMENTS = new Set([
   "news",
@@ -195,6 +195,10 @@ function sortArticleSources(
   lookback: SourceLookback
 ): GeneratedSource[] {
   return [...sources].sort((left, right) => {
+    // Self-published blogs and stock commentary never lead a story's source list over a real outlet.
+    const tierDiff =
+      (isLowSignalDomain(left.url) ? 1 : 0) - (isLowSignalDomain(right.url) ? 1 : 0);
+    if (tierDiff !== 0) return tierDiff;
     // Recency first: fresher AI news beats domain prestige for weekly curation.
     const dateDiff = comparePublishedDesc(left.published_at ?? null, right.published_at ?? null);
     if (dateDiff !== 0) return dateDiff;

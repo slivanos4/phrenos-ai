@@ -1,5 +1,5 @@
 import { callAnthropicSafe, extractJsonObject } from "@/lib/phrenos-updates/anthropic";
-import { domainNewsBoost } from "@/lib/phrenos-updates/research-discovery";
+import { domainNewsBoost, isLowSignalDomain } from "@/lib/phrenos-updates/research-discovery";
 import type { GeneratedSource, ResearchSection } from "@/lib/phrenos-updates/types";
 import { SECTION_LABELS } from "@/lib/phrenos-updates/types";
 
@@ -11,19 +11,6 @@ export type MajorEvent = {
 
 /** Most distinct "major" developments we will force into a section. */
 export const MAX_MAJOR_EVENTS = 5;
-
-/** Stock commentary and aggregator pages: rarely the right primary source for a story. */
-const LOW_SIGNAL_DOMAINS = [
-  "zacks.com",
-  "tradingview.com",
-  "simplywall.st",
-  "fool.com",
-  "marketbeat.com",
-  "investing.com",
-  "finance.yahoo.com",
-  "benzinga.com",
-  "medium.com",
-];
 
 function host(url: string): string {
   try {
@@ -38,8 +25,7 @@ export function normalizeUrlKey(url: string): string {
 }
 
 function signalScore(source: GeneratedSource): number {
-  const h = host(source.url);
-  const lowSignal = LOW_SIGNAL_DOMAINS.some((domain) => h === domain || h.endsWith(`.${domain}`));
+  const lowSignal = isLowSignalDomain(source.url);
   const published = source.published_at ? Date.parse(source.published_at) : 0;
   const recency = Number.isFinite(published) ? published / 86_400_000 / 1000 : 0;
   return domainNewsBoost(source.url) - (lowSignal ? 3 : 0) + recency;
