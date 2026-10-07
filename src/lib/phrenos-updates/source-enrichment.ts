@@ -9,7 +9,10 @@ import {
 import { resolveSourcePublishedDate, type SourceLookback } from "@/lib/phrenos-updates/source-dates";
 import { isSpecificArticleUrl } from "@/lib/phrenos-updates/research-sources";
 
-const MAX_FIRECRAWL_URLS_PER_SECTION = 24;
+// Both sections scrape in parallel and Firecrawl refused requests after ~28 per minute, so 24 per
+// section meant about half the reads failed at random. 12 each stays inside the limit, and the pool is
+// ordered major-events-first, so the reads go to the most important articles.
+const MAX_FIRECRAWL_URLS_PER_SECTION = 12;
 const FIRECRAWL_CONCURRENCY = 3;
 
 function articleKey(url: string) {

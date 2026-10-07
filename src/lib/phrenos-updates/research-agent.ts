@@ -46,6 +46,14 @@ import {
   type TavilySearchOptions,
 } from "@/lib/phrenos-updates/research-discovery";
 
+import {
+  identifyMajorEvents,
+  MAX_MAJOR_EVENTS,
+  normalizeUrlKey,
+  orderPoolByEvents,
+  type MajorEvent,
+} from "@/lib/phrenos-updates/major-events";
+
 export type { GeneratedSource, GeneratedStory, GeneratedSuggestion };
 export { tavilyQueriesForSection };
 
@@ -116,11 +124,28 @@ function sanitizeStory(story: GeneratedStory): GeneratedStory {
 }
 
 /** Doc section 9: story curation prompt. Summaries only, content pack runs later. */
+/** How many ranked articles the curation prompt may see (was an unranked first 12). */
+const CURATION_SOURCE_LIMIT = 30;
+const MAX_STORIES_WITH_MAJOR_EVENTS = 5;
+
 function buildStoryGenerationPrompt(
   input: ResearchAgentInput,
   section: ResearchSection,
-  webSources: GeneratedSource[]
+  webSources: GeneratedSource[],
+  options: { count?: number; mustCover?: MajorEvent[] } = {}
 ): string {
+  const count = options.count ?? MAX_STORIES_PER_SECTION;
+  const mustCover = options.mustCover ?? [];
+  const mustCoverBlock =
+    mustCover.length > 0
+      ? `MUST-COVER DEVELOPMENTS (found by reading the full article list; each is significant and must not be left out):
+${mustCover
+  .map((event, index) => `${index + 1}. ${event.label}\n   articles: ${event.urls.join(", ")}`)
+  .join("\n")}
+Give each must-cover development its own story, built from the articles listed for it (merge two only if they are literally the same development). Use any remaining story slots for the next most significant developments.
+
+`
+      : "";
   const sourceRules =
     webSources.length > 0
       ? `  * Each source MUST be a specific article from the "Web articles found" list below
@@ -144,7 +169,7 @@ ${SOURCE_INTEGRITY_BLOCK}
 ${BRITISH_ENGLISH_BLOCK}
 
 ${input.deskBriefPrompt ? `${input.deskBriefPrompt}\n` : ""}
-Generate exactly ${MAX_STORIES_PER_SECTION} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that. When the desk brief suggests an angle, prefer matching in-period articles from the list if they exist — never invent facts from the brief alone.
+${mustCoverBlock}Generate exactly ${count} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that. When the desk brief suggests an angle, prefer matching in-period articles from the list if they exist — never invent facts from the brief alone.
 
 Each story needs:
 - title (string): specific editorial headline reflecting the trend, not the raw article headline
@@ -158,7 +183,7 @@ ${sourceRules}
   * Never use em-dash or en-dash characters in source titles or excerpts
 
 Web articles found:
-${JSON.stringify(webSources.slice(0, 12), null, 2)}
+${JSON.stringify(webSources.slice(0, CURATION_SOURCE_LIMIT), null, 2)}
 
 Return ONLY valid JSON array, no markdown fences or commentary.`;
 }
@@ -191,7 +216,8 @@ function keepInPeriodStories(
 
 async function callAnthropicForStories(
   section: ResearchSection,
-  prompt: string
+  prompt: string,
+  count: number = MAX_STORIES_PER_SECTION
 ): Promise<GeneratedStory[]> {
   const text = await callAnthropic(prompt, 16000);
   const jsonPayload = extractJsonArray(text);
@@ -203,7 +229,7 @@ async function callAnthropicForStories(
 
   const parsed = JSON.parse(jsonPayload) as GeneratedStory[];
   return parsed
-    .slice(0, MAX_STORIES_PER_SECTION)
+    .slice(0, count)
     .map((story) => sanitizeStory({ ...story, section, suggestions: [] }));
 }
 
@@ -501,20 +527,66 @@ function buildStoriesFromPool(
   });
 }
 
+/** True when a story already draws on any article that belongs to this event. */
+function storyCoversEvent(story: GeneratedStory, event: MajorEvent): boolean {
+  const keys = new Set(event.urls.map(normalizeUrlKey));
+  return story.sources.some((source) => keys.has(normalizeUrlKey(source.url)));
+}
+
 async function generateSectionStories(
   input: ResearchAgentInput,
   section: ResearchSection,
-  webSources: GeneratedSource[]
+  webSources: GeneratedSource[],
+  knownEvents?: MajorEvent[]
 ): Promise<GeneratedStory[]> {
   if (webSources.length === 0) return [];
+
+  // Significant developments are identified from the whole pool and ordered first, instead of
+  // depending on where they happened to land in an unranked list.
+  const events = knownEvents ?? (await identifyMajorEvents(section, webSources, input));
+  const majors = events.filter((event) => event.importance === "major");
+  const ordered = orderPoolByEvents(webSources, events);
+  const count = Math.min(
+    MAX_STORIES_WITH_MAJOR_EVENTS,
+    Math.max(MAX_STORIES_PER_SECTION, Math.min(majors.length, MAX_MAJOR_EVENTS))
+  );
+  console.info(
+    `Curation ${section}: ${webSources.length} articles, ${events.length} events (${majors.length} major) -> ${count} stories`
+  );
 
   try {
     const stories = await callAnthropicForStories(
       section,
-      buildStoryGenerationPrompt(input, section, webSources)
+      buildStoryGenerationPrompt(input, section, ordered, { count, mustCover: majors }),
+      count
     );
 
     if (stories.length > 0) {
+      // Guarantee: any major development the model still left out gets its own story.
+      const missing = majors.filter(
+        (event) => !stories.some((story) => storyCoversEvent(story, event))
+      );
+      for (const event of missing) {
+        console.warn(`Curation ${section}: major event not covered, adding story for "${event.label}"`);
+        const eventArticles = ordered.filter((source) =>
+          event.urls.map(normalizeUrlKey).includes(normalizeUrlKey(source.url))
+        );
+        try {
+          const extra = await callAnthropicForStories(
+            section,
+            buildStoryGenerationPrompt(input, section, eventArticles, {
+              count: 1,
+              mustCover: [event],
+            }),
+            1
+          );
+          stories.push(...extra);
+        } catch (error) {
+          console.error(`Could not add story for "${event.label}":`, error);
+          stories.push(...buildStoriesFromPool(section, input, eventArticles).slice(0, 1));
+        }
+      }
+
       return Promise.all(
         stories.map(async (story) =>
           sanitizeStory({
@@ -537,7 +609,7 @@ async function generateSectionStories(
     }
   }
 
-  return buildStoriesFromPool(section, input, webSources);
+  return buildStoriesFromPool(section, input, ordered);
 }
 
 export async function runResearchAgent(input: ResearchAgentInput): Promise<GeneratedStory[]> {
@@ -569,9 +641,16 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
     );
   }
 
+  // Read each whole pool once and rank it by importance BEFORE the expensive steps, so the
+  // in-depth article reads (Firecrawl is capped and rate-limited) go to major developments first.
+  const [modelsEvents, productsEvents] = await Promise.all([
+    identifyMajorEvents("models_research", modelsPool, input),
+    identifyMajorEvents("products_industry", productsPool, input),
+  ]);
+
   const [enrichedModelsPool, enrichedProductsPool] = await Promise.all([
-    enrichSourcesWithFirecrawl(modelsPool, input),
-    enrichSourcesWithFirecrawl(productsPool, input),
+    enrichSourcesWithFirecrawl(orderPoolByEvents(modelsPool, modelsEvents), input),
+    enrichSourcesWithFirecrawl(orderPoolByEvents(productsPool, productsEvents), input),
   ]);
 
   const [datedModelsPool, datedProductsPool] = await Promise.all([
@@ -590,8 +669,8 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
   }
 
   const [modelStories, productStories] = await Promise.all([
-    generateSectionStories(input, "models_research", datedModelsPool),
-    generateSectionStories(input, "products_industry", datedProductsPool),
+    generateSectionStories(input, "models_research", datedModelsPool, modelsEvents),
+    generateSectionStories(input, "products_industry", datedProductsPool, productsEvents),
   ]);
 
   if (modelStories.length === 0 && productStories.length === 0) {
