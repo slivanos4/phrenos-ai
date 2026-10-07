@@ -65,7 +65,7 @@ function splitCta(cta: string): {
   // A CTA saved as one long paragraph would print entirely in the headline style. Use the first
   // sentence as the headline and the rest as supporting copy.
   if (parts.length === 1 && parts[0].length > 140) {
-    const sentences = parts[0].match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g)?.map((part) => part.trim()) ?? [];
+    const sentences = parts[0].split(/(?<=[.!?])\s+/).filter(Boolean);
     if (sentences.length > 1) {
       return { primary: sentences[0], supporting: sentences.slice(1).join(" "), buttonLabel };
     }

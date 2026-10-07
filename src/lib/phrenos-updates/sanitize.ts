@@ -9,8 +9,10 @@ export function sanitizeDashes(text: string): string {
     .replace(/(\d)\u2013(\d)/g, "$1-$2")
     .replace(/\s*\u2013\s*/g, " to ")
     .replace(/,\s*,+/g, ", ")
-    .replace(/\s+([,.;:!?])/g, "$1")
-    .replace(/\s{2,}/g, " ")
+    .replace(/[ \t]+([,.;:!?])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
