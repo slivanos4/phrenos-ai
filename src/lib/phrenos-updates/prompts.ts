@@ -133,7 +133,7 @@ FIELD MAPPING FOR A FULL POST:
 STYLE:
 - Write in short, line-broken beats (1-2 sentences per paragraph, sometimes one fragment). Visual breathing room is the voice, not just formatting.
 - This overrides the generic cta field guidance above for LinkedIn: no two-paragraph provocation-plus-nurture pitch.
-- Target length: roughly 180-250 words for the whole post (hook, body including the pointer line, and cta; excluding hashtags); the reference post is about 240. Count before answering and if you are over 250, delete the weakest paragraph. Do not pad. A tight post that lands the beats beats a diluted one.
+- Target length: about 200 words for the whole post (hook, body including the pointer line, and cta; excluding hashtags). The reference post is about 240 and is the upper end; models tend to overshoot a target by 15 to 25 percent, so aim at 200 to land near 230. Never exceed 250. Count before answering and if you are over, delete the weakest paragraphs. Do not pad. A tight post that lands the beats beats a diluted one.
 - Confident and contraction-friendly ("isn't", "don't"). Minimal hedging in the body copy; keep precision and attribution for the specific claims that need it. Sentence fragments are fine when the rhythm calls for it.`;
 
 /** Doc section 9: story summary rules. */
@@ -199,7 +199,7 @@ ${PUNCHY_OPENING_BLOCK}
 ${LINKEDIN_VOICE_PATTERNS_BLOCK}
 
 Voice reference:
-- Target length: 180-250 words (minimum 150). Tight and scannable, not a teaser and not an essay.
+- Target length: about 200 words (minimum 150, never more than 250). Tight and scannable, not a teaser and not an essay.
 - Structure it like a real post, not an essay: short line-broken beats building to the reframe and the one sharp question, then a practical takeaway, then the article pointer, then the closing question. Do not force labelled "Why this matters now" / "What to do next" sections onto it.
 - Connect to themes Sophia covers: agentic AI, reasoning models, multimodal workflows, open source, regulation, AI search, ROI, ethics and trust, human judgement
 - Confident and accessible, a consultant who builds systems rather than a hype merchant

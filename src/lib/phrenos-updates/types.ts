@@ -127,3 +127,16 @@ export const TOPIC_TAG_OPTIONS = [
   "infrastructure",
   "eye-opening",
 ] as const;
+
+/** Title of the synthesis source row that stores an author's brief on a custom-topic story. */
+export const AUTHOR_BRIEF_SOURCE_TITLE = "Author brief (direction, not evidence)";
+
+/** The single run that holds every custom-topic story uses this sentinel window. */
+export const CUSTOM_RUN_LOOKBACK = "2000-01-01";
+
+export function isCustomRun(run: {
+  trigger_type?: string | null;
+  lookback_start?: string | null;
+}): boolean {
+  return run.trigger_type === "custom" || run.lookback_start === CUSTOM_RUN_LOOKBACK;
+}

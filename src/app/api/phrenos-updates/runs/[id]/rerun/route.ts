@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import {
   AdminAuthError,
+  assertRunIsRerunnable,
   errorResponse,
   executeResearchRun,
   isServiceRoleConfigured,
@@ -23,6 +24,8 @@ export async function POST(
         { status: 503 },
       );
     }
+
+    await assertRunIsRerunnable(id);
 
     after(async () => {
       try {

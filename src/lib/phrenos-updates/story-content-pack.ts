@@ -29,13 +29,18 @@ import {
   LINKEDIN_TARGET_WORDS,
   meetsLengthTarget,
 } from "@/lib/phrenos-updates/suggestion-quality";
-import type {
-  GeneratedStory,
-  GeneratedSuggestion,
-  SuggestionType,
+import {
+  AUTHOR_BRIEF_SOURCE_TITLE,
+  type GeneratedStory,
+  type GeneratedSuggestion,
+  type SuggestionType,
 } from "@/lib/phrenos-updates/types";
 
 export const IDEA_COUNT = 4;
+
+/** LinkedIn posts above this get tightened by deletion; above the hard limit after that they are rejected. */
+const LINKEDIN_TIGHTEN_ABOVE_WORDS = 250;
+const LINKEDIN_HARD_MAX_WORDS = 270;
 
 function tovFor(suggestionType: SuggestionType): string {
   return suggestionType === "blog" ? PHRENOS_BLOG_TOV : PHRENOS_LINKEDIN_TOV;
@@ -43,6 +48,34 @@ function tovFor(suggestionType: SuggestionType): string {
 
 function labelFor(suggestionType: SuggestionType): string {
   return suggestionType === "blog" ? "blog post" : "LinkedIn post";
+}
+
+/** Sophia's own brief for a custom-topic story, stored on the story as a synthesis source. */
+function authorBriefFor(story: GeneratedStory): string | null {
+  const row = story.sources.find(
+    (source) => source.is_synthesis && source.title === AUTHOR_BRIEF_SOURCE_TITLE
+  );
+  const text = (row?.extracted_facts || row?.excerpt || "").trim();
+  return text || null;
+}
+
+function authorBriefBlock(story: GeneratedStory, mode: "ideas" | "draft"): string {
+  const brief = authorBriefFor(story);
+  if (!brief) return "";
+  const scope =
+    mode === "ideas"
+      ? `ANGLE LOCK: the brief decides what these ideas are about. It overrides the default angle list and the Creation, Optimisation and Validity lens rotation. All four ideas must make the point the brief makes (its central claim and why it matters), each entering that same point from a different direction. They are not four different stories.`
+      : `ANGLE LOCK: the title, hook and body must make the point the brief makes. If the seed idea drifts from the brief, follow the brief and ignore the seed's angle.`;
+  return `
+
+AUTHOR'S BRIEF (editorial direction from Sophia, who is writing this piece):
+"""
+${brief}
+"""
+${scope}
+Source facts support the brief's point; they do not choose it. The sources may contain more dramatic material outside the brief (a safety incident, a regulatory probe, a competitor comparison, stock moves). Do not make that the story. Mention it only if it is essential to the brief's own point, and then in one short clause.
+The brief is direction, NOT a source. A factual claim from the brief may appear only if the story sources above support it. If the brief states something the sources do not support (a date, a figure, a quote, a feature), leave it out entirely rather than asserting it or hinting at it.
+`;
 }
 
 function storyContext(story: GeneratedStory) {
@@ -90,15 +123,19 @@ async function generateIdeas(
 ${SOURCE_INTEGRITY_BLOCK}
 
 Story:
-${JSON.stringify(storyContext(story), null, 2)}
+${JSON.stringify(storyContext(story), null, 2)}${authorBriefBlock(story, "ideas")}
 
 Return ONLY a JSON array of exactly ${IDEA_COUNT} objects. These are IDEA SNIPPETS, not full posts.
 Each object:
 {"suggestion_type":"${suggestionType}","title":"...","hook":"one-line hook","body_html":"<p>punchy 2-3 sentence note, one fact plus one implication, not a chained-facts paragraph</p>","cta":"...","hashtags":"...","image_ideas":"..."}
 
 Rules:
-- Each idea must use a different angle: ${angles}
-- Rotate the editorial lens across the four ideas: Creation (what your organisation can now build or generate), Optimisation (what changes for search, planning, or workflow speed), Validity (what leaders must change for trust, verification, and governance)
+${
+  authorBriefFor(story)
+    ? "- Each idea is a different entry point into the author's brief (for example: what changed, what it means for how work gets done, what leaders should decide), never a different story. Follow the ANGLE LOCK above."
+    : `- Each idea must use a different angle: ${angles}
+- Rotate the editorial lens across the four ideas: Creation (what your organisation can now build or generate), Optimisation (what changes for search, planning, or workflow speed), Validity (what leaders must change for trust, verification, and governance)`
+}
 - body_html is a punchy note, not a mini-essay: 2-3 short sentences, 30-70 words. Pick the single sharpest fact plus the one implication. Do not chain three or four facts together into an informational paragraph, that reads as a briefing, not a hook.
   Bad (essay-like, chains facts): "OpenAI coordinated roughly 10,000 AI agents on the Navier-Stokes Millennium Prize Problem. The agents exchanged 2.7 million messages and generated approximately 130 billion output tokens. GPT-6 Astra then spent a further 17 hours formalising and verifying the proof in Lean. Fields Medal winner Terence Tao warned that this pace of AI-driven discovery risks losing the valuable ramifications of the work along the way."
   Good (one fact, one tension): "10,000 AI agents just solved a 90-year maths problem in 88 hours. Terence Tao says the real cost is not the proof. It is everything the agents did not stop to notice along the way."
@@ -132,6 +169,45 @@ type DraftAttempt =
   | { draft: GeneratedSuggestion; reason?: undefined }
   | { draft: null; reason: string };
 
+/**
+ * Cut an over-long LinkedIn post by deleting, not rewriting. Editing existing text hits a word
+ * target far more reliably than regenerating, and deletion cannot introduce new claims.
+ */
+async function tightenLinkedinDraft(
+  draft: GeneratedSuggestion,
+  words: number
+): Promise<GeneratedSuggestion | null> {
+  const text = await callAnthropicSafe(
+    `You are editing a LinkedIn post that is ${words} words. Cut it to about 205 words by DELETING, not rewriting.
+
+Keep exactly as they are: the opening lines (hook), the single mid-post question, the pointer line ending in a colon, the paragraph containing only [link], and the closing question (cta).
+Delete first: any sentence about a risk, incident, statistic or comparison that is not the post's single central point; any repeated restatement of the same idea; the longest explanatory paragraph.
+Do not add new facts, numbers, names or claims. Do not merge sentences to save space. Keep British English. No em dashes or en dashes. Keep every paragraph in its own <p>.
+
+Return ONLY JSON: {"hook":"...","body_html":"<p>...</p>...","cta":"..."}
+
+Post:
+${JSON.stringify({ hook: draft.hook, body_html: draft.body_html, cta: draft.cta }, null, 2)}`,
+    2500
+  );
+  const json = text ? extractJsonObject(text) : null;
+  if (!json) return null;
+  try {
+    const parsed = JSON.parse(json) as { hook?: string; body_html?: string; cta?: string };
+    if (!parsed.hook || !parsed.body_html || !parsed.cta) return null;
+    if (/\[link\]/i.test(draft.body_html) && !/\[link\]/i.test(parsed.body_html)) return null;
+    if (/\?\s*$/.test(draft.cta) && !/\?\s*$/.test(parsed.cta)) return null;
+    return cleanSuggestionFields({
+      ...draft,
+      hook: parsed.hook,
+      body_html: parsed.body_html,
+      cta: parsed.cta,
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Doc section 10: featured draft prompt. Returns why it failed, not just null, so callers can retry or report the real cause. */
 async function attemptFeaturedDraft(
   story: GeneratedStory,
@@ -153,7 +229,7 @@ Story:
 ${JSON.stringify(storyContext(story), null, 2)}
 
 Seed idea to expand:
-${JSON.stringify(seedIdea, null, 2)}
+${JSON.stringify(seedIdea, null, 2)}${authorBriefBlock(story, "draft")}
 
 Return ONLY one JSON object:
 {"suggestion_type":"${suggestionType}","title":"...","hook":"...","body_html":"...","cta":"...","hashtags":"...","image_ideas":"..."}
@@ -224,9 +300,29 @@ ${
     };
   }
 
+  let finalDraft = cleaned;
+  if (suggestionType === "linkedin") {
+    const wordsOf = (draft: GeneratedSuggestion) =>
+      countWords(`${draft.hook} ${draft.body_html} ${draft.cta}`.replace(/\[link\]/gi, ""));
+    const total = wordsOf(cleaned);
+    if (total > LINKEDIN_TIGHTEN_ABOVE_WORDS) {
+      const tightened = await tightenLinkedinDraft(cleaned, total);
+      if (tightened && meetsLengthTarget(tightened) && wordsOf(tightened) < total) {
+        finalDraft = tightened;
+      }
+      const after = wordsOf(finalDraft);
+      if (after > LINKEDIN_HARD_MAX_WORDS) {
+        return {
+          draft: null,
+          reason: `The post was ${after} words after tightening. LinkedIn posts must be 250 words or fewer (hook, body and closing question together).`,
+        };
+      }
+    }
+  }
+
   // Blog drafts get a hard source fact-check pass; LinkedIn too when it is a full draft.
   const { enforceSourceVerifiedDraft } = await import("@/lib/phrenos-updates/draft-verify");
-  const verified = await enforceSourceVerifiedDraft(story, cleaned);
+  const verified = await enforceSourceVerifiedDraft(story, finalDraft);
   if (!verified) {
     return {
       draft: null,

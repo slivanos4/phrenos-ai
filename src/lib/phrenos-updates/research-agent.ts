@@ -1,4 +1,5 @@
 import {
+  AUTHOR_BRIEF_SOURCE_TITLE,
   MAX_STORIES_PER_SECTION,
   SECTION_LABELS,
   type GeneratedSource,
@@ -16,7 +17,9 @@ import {
 import {
   ANTHROPIC_MODEL,
   callAnthropic,
+  callAnthropicSafe,
   extractJsonArray,
+  extractJsonObject,
   readApiError,
 } from "@/lib/phrenos-updates/anthropic";
 import { BRITISH_ENGLISH_BLOCK, SOURCE_INTEGRITY_BLOCK, STORY_SUMMARY_RULES } from "@/lib/phrenos-updates/prompts";
@@ -36,9 +39,14 @@ import {
   normalizeStoryTitle,
   polishSummary,
 } from "@/lib/phrenos-updates/story-summary";
-import { enrichSourcesWithFirecrawl } from "@/lib/phrenos-updates/source-enrichment";
+import { enrichSourcesWithFirecrawl, sourceFactsForPrompt } from "@/lib/phrenos-updates/source-enrichment";
+import {
+  extractFactsFromArticle,
+  scrapeArticleWithFirecrawl,
+} from "@/lib/phrenos-updates/firecrawl-extract";
 import { isExaConfigured, searchExaArticles } from "@/lib/phrenos-updates/exa-search";
 import {
+  AI_NEWS_DOMAINS,
   discoveryQueriesForSection,
   tavilyBodyForQuery,
   tavilyMinimalBody,
@@ -51,6 +59,7 @@ import {
   MAX_MAJOR_EVENTS,
   normalizeUrlKey,
   orderPoolByEvents,
+  rankByQuality,
   type MajorEvent,
 } from "@/lib/phrenos-updates/major-events";
 
@@ -132,9 +141,18 @@ function buildStoryGenerationPrompt(
   input: ResearchAgentInput,
   section: ResearchSection,
   webSources: GeneratedSource[],
-  options: { count?: number; mustCover?: MajorEvent[] } = {}
+  options: { count?: number; mustCover?: MajorEvent[]; authorBrief?: string } = {}
 ): string {
   const count = options.count ?? MAX_STORIES_PER_SECTION;
+  const authorBriefBlock = options.authorBrief
+    ? `AUTHOR'S BRIEF (the subject and angle Sophia wants; the story must be about exactly this):
+"""
+${options.authorBrief}
+"""
+The brief is direction, NOT a source. Include a factual claim from it only if a listed article supports it, and leave out anything the articles do not support (dates, figures, quotes, features). The story title and summary must reflect the brief's angle.
+
+`
+    : "";
   const mustCover = options.mustCover ?? [];
   const mustCoverBlock =
     mustCover.length > 0
@@ -150,7 +168,7 @@ Give each must-cover development its own story, built from the articles listed f
     webSources.length > 0
       ? `  * Each source MUST be a specific article from the "Web articles found" list below
   * Copy the exact url, title, and published_at from that list. Do NOT invent URLs or dates
-  * published_at is required for every real article and MUST fall within ${input.lookbackStart} to ${input.lookbackEnd} (the past two weeks). Reject anything older or undated
+  * published_at is required for every real article and MUST fall within ${input.lookbackStart} to ${input.lookbackEnd} (the research period). Reject anything older or undated
   * NEVER use homepage, section index, or domain-root links
   * NEVER use Instagram, Facebook, Twitter/X, TikTok, or LinkedIn post URLs. Use publisher articles, official company blogs, and research coverage only
   * Use is_synthesis:true ONLY when no listed article supports a minor point; max one synthesis source per story`
@@ -169,7 +187,7 @@ ${SOURCE_INTEGRITY_BLOCK}
 ${BRITISH_ENGLISH_BLOCK}
 
 ${input.deskBriefPrompt ? `${input.deskBriefPrompt}\n` : ""}
-${mustCoverBlock}Generate exactly ${count} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that. When the desk brief suggests an angle, prefer matching in-period articles from the list if they exist — never invent facts from the brief alone.
+${authorBriefBlock}${mustCoverBlock}Generate exactly ${count} distinct news stories as a JSON array from the articles below. Each story must cover a different article or trend. Prioritise stories that are strategically significant, surprising, or eye-opening when the sources support that. When the desk brief suggests an angle, prefer matching in-period articles from the list if they exist — never invent facts from the brief alone.
 
 Each story needs:
 - title (string): specific editorial headline reflecting the trend, not the raw article headline
@@ -696,4 +714,224 @@ export async function runResearchAgent(input: ResearchAgentInput): Promise<Gener
   }
 
   return ensurePolishedSummaries(inPeriod);
+}
+
+export type BriefClaimCheck = {
+  claim: string;
+  status: "supported" | "unverified" | "contradicted";
+  note: string;
+};
+
+const CUSTOM_WINDOW_DAYS = 90;
+
+function isoDay(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+async function planCustomResearch(
+  brief: string,
+  input: ResearchAgentInput
+): Promise<{ queries: string[]; claims: string[] }> {
+  const fallback = { queries: [brief.replace(/\s+/g, " ").slice(0, 120)], claims: [] as string[] };
+  const text = await callAnthropicSafe(
+    `You help Phrenos.ai research a topic its author wants to write about.
+Today is ${input.lookbackEnd}. Research window: ${input.lookbackStart} to ${input.lookbackEnd}.
+
+Author's brief:
+"""
+${brief}
+"""
+
+Return ONLY JSON:
+{"queries":["up to 4 short web news search queries, each naming the specific company, product or event"],"claims":["each specific factual assertion in the brief (a date, number, quote, named feature or capability) as a short standalone statement, at most 8"]}
+
+Rules: queries must not include years or months outside the research window. Do not invent claims that the brief does not make.`,
+    900
+  );
+  const json = text ? extractJsonObject(text) : null;
+  if (!json) return fallback;
+  try {
+    const parsed = JSON.parse(json) as { queries?: unknown; claims?: unknown };
+    const strings = (value: unknown, max: number) =>
+      Array.isArray(value)
+        ? value
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.trim())
+            .filter((item) => item.length >= 8)
+            .slice(0, max)
+        : [];
+    const queries = strings(parsed.queries, 4);
+    return { queries: queries.length > 0 ? queries : fallback.queries, claims: strings(parsed.claims, 8) };
+  } catch {
+    return fallback;
+  }
+}
+
+async function readUserSourceUrl(url: string, input: ResearchAgentInput): Promise<GeneratedSource | null> {
+  if (!isSpecificArticleUrl(url)) return null;
+  const scraped = await scrapeArticleWithFirecrawl(url);
+  if (!scraped) return null;
+  const heading = scraped.markdown.match(/^#\s+(.+)$/m)?.[1]?.trim();
+  const title = heading || new URL(url).hostname.replace(/^www\./, "");
+  const facts = await extractFactsFromArticle(title, scraped.markdown);
+  return sanitizeSourceFields({
+    url,
+    title,
+    excerpt: (facts || scraped.markdown).slice(0, 500),
+    published_at: resolveSourcePublishedDate(
+      url,
+      scraped.published_at,
+      null,
+      scraped.markdown.slice(0, 1200),
+      input
+    ),
+    is_synthesis: false,
+    extracted_facts: facts || scraped.markdown.slice(0, 2000),
+  });
+}
+
+async function checkBriefClaims(
+  claims: string[],
+  sources: GeneratedSource[]
+): Promise<BriefClaimCheck[]> {
+  if (claims.length === 0) return [];
+  const unchecked = claims.map((claim) => ({
+    claim,
+    status: "unverified" as const,
+    note: "Could not be checked against the sources.",
+  }));
+  const packet = sources
+    .filter((source) => !source.is_synthesis && source.url)
+    .slice(0, 14)
+    .map((source) => ({
+      url: source.url,
+      title: source.title,
+      published_at: source.published_at ?? null,
+      facts: sourceFactsForPrompt(source).slice(0, 1200),
+    }));
+  if (packet.length === 0) return unchecked;
+
+  const text = await callAnthropicSafe(
+    `You fact-check claims an author made in a writing brief against the source articles below. Judge each claim ONLY from the sources.
+
+Statuses: "supported" (a source states it), "contradicted" (a source states something different, for example another date), "unverified" (no source either way). Keep each note to one short sentence that names what the sources actually say.
+
+Claims:
+${JSON.stringify(claims)}
+
+Sources:
+${JSON.stringify(packet, null, 2)}
+
+Return ONLY JSON: {"checks":[{"claim":"...","status":"supported","note":"..."}]} with one entry per claim, in the same order.`,
+    1800
+  );
+  const json = text ? extractJsonObject(text) : null;
+  if (!json) return unchecked;
+  try {
+    const parsed = JSON.parse(json) as { checks?: { claim?: unknown; status?: unknown; note?: unknown }[] };
+    const checks = (parsed.checks ?? []).map((item, index): BriefClaimCheck => ({
+      claim: typeof item.claim === "string" && item.claim.trim() ? item.claim.trim() : claims[index] ?? "",
+      status:
+        item.status === "supported" || item.status === "contradicted" ? item.status : "unverified",
+      note: sanitizeDashes(typeof item.note === "string" ? item.note.trim() : ""),
+    }));
+    return checks.length > 0 ? checks : unchecked;
+  } catch {
+    return unchecked;
+  }
+}
+
+/**
+ * Research a topic Sophia has described in her own words: plan searches from the brief, read the
+ * articles, write one story on her angle, and report which of her claims the sources back up.
+ * The brief is stored on the story as a synthesis source so later drafts keep following it, but it is
+ * never evidence: drafts and the fact-checker only see real articles.
+ */
+export async function researchCustomTopic(options: {
+  brief: string;
+  section: ResearchSection;
+  sourceUrls?: string[];
+}): Promise<{
+  story: GeneratedStory;
+  claimChecks: BriefClaimCheck[];
+  articleCount: number;
+  unreadableUrls: string[];
+}> {
+  if (!process.env.ANTHROPIC_API_KEY?.trim() || !(process.env.TAVILY_API_KEY?.trim() || isExaConfigured())) {
+    throw new Error("Research requires ANTHROPIC_API_KEY and TAVILY_API_KEY (or EXA_API_KEY).");
+  }
+
+  const brief = options.brief.trim();
+  const end = new Date();
+  const input: ResearchAgentInput = {
+    lookbackStart: isoDay(new Date(end.getTime() - CUSTOM_WINDOW_DAYS * 86_400_000)),
+    lookbackEnd: isoDay(end),
+  };
+
+  const plan = await planCustomResearch(brief, input);
+  const searches: TavilySearchOptions[] = [
+    ...plan.queries.map((query) => ({ query, topic: "general" as const, maxResults: 10 })),
+    {
+      query: plan.queries[0],
+      topic: "general" as const,
+      includeDomains: AI_NEWS_DOMAINS,
+      maxResults: 10,
+    },
+  ];
+
+  const urls = [...new Set((options.sourceUrls ?? []).map((url) => url.trim()).filter(Boolean))].slice(0, 8);
+  const [batches, userRead] = await Promise.all([
+    Promise.all(searches.map((search) => fetchDiscoveryContextDetailed(search, input))),
+    Promise.all(urls.map((url) => readUserSourceUrl(url, input))),
+  ]);
+
+  const unreadableUrls = urls.filter((_, index) => !userRead[index]);
+  const userSources = userRead.filter((source): source is GeneratedSource => source !== null);
+  const webPool = filterDiscoveryCandidates(
+    dedupeSources(batches.flatMap((batch) => batch.sources)),
+    input
+  );
+
+  // User links are already read in full; only the web results still need their in-depth read.
+  const enrichedWeb = await enrichSourcesWithFirecrawl(rankByQuality(webPool), input);
+  const dated = filterSourcesByLookback(
+    await enrichPoolPublishedDates(dedupeSources([...userSources, ...enrichedWeb]), input),
+    input
+  );
+
+  if (dated.length === 0) {
+    throw new Error(
+      `No usable articles found for this topic in the last ${CUSTOM_WINDOW_DAYS} days. Add source links, or describe the topic with the company and product names.`
+    );
+  }
+
+  const stories = await callAnthropicForStories(
+    options.section,
+    buildStoryGenerationPrompt(input, options.section, dated, { count: 1, authorBrief: brief }),
+    1
+  );
+  if (stories.length === 0) throw new Error("Could not write a story from the sources found. Try again.");
+
+  const sources = await ensureVerifiedStorySources(stories[0].sources, dated, stories[0].title, input);
+  const story = sanitizeStory({ ...stories[0], section: options.section, sources });
+  const realSources = story.sources.filter((source) => !source.is_synthesis && source.url);
+  if (realSources.length === 0) {
+    throw new Error("No verified articles could be attached to this topic. Add source links and try again.");
+  }
+
+  const claimChecks = await checkBriefClaims(plan.claims, realSources);
+
+  story.sources = [
+    ...story.sources,
+    {
+      url: "",
+      title: AUTHOR_BRIEF_SOURCE_TITLE,
+      excerpt: brief.slice(0, 600),
+      extracted_facts: brief,
+      is_synthesis: true,
+      published_at: null,
+    },
+  ];
+
+  return { story, claimChecks, articleCount: realSources.length, unreadableUrls };
 }

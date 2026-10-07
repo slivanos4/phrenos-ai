@@ -28,6 +28,7 @@ export {
   cleanupAbandonedRuns,
   createPendingResearchRun,
   deleteResearchRun,
+  assertRunIsRerunnable,
   executeResearchRun,
   listResearchRuns,
   loadRunWithDetails,

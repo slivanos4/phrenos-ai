@@ -37,6 +37,7 @@ import type {
   SuggestionType,
 } from "@/lib/phrenos-updates/types";
 import { runResearchAgent } from "@/lib/phrenos-updates/research-agent";
+import { CUSTOM_RUN_LOOKBACK } from "@/lib/phrenos-updates/types";
 
 const STALE_RUN_MINUTES = 12;
 const MAX_RESEARCH_ATTEMPTS = 3;
@@ -189,7 +190,19 @@ export async function listResearchRuns(limit = 20) {
     .limit(limit);
 
   if (error) throw new Error(error.message);
-  return data ?? [];
+
+  // The Custom topics batch is created once and ages out of the newest-first limit, so always include it.
+  const runs = data ?? [];
+  if (!runs.some((run) => run.lookback_start === CUSTOM_RUN_LOOKBACK)) {
+    const { data: custom } = await supabase
+      .from(RUNS_TABLE)
+      .select("*")
+      .eq("lookback_start", CUSTOM_RUN_LOOKBACK)
+      .limit(1)
+      .maybeSingle();
+    if (custom) runs.push(custom);
+  }
+  return runs;
 }
 
 export async function deleteResearchRun(runId: string) {
@@ -287,11 +300,27 @@ export async function createPendingResearchRun(options: {
   return run.id as string;
 }
 
+/** The Custom topics batch holds hand-written stories; re-running it would delete them. */
+export async function assertRunIsRerunnable(runId: string) {
+  const supabase = createServiceRoleClient();
+  const { data: run } = await supabase
+    .from(RUNS_TABLE)
+    .select("lookback_start")
+    .eq("id", runId)
+    .maybeSingle();
+  if (run?.lookback_start === CUSTOM_RUN_LOOKBACK) {
+    throw new Error(
+      "The Custom topics batch cannot be re-run. Add a new topic instead, or use Generate content on a story."
+    );
+  }
+}
+
 export async function executeResearchRun(options: {
   triggerType: TriggerType;
   createdBy?: string | null;
   existingRunId?: string;
 }) {
+  if (options.existingRunId) await assertRunIsRerunnable(options.existingRunId);
   const supabase = createServiceRoleClient();
   const window = lookbackWindow();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { formatSourcePublishedDate, getDisplayPublishedDate } from "@/lib/phrenos-updates/source-dates";
 import {
   hasFeaturedBlogDraft,
@@ -8,6 +8,7 @@ import {
   WEEK_HERO_TAG,
 } from "@/lib/phrenos-updates/week-hero-shared";
 import {
+  isCustomRun,
   SECTION_LABELS,
   type ContentSuggestion,
   type ResearchRun,
@@ -118,6 +119,7 @@ function formatDateTime(value: string | null): string {
 }
 
 function formatWeek(run: ResearchRun): string {
+  if (isCustomRun(run)) return "Custom topics";
   if (run.lookback_start && run.lookback_end) {
     const start = formatSourcePublishedDate(run.lookback_start);
     const end = formatSourcePublishedDate(run.lookback_end);
@@ -1547,6 +1549,21 @@ function DeskBriefsPanel({
   );
 }
 
+type BriefClaimCheck = {
+  claim: string;
+  status: "supported" | "unverified" | "contradicted";
+  note: string;
+};
+
+type CustomTopicResult = {
+  runId: string;
+  storyId: string;
+  title: string;
+  articleCount: number;
+  claimChecks: BriefClaimCheck[];
+  unreadableUrls: string[];
+};
+
 export function AiUpdatesPanel() {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [password, setPassword] = useState("");
@@ -1560,6 +1577,12 @@ export function AiUpdatesPanel() {
   const [startingRun, setStartingRun] = useState(false);
   const [rerunning, setRerunning] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+
+  const [customBrief, setCustomBrief] = useState("");
+  const [customUrls, setCustomUrls] = useState("");
+  const [customSection, setCustomSection] = useState<ResearchSection>("products_industry");
+  const [customPhase, setCustomPhase] = useState<"researching" | "writing" | null>(null);
+  const [customResult, setCustomResult] = useState<CustomTopicResult | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -1877,6 +1900,47 @@ export function AiUpdatesPanel() {
     });
   }
 
+  async function handleCustomTopic(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setNotice(null);
+    setCustomResult(null);
+    setCustomPhase("researching");
+    try {
+      const result = await requestJson<CustomTopicResult>("/api/phrenos-updates/custom-topic", {
+        method: "POST",
+        body: JSON.stringify({
+          brief: customBrief,
+          section: customSection,
+          sourceUrls: customUrls.split(/\s+/).filter(Boolean),
+        }),
+      });
+      setCustomResult(result);
+      await loadRuns(true);
+      setRun(null);
+      setSelectedRunId(result.runId);
+
+      setCustomPhase("writing");
+      markBusy(result.storyId, true);
+      try {
+        await requestJson<{ title: string }>(
+          `/api/phrenos-updates/stories/${result.storyId}/generate`,
+          { method: "POST", body: JSON.stringify({ mode: "hero-blog" }) },
+        );
+        setNotice(`Blog and LinkedIn drafts are ready for "${result.title}".`);
+        setCustomBrief("");
+        setCustomUrls("");
+      } finally {
+        markBusy(result.storyId, false);
+      }
+      await loadRun(result.runId, true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      setCustomPhase(null);
+    }
+  }
+
   async function handleDraftWeekHero() {
     if (!selectedRunId) return;
     markBusy(`week-hero:${selectedRunId}`, true);
@@ -2185,6 +2249,122 @@ export function AiUpdatesPanel() {
       />
 
       <div className={panelClass}>
+        <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
+          Write about a specific topic
+        </p>
+        <p className="mt-1 text-sm text-[#f1e8d6]">
+          Tell me what the blog should address. I research it, then write the blog and the LinkedIn post.
+        </p>
+        <form onSubmit={handleCustomTopic} className="mt-4 space-y-4">
+          <label className="block space-y-2">
+            <span className={labelClass}>What should it address?</span>
+            <textarea
+              required
+              value={customBrief}
+              onChange={(event) => setCustomBrief(event.target.value)}
+              disabled={customPhase !== null}
+              className={`${fieldClass} min-h-[9rem] resize-y`}
+              placeholder="Describe the topic and the angle in your own words. Include what you know. Anything the sources do not back up is left out and flagged to you."
+            />
+          </label>
+          <label className="block space-y-2">
+            <span className={labelClass}>Source links (optional, one per line)</span>
+            <textarea
+              value={customUrls}
+              onChange={(event) => setCustomUrls(event.target.value)}
+              disabled={customPhase !== null}
+              className={`${fieldClass} min-h-[4rem] resize-y`}
+              placeholder="https://..."
+            />
+          </label>
+          <div className="flex flex-wrap items-end gap-4">
+            <label className="block space-y-2">
+              <span className={labelClass}>Sits under</span>
+              <select
+                value={customSection}
+                onChange={(event) => setCustomSection(event.target.value as ResearchSection)}
+                disabled={customPhase !== null}
+                className={fieldClass}
+              >
+                <option value="products_industry">{SECTION_LABELS.products_industry}</option>
+                <option value="models_research">{SECTION_LABELS.models_research}</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              className={primaryButtonClass}
+              disabled={customPhase !== null || anyBusy || customBrief.trim().length < 40}
+            >
+              {customPhase === "researching"
+                ? "Researching..."
+                : customPhase === "writing"
+                  ? "Writing drafts..."
+                  : "Research and write"}
+            </button>
+          </div>
+          {customPhase ? (
+            <p className="text-xs text-[#a9b0a3]" role="status">
+              {customPhase === "researching"
+                ? "Finding and reading sources for your topic. About a minute."
+                : "Sources saved. Writing the blog and the LinkedIn post, a few minutes. You can leave this open."}
+            </p>
+          ) : null}
+        </form>
+
+        {customResult ? (
+          <div className="mt-5 space-y-3 border-t border-[#d4af5a]/20 pt-4">
+            <p className="text-xs text-[#a9b0a3]">
+              Used {customResult.articleCount} article{customResult.articleCount === 1 ? "" : "s"} for
+              {" "}&ldquo;{customResult.title}&rdquo;. It is saved under Custom topics below.
+            </p>
+            {customResult.claimChecks.length > 0 ? (
+              <div>
+                <p className={labelClass}>What the sources say about your claims</p>
+                <ul className="mt-2 space-y-2 text-sm">
+                  {[...customResult.claimChecks]
+                    .sort(
+                      (a, b) =>
+                        Number(a.status === "supported") - Number(b.status === "supported"),
+                    )
+                    .map((check) => (
+                      <li key={check.claim} className="flex gap-2">
+                        <span
+                          className={`mt-0.5 shrink-0 text-[10px] font-semibold tracking-wide uppercase ${
+                            check.status === "supported"
+                              ? "text-[#8fbf9f]"
+                              : check.status === "contradicted"
+                                ? "text-[#e8b4a0]"
+                                : "text-[#e0c078]"
+                          }`}
+                        >
+                          {check.status === "supported"
+                            ? "Backed"
+                            : check.status === "contradicted"
+                              ? "Conflicts"
+                              : "Not found"}
+                        </span>
+                        <span className="text-[#cfd3c8]">
+                          {check.claim}
+                          {check.note ? <span className="text-[#a9b0a3]"> {check.note}</span> : null}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+                <p className="mt-2 text-xs text-[#a9b0a3]">
+                  Anything marked Conflicts or Not found is left out of the drafts.
+                </p>
+              </div>
+            ) : null}
+            {customResult.unreadableUrls.length > 0 ? (
+              <p className="text-xs text-[#e0c078]">
+                Could not read: {customResult.unreadableUrls.join(", ")}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <div className={panelClass}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
@@ -2211,7 +2391,11 @@ export function AiUpdatesPanel() {
             type="button"
             className={ghostButtonClass}
             onClick={handleRerun}
-            disabled={anyBusy || !selectedRunId}
+            disabled={
+              anyBusy ||
+              !selectedRunId ||
+              runs.some((item) => item.id === selectedRunId && isCustomRun(item))
+            }
           >
             {rerunning ? "Re-running..." : "Re-run this week"}
           </button>
@@ -2244,7 +2428,7 @@ export function AiUpdatesPanel() {
                   <span className="mt-1 flex items-center gap-2">
                     <Badge tone={statusTone(item.status)}>{item.status}</Badge>
                     <span className="text-[10px] text-[#a9b0a3]">
-                      {item.trigger_type}
+                      {isCustomRun(item) ? "your topics" : item.trigger_type}
                     </span>
                   </span>
                 </button>
