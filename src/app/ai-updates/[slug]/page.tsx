@@ -62,6 +62,15 @@ function splitCta(cta: string): {
     buttonLabel = parts.pop() as string;
   }
 
+  // A CTA saved as one long paragraph would print entirely in the headline style. Use the first
+  // sentence as the headline and the rest as supporting copy.
+  if (parts.length === 1 && parts[0].length > 140) {
+    const sentences = parts[0].match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g)?.map((part) => part.trim()) ?? [];
+    if (sentences.length > 1) {
+      return { primary: sentences[0], supporting: sentences.slice(1).join(" "), buttonLabel };
+    }
+  }
+
   return {
     primary: parts[0],
     supporting: parts.slice(1).join(" ") || null,
@@ -206,7 +215,11 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
 
         {cta.primary ? (
           <div className="mt-12 rounded-2xl border border-[#d4af5a]/30 bg-[#101c14]/75 px-6 py-8 text-center backdrop-blur-[2px]">
-            <p className="font-sans text-xl leading-snug font-semibold text-[#e0c078] sm:text-2xl">
+            <p
+              className={`font-sans leading-snug font-semibold text-[#e0c078] ${
+                cta.primary.length > 110 ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
+              }`}
+            >
               {cta.primary}
             </p>
             {cta.supporting ? (
