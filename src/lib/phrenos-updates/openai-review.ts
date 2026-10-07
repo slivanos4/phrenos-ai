@@ -4,6 +4,7 @@ import {
   LINKEDIN_VOICE_PATTERNS_BLOCK,
   PUNCHY_OPENING_BLOCK,
 } from "@/lib/phrenos-updates/prompts";
+import { extractJsonObject } from "@/lib/phrenos-updates/anthropic";
 import { sourceFactsForPrompt } from "@/lib/phrenos-updates/source-enrichment";
 import type {
   ChatGptSuggestion,
@@ -21,8 +22,17 @@ export type ChatGptReview = {
   suggestions: ChatGptSuggestion[];
 };
 
-/** No default model is guaranteed to exist on every account, so this is the one thing worth setting. */
-export const DEFAULT_OPENAI_REVIEW_MODEL = "gpt-5";
+/**
+ * gpt-4.1 answers directly and works on any account. The gpt-5 and o-series models are "thinking"
+ * models: they need organisation verification on OpenAI, and they spend part of their token budget
+ * thinking before they write the review.
+ */
+export const DEFAULT_OPENAI_REVIEW_MODEL = "gpt-4.1";
+
+/** Thinking models: gpt-5 and o-series, but not the plain gpt-5-chat variants. */
+function isThinkingModel(model: string): boolean {
+  return /^(o\d|gpt-5)/i.test(model) && !/chat/i.test(model);
+}
 
 export function isOpenAiConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY?.trim());
@@ -108,53 +118,81 @@ ${JSON.stringify(sourceFacts, null, 2)}
 DRAFT TO REVIEW:
 ${draftText}`;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 150_000);
-  let response: Response;
-  try {
-    const base = (process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1").replace(/\/+$/, "");
-    response = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 6000,
-      }),
-      signal: controller.signal,
+  const thinking = isThinkingModel(model);
+  const buildBody = (withEffort: boolean) =>
+    JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ],
+      response_format: { type: "json_object" },
+      // A thinking model spends tokens reasoning before it writes, so it needs a lot more room.
+      max_completion_tokens: thinking ? 25000 : 6000,
+      ...(thinking && withEffort ? { reasoning_effort: "low" } : {}),
     });
-  } catch (error) {
-    throw new Error(
-      error instanceof Error && error.name === "AbortError"
-        ? "ChatGPT took too long to respond."
-        : `Could not reach OpenAI: ${error instanceof Error ? error.message : "network error"}`
-    );
-  } finally {
-    clearTimeout(timer);
+
+  const base = (process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1").replace(/\/+$/, "");
+  const send = async (withEffort: boolean): Promise<Response> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 150_000);
+    try {
+      return await fetch(`${base}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: buildBody(withEffort),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      throw new Error(
+        error instanceof Error && error.name === "AbortError"
+          ? "ChatGPT took too long to respond."
+          : `Could not reach OpenAI: ${error instanceof Error ? error.message : "network error"}`
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  let response = await send(true);
+  if (!response.ok && response.status === 400 && thinking) {
+    // Some thinking models do not accept reasoning_effort; try once without it.
+    const detail = await response.clone().text().catch(() => "");
+    if (/reasoning_effort|unsupported|unrecognized/i.test(detail)) response = await send(false);
   }
 
   if (!response.ok) {
     const detail = (await response.text().catch(() => "")).slice(0, 300);
-    throw new Error(
-      `OpenAI error (${response.status}) on model ${model}: ${detail}${
-        response.status === 404 ? " Set OPENAI_REVIEW_MODEL to a model your account can use." : ""
-      }`
-    );
+    const hint = /must be verified/i.test(detail)
+      ? " Either verify your organisation in OpenAI settings, or set OPENAI_REVIEW_MODEL=gpt-4.1, which needs no verification."
+      : response.status === 404
+        ? " Set OPENAI_REVIEW_MODEL to a model your account can use, for example gpt-4.1."
+        : "";
+    throw new Error(`OpenAI error (${response.status}) on model ${model}: ${detail}${hint}`);
   }
 
   const payload = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
+    choices?: { message?: { content?: string | null }; finish_reason?: string }[];
   };
   const content = payload.choices?.[0]?.message?.content ?? "";
+  const finish = payload.choices?.[0]?.finish_reason;
+  if (!content.trim()) {
+    throw new Error(
+      `ChatGPT (${model}) sent back an empty review${
+        finish === "length" ? " because it used up its token allowance while thinking" : ""
+      }. Set OPENAI_REVIEW_MODEL=gpt-4.1, which answers directly.`
+    );
+  }
+  const jsonText = extractJsonObject(content) ?? content;
   let parsed: { overall?: unknown; suggestions?: unknown };
   try {
-    parsed = JSON.parse(content);
+    parsed = JSON.parse(jsonText);
   } catch {
-    throw new Error("ChatGPT returned a review that could not be read.");
+    throw new Error(
+      `ChatGPT (${model}) returned a review that could not be read${
+        finish === "length" ? " because it was cut off" : ""
+      }.`
+    );
   }
 
   const types: ReviewSuggestionType[] = [
