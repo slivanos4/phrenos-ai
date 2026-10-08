@@ -508,9 +508,19 @@ function SuggestionCard({
     window.setTimeout(() => setLinkCopyState("idle"), 1600);
   }
 
-  function handleDownload() {
+  async function handleDownload() {
     const kind = suggestion.suggestion_type === "blog" ? "blog" : "linkedin";
     const tier = suggestion.is_full_draft ? "draft" : "idea";
+    // Blogs come down as a Word file with the logo; LinkedIn posts stay plain text so they paste cleanly.
+    if (kind === "blog") {
+      try {
+        const { downloadDraftDocx } = await import("@/lib/phrenos-updates/export-docx");
+        await downloadDraftDocx(suggestion, suggestion.is_full_draft);
+        return;
+      } catch {
+        // Fall through to the plain text download rather than leave the user with nothing.
+      }
+    }
     downloadTextFile(
       `${slugifyFilename(suggestion.title || kind)}-${kind}-${tier}.txt`,
       formatSuggestionPlainText(suggestion, articleUrl),
