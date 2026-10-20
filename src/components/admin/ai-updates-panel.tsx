@@ -1731,6 +1731,14 @@ export function AiUpdatesPanel() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [run, setRun] = useState<ResearchRun | null>(null);
   const [loadingRun, setLoadingRun] = useState(false);
+  // The batch list can be folded away; the choice is remembered in this browser.
+  const [batchesOpen, setBatchesOpen] = useState(() => {
+    try {
+      return window.localStorage.getItem("phrenos-batches-open") !== "0";
+    } catch {
+      return true;
+    }
+  });
 
   const [startingRun, setStartingRun] = useState(false);
   const [rerunning, setRerunning] = useState(false);
@@ -2615,19 +2623,43 @@ export function AiUpdatesPanel() {
       </div>
 
       <div className={panelClass}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
+        <button
+          type="button"
+          className="flex w-full items-start justify-between gap-4 text-left"
+          aria-expanded={batchesOpen}
+          aria-controls="weekly-batches-body"
+          onClick={() => {
+            const next = !batchesOpen;
+            setBatchesOpen(next);
+            try {
+              window.localStorage.setItem("phrenos-batches-open", next ? "1" : "0");
+            } catch {
+              // Remembering the choice is a convenience only.
+            }
+          }}
+        >
+          <span>
+            <span className="block text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
               Weekly batches
-            </p>
-            <p className="mt-1 text-sm text-[#f1e8d6]">
+            </span>
+            <span className="mt-1 block text-sm text-[#f1e8d6]">
               {runs.length > 0
                 ? `${runs.length} batch${runs.length === 1 ? "" : "es"} on record`
                 : "No batches yet"}
-            </p>
-          </div>
-        </div>
+              {!batchesOpen && selectedRunId
+                ? ` · viewing ${formatWeek(runs.find((item) => item.id === selectedRunId) ?? runs[0])}`
+                : ""}
+            </span>
+          </span>
+          <span
+            aria-hidden
+            className={`mt-1 text-lg leading-none text-[#e0c078] transition-transform ${batchesOpen ? "rotate-180" : ""}`}
+          >
+            ▾
+          </span>
+        </button>
 
+        <div id="weekly-batches-body" hidden={!batchesOpen}>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
@@ -2686,6 +2718,7 @@ export function AiUpdatesPanel() {
             })}
           </div>
         ) : null}
+        </div>
       </div>
 
       {error ? (
