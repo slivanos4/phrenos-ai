@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { enhanceArticle } from "@/lib/phrenos-updates/article-enhance";
 import { PostFeedback } from "@/components/ai-updates/post-feedback";
 import { UpdatesSubscribeForm } from "@/components/ai-updates/updates-subscribe-form";
 import {
@@ -122,6 +123,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
   const summaryHtml = sanitizeEditorialText(post.summary_html);
   const bodyHtml = sanitizeEditorialText(post.body_html);
   const cta = splitCta(post.cta ?? "");
+  const { html: articleHtml, sections, minutes } = enhanceArticle(bodyHtml);
 
   const articleUrl = `https://phrenosai.com/ai-updates/${post.slug}`;
   const articleJsonLd = {
@@ -181,7 +183,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,28,20,0.55)_0%,rgba(16,28,20,0.82)_38%,#101C14_72%)] lg:bg-[linear-gradient(180deg,rgba(16,28,20,0.35)_0%,transparent_22%,transparent_70%,rgba(16,28,20,0.55)_100%)]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-3xl px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 lg:px-8">
         <Link
           href="/ai-updates"
           className="text-[11px] font-semibold tracking-[0.22em] text-sage uppercase transition-colors hover:text-[#e0c078]"
@@ -189,66 +191,102 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
           Back to AI Updates
         </Link>
 
-        <p className="mt-8 text-xs font-semibold tracking-[0.28em] text-gold uppercase">
-          {formatPublishedDate(post.published_at)}
-        </p>
-        <h1 className="mt-4 font-serif text-4xl leading-tight tracking-tight text-ivory sm:text-5xl">
-          {title}
-        </h1>
-        {hook ? (
-          <p className="mt-5 text-base leading-relaxed text-sage sm:text-lg">
-            {hook}
-          </p>
-        ) : null}
-
-        {summaryHtml ? (
-          <div
-            className="mt-8 rounded-2xl border border-[#d4af5a]/25 bg-[#101c14]/70 px-5 py-5 text-sm leading-relaxed text-[#c9c6ba] backdrop-blur-[2px] [&_li]:mt-1.5 [&_li]:ml-4 [&_li]:list-disc [&_p]:mt-2 [&_ul]:mt-0"
-            dangerouslySetInnerHTML={{ __html: summaryHtml }}
-          />
-        ) : null}
-
-        <div
-          className="mt-10 text-base leading-relaxed text-[#d5d0c1] [&>*+*]:mt-5 [&_a]:text-[#e0c078] [&_a]:underline-offset-2 [&_a:hover]:underline [&_blockquote]:border-l [&_blockquote]:border-[#d4af5a]/45 [&_blockquote]:pl-4 [&_blockquote]:italic [&_h2]:mt-10 [&_h2]:font-sans [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ivory [&_h3]:mt-8 [&_h3]:font-sans [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-ivory [&_li]:mt-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-sans [&_strong]:text-[#e0c078] [&_ul]:list-disc [&_ul]:pl-5"
-          dangerouslySetInnerHTML={{ __html: bodyHtml }}
-        />
-
-        {cta.primary ? (
-          <div className="mt-12 rounded-2xl border border-[#d4af5a]/30 bg-[#101c14]/75 px-6 py-8 text-center backdrop-blur-[2px]">
-            <p
-              className={`font-sans leading-snug font-semibold text-[#e0c078] ${
-                cta.primary.length > 110 ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
-              }`}
-            >
-              {cta.primary}
-            </p>
-            {cta.supporting ? (
-              <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-sage sm:text-base">
-                {cta.supporting}
-              </p>
-            ) : null}
-            <Link
-              href="/contact#contact-form"
-              className="mt-7 inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
-            >
-              {cta.buttonLabel}
-            </Link>
+        <header className="mt-6 overflow-hidden rounded-2xl border border-[#d4af5a]/35 bg-[linear-gradient(135deg,rgba(212,175,90,0.2),rgba(16,28,20,0.9)_58%)] p-6 shadow-2xl backdrop-blur-sm md:p-10">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] tracking-[0.22em] uppercase">
+            <span className="rounded-full border border-[#d4af5a]/60 bg-[#d4af5a]/15 px-3 py-1 font-semibold text-[#e0c078]">
+              AI Update
+            </span>
+            <span className="text-ivory/65">{formatPublishedDate(post.published_at)}</span>
+            <span className="text-ivory/65">{minutes} min read</span>
           </div>
-        ) : null}
+          <h1 className="mt-5 max-w-4xl font-serif text-4xl leading-tight tracking-tight text-ivory sm:text-5xl">
+            {title}
+          </h1>
+          {hook ? (
+            <p className="mt-6 max-w-3xl border-l-4 border-[#d4af5a] pl-4 text-lg leading-relaxed text-ivory/90 sm:text-xl">
+              {hook}
+            </p>
+          ) : null}
+        </header>
 
-        <PostFeedback postId={post.id} />
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="min-w-0">
+            <div className="rounded-2xl border border-[#d4af5a]/20 bg-[#0b140e]/80 p-6 backdrop-blur-sm md:p-10">
+              {summaryHtml ? (
+                <div
+                  className="mb-8 rounded-xl border border-[#d4af5a]/30 bg-[#d4af5a]/[0.07] px-5 py-5 text-sm leading-relaxed text-[#d5d0c1] [&_li]:mt-1.5 [&_li]:ml-4 [&_li]:list-disc [&_li]:marker:text-[#d4af5a] [&_p]:mt-2 [&_ul]:mt-0"
+                  dangerouslySetInnerHTML={{ __html: summaryHtml }}
+                />
+              ) : null}
+              <div className="ai-article" dangerouslySetInnerHTML={{ __html: articleHtml }} />
+            </div>
 
-        <div className="mt-12 border-t border-[#d4af5a]/20 pt-10">
-          <UpdatesSubscribeForm source="ai-update-article" compact />
-        </div>
+            {cta.primary ? (
+              <div className="mt-8 rounded-2xl border border-[#d4af5a]/40 bg-[linear-gradient(135deg,rgba(212,175,90,0.22),rgba(11,20,14,0.9))] px-6 py-8 text-center backdrop-blur-[2px]">
+                <p
+                  className={`font-serif leading-snug font-semibold text-[#e0c078] ${
+                    cta.primary.length > 110 ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"
+                  }`}
+                >
+                  {cta.primary}
+                </p>
+                {cta.supporting ? (
+                  <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-ivory/80 sm:text-base">
+                    {cta.supporting}
+                  </p>
+                ) : null}
+                <Link
+                  href="/contact#contact-form"
+                  className="mt-7 inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
+                >
+                  {cta.buttonLabel}
+                </Link>
+              </div>
+            ) : null}
 
-        <div className="mt-10 border-t border-[#d4af5a]/20 pt-6">
-          <Link
-            href="/ai-updates"
-            className="text-xs font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline"
-          >
-            All AI Updates
-          </Link>
+            <PostFeedback postId={post.id} />
+
+            <div className="mt-12 border-t border-[#d4af5a]/20 pt-10">
+              <UpdatesSubscribeForm source="ai-update-article" compact />
+            </div>
+
+            <div className="mt-10 border-t border-[#d4af5a]/20 pt-6">
+              <Link
+                href="/ai-updates"
+                className="text-xs font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline"
+              >
+                All AI Updates
+              </Link>
+            </div>
+          </div>
+
+          {sections.length > 0 ? (
+            <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
+              <nav
+                aria-label="In this article"
+                className="rounded-2xl border border-[#d4af5a]/25 bg-[#0b140e]/80 p-5 backdrop-blur-sm"
+              >
+                <p className="text-[11px] font-semibold tracking-[0.22em] text-[#e0c078] uppercase">
+                  In this article
+                </p>
+                <ol className="mt-4 space-y-3">
+                  {sections.map((section, index) => (
+                    <li key={section.id}>
+                      <a
+                        href={`#${section.id}`}
+                        className="group flex items-start gap-3 text-sm leading-snug text-ivory/80 transition-colors hover:text-[#e0c078]"
+                      >
+                        <span className="mt-0.5 text-xs font-semibold text-[#d4af5a]">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <span>{section.title}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            </aside>
+          ) : null}
         </div>
       </div>
     </article>
