@@ -1,22 +1,22 @@
 import { DrawOnView, Reveal } from "@/components/home/motion";
 
-// Each step is taken from the About narrative: where the work began and where it leads.
+// Each line is lifted from the About narrative, in Sophia's own words.
 const steps = [
   {
     title: "Osteopathy",
-    line: "How the nervous system drives behaviour.",
+    line: "Taught me how the nervous system drives behaviour.",
   },
   {
     title: "Neuroscience & neurolinguistics",
-    line: "How people process language and make decisions.",
+    line: "The mechanics of how people process language and make decisions.",
   },
   {
     title: "Generative AI",
-    line: "Custom GPTs, agentic workflows, automation platforms and reporting.",
+    line: "More than 40 custom GPTs and AI assistants, agentic workflows, automation platforms and reporting solutions.",
   },
   {
     title: "Phrenos.ai",
-    line: "AI that strengthens people’s judgement instead of replacing it.",
+    line: "The philosophy behind everything I build, teach and share.",
   },
 ] as const;
 
