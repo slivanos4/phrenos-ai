@@ -45,7 +45,23 @@ export default function ResourcesPage() {
             Free cheat sheet
           </p>
 
-          <div className="mt-8 border-t border-[#d4af5a]/25 pt-8 sm:pt-10">
+          <div className="mt-8 grid items-start gap-10 border-t border-[#d4af5a]/25 pt-8 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
+            <div className="lg:order-2">
+              <div className="relative mx-auto max-w-[15rem] lg:max-w-none lg:-rotate-2 lg:transition-transform lg:duration-700 lg:hover:rotate-0">
+                <div className="absolute -inset-4 rounded-3xl bg-[radial-gradient(circle,rgba(212,175,90,0.28),transparent_70%)]" aria-hidden />
+                <picture>
+                  <source srcSet="/brand/products/brief-cover.webp" type="image/webp" />
+                  <img
+                    src="/brand/products/brief-cover.jpg"
+                    alt="Cover of the cheat sheet How to Brief AI Like a Strategist"
+                    className="relative w-full rounded-lg border border-[#d4af5a]/50 shadow-[0_24px_70px_rgba(0,0,0,0.55)]"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
+              </div>
+            </div>
+            <div className="lg:order-1">
             <p className="text-[11px] font-semibold tracking-[0.2em] text-sage uppercase">
               Cheat sheet · 8 pages
             </p>
@@ -89,6 +105,7 @@ export default function ResourcesPage() {
               </a>
               .
             </p>
+            </div>
           </div>
 
           <div className="mt-16 border-t border-[#d4af5a]/25 pt-10 sm:pt-12">

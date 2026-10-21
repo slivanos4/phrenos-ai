@@ -157,26 +157,14 @@ function TransformViz({ title, from, to }: { title: string; from: string; to: st
   );
 }
 
-export function ProofSection() {
+export function ProofStats({ className = "" }: { className?: string }) {
   const { proof } = homePage;
-  const cases = ["Competitive Intelligence", "Content Buddy", "Monthly Report Automation"]
-    .map((title) => selectedWork.find((item) => item.title === title))
-    .filter((item): item is (typeof selectedWork)[number] => Boolean(item));
   const counts = [
     { target: 40, suffix: "+" },
     { target: 5, suffix: "" },
   ];
   return (
-    <section className="bg-forest py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-6 lg:px-8">
-        <Reveal className="flex flex-wrap items-end justify-between gap-4">
-          <SectionHeading label={proof.eyebrow} heading={proof.heading} />
-          <Link href={proof.link.href} className={sectionLink}>
-            {proof.link.label} →
-          </Link>
-        </Reveal>
-
-        <dl className="mt-10 grid gap-5 sm:grid-cols-3">
+        <dl className={`grid gap-5 sm:grid-cols-3 ${className}`}>
           {proof.stats.map((stat, index) => (
             <Reveal
               key={stat.label}
@@ -196,6 +184,25 @@ export function ProofSection() {
             </Reveal>
           ))}
         </dl>
+  );
+}
+
+export function ProofSection() {
+  const { proof } = homePage;
+  const cases = ["Competitive Intelligence", "Content Buddy", "Monthly Report Automation"]
+    .map((title) => selectedWork.find((item) => item.title === title))
+    .filter((item): item is (typeof selectedWork)[number] => Boolean(item));
+  return (
+    <section className="bg-forest py-20 lg:py-28">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8">
+        <Reveal className="flex flex-wrap items-end justify-between gap-4">
+          <SectionHeading label={proof.eyebrow} heading={proof.heading} />
+          <Link href={proof.link.href} className={sectionLink}>
+            {proof.link.label} →
+          </Link>
+        </Reveal>
+
+        <ProofStats className="mt-10" />
 
         <div className="mt-8 grid gap-5 lg:grid-cols-3">
           {cases.map((item, index) => (

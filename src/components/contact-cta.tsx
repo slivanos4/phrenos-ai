@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { bookCallHref, bookCallIsExternal, contactCta } from "@/data/site-content";
 
-export function ContactCta() {
+export function ContactCta({
+  heading = contactCta.heading,
+  supporting = contactCta.supporting,
+}: {
+  heading?: string;
+  supporting?: string;
+} = {}) {
   return (
     <section
       id="contact"
@@ -26,10 +32,10 @@ export function ContactCta() {
 
       <div className="relative mx-auto max-w-3xl px-6 text-center lg:px-8">
         <h2 className="font-serif text-4xl tracking-tight text-ivory sm:text-5xl">
-          {contactCta.heading}
+          {heading}
         </h2>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-sage sm:text-lg">
-          {contactCta.supporting}
+          {supporting}
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link

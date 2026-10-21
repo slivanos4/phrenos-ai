@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { UpdatesSubscribeForm } from "@/components/ai-updates/updates-subscribe-form";
+import { ContactCta } from "@/components/contact-cta";
+import { SignalNoise } from "@/components/home/graphics";
+import { Reveal } from "@/components/home/motion";
 import { PageHero } from "@/components/page-hero";
 import {
   isServiceRoleConfigured,
@@ -77,19 +80,39 @@ export default async function AiUpdatesPage({ searchParams }: AiUpdatesPageProps
 
           {posts.length > 0 ? (
             <>
+              <div className="mb-12">
+                <SignalNoise from="Noise" to="Signal" />
+              </div>
               <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
                 Latest updates
               </p>
               <div className="mt-8 grid gap-5 sm:grid-cols-2">
-                {posts.map((post) => (
-                  <article
+                {posts.map((post, index) => (
+                  <Reveal
                     key={post.id}
-                    className="flex flex-col rounded-2xl border border-[#d4af5a]/25 bg-[#101c14]/60 p-6 transition-colors hover:border-[#d4af5a]/60"
+                    delay={(index % 2) * 110}
+                    className={index === 0 ? "sm:col-span-2" : ""}
+                  >
+                  <article
+                    className={`flex h-full flex-col rounded-2xl border p-6 transition-colors hover:border-[#d4af5a]/60 ${
+                      index === 0
+                        ? "border-[#d4af5a]/50 bg-[linear-gradient(135deg,rgba(212,175,90,0.16),rgba(16,28,20,0.7))] sm:p-10"
+                        : "border-[#d4af5a]/25 bg-[#101c14]/60"
+                    }`}
                   >
                     <p className="text-[11px] font-semibold tracking-[0.2em] text-sage uppercase">
+                      {index === 0 ? (
+                        <span className="mr-3 rounded-full border border-[#d4af5a]/60 bg-[#d4af5a]/15 px-3 py-1 text-[#e0c078]">
+                          Latest
+                        </span>
+                      ) : null}
                       {formatPublishedDate(post.published_at)}
                     </p>
-                    <h2 className="mt-3 font-serif text-2xl leading-snug text-ivory">
+                    <h2
+                      className={`mt-3 font-serif leading-snug text-ivory ${
+                        index === 0 ? "text-3xl sm:text-4xl" : "text-2xl"
+                      }`}
+                    >
                       <Link
                         href={`/ai-updates/${post.slug}`}
                         className="transition-colors hover:text-[#e0c078]"
@@ -109,6 +132,7 @@ export default async function AiUpdatesPage({ searchParams }: AiUpdatesPageProps
                       Read the update
                     </Link>
                   </article>
+                  </Reveal>
                 ))}
               </div>
             </>
@@ -133,6 +157,11 @@ export default async function AiUpdatesPage({ searchParams }: AiUpdatesPageProps
           </div>
         </div>
       </section>
+
+      <ContactCta
+        heading="Want this applied to your organisation?"
+        supporting="AI Updates tells you what changed. A free call works out what it means for you."
+      />
     </>
   );
 }

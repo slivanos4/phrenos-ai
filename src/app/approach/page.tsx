@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Approach } from "@/components/approach";
+import { ContactCta } from "@/components/contact-cta";
 import { PageHero } from "@/components/page-hero";
 import { approach } from "@/data/site-content";
 
@@ -34,6 +35,10 @@ export default function ApproachPage() {
         description={approach.intro}
       />
       <Approach hideIntro />
+      <ContactCta
+        heading="Every engagement starts with Understand."
+        supporting="A short note, then a free call. We’ll map where AI, data and automation can create real leverage in your organisation."
+      />
     </>
   );
 }

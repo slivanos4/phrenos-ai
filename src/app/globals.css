@@ -920,3 +920,44 @@ body {
   font-variant-numeric: lining-nums;
   font-feature-settings: "lnum" 1;
 }
+
+/* The journey line on the About page draws itself, then each step lights up in turn. */
+.journey-line {
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 2.4s cubic-bezier(0.45, 0, 0.2, 1) 0.2s;
+}
+
+@media (min-width: 1024px) {
+  .journey-line {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+}
+
+.is-visible .journey-line {
+  transform: none;
+}
+
+.journey-node {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.9s ease,
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(0.5s + var(--step, 0) * 0.55s);
+}
+
+.is-visible .journey-node {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-line,
+  .journey-node {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+}

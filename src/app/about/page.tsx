@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AboutFocus } from "@/components/about-focus";
 import { AboutStory } from "@/components/about-story";
+import { AboutJourney } from "@/components/about-journey";
 import { ContactCta } from "@/components/contact-cta";
 
 const pageTitle = "About";
@@ -24,8 +25,12 @@ export default function AboutPage() {
   return (
     <>
       <AboutStory />
+      <AboutJourney />
       <AboutFocus />
-      <ContactCta />
+      <ContactCta
+        heading="Let’s find where AI can amplify your people."
+        supporting="A short note is enough to begin. Tell us where the friction is, and we’ll help find the leverage."
+      />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ContactCta } from "@/components/contact-cta";
 import { PageHero } from "@/components/page-hero";
 import { Services } from "@/components/services";
 import { services } from "@/data/site-content";
@@ -62,6 +63,10 @@ export default function ConsultancyPage() {
         description="Five capabilities. One goal: AI that changes what your business can do, not just how it talks about the future."
       />
       <Services hideIntro />
+      <ContactCta
+        heading="Not sure which capability comes first?"
+        supporting="Most organisations start with one. A free 30-minute call is the quickest way to find yours, or take the readiness check to see where you stand."
+      />
     </>
   );
 }

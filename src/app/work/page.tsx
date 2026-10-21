@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ContactCta } from "@/components/contact-cta";
+import { ProofStats } from "@/components/home/sections";
 import { SelectedWork } from "@/components/selected-work";
 
 const pageTitle = "Work";
@@ -60,6 +62,17 @@ export default function WorkPage() {
 
       <div className="relative z-10">
         <SelectedWork hideIntro continuous />
+      </div>
+
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20 lg:px-8 lg:pb-28">
+        <ProofStats />
+      </section>
+
+      <div className="relative z-10">
+        <ContactCta
+          heading="Got a slow, scattered or manual process in mind?"
+          supporting="Describe it in a short note. Every system here started with exactly that."
+        />
       </div>
     </div>
   );
