@@ -1,6 +1,6 @@
 import { DrawOnView, Reveal } from "@/components/home/motion";
 
-// Each line is lifted from the About narrative, in Sophia's own words.
+// The first two lines are lifted from the About narrative in Sophia's own words; the last two she chose.
 const steps = [
   {
     title: "Osteopathy",
@@ -12,11 +12,11 @@ const steps = [
   },
   {
     title: "Generative AI",
-    line: "More than 40 custom GPTs and AI assistants, agentic workflows, automation platforms and reporting solutions.",
+    line: "Custom GPTs, agentic workflows, automation platforms and reporting.",
   },
   {
     title: "Phrenos.ai",
-    line: "The philosophy behind everything I build, teach and share.",
+    line: "AI that strengthens people’s judgement instead of replacing it.",
   },
 ] as const;
 
