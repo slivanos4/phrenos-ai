@@ -3,9 +3,12 @@
 import { FormEvent, useState, useSyncExternalStore } from "react";
 import { leadMagnets } from "@/data/site-content";
 import { trackEvent } from "@/lib/site/analytics";
-import { isEmail, joinBriefing, submitLead } from "@/lib/site/lead";
+import { isEmail } from "@/lib/site/lead";
 
 const STORAGE_KEY = "phrenos-brief-sheet-unlocked";
+// The server's access cookie lasts 30 days; this browser-side flag only decides which buttons to show.
+const REMEMBER_DAYS = 29;
+const DOWNLOAD_URL = "/api/resources/brief-sheet/download";
 const CHANGE_EVENT = "phrenos-brief-sheet-unlocked-change";
 
 function subscribe(onChange: () => void) {
@@ -19,7 +22,8 @@ function subscribe(onChange: () => void) {
 
 function readUnlocked(): boolean {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
+    const expiresAt = Number(window.localStorage.getItem(STORAGE_KEY));
+    return Number.isFinite(expiresAt) && expiresAt > Date.now();
   } catch {
     return false;
   }
@@ -32,7 +36,7 @@ const fieldClass =
  * The cheat sheet is free, in exchange for an email address. Once someone has given theirs, this browser
  * remembers it and shows the download straight away next time.
  */
-export function BriefSheetGate({ pdfHref, downloadName }: { pdfHref: string; downloadName: string }) {
+export function BriefSheetGate({ downloadName }: { downloadName: string }) {
   const unlocked = useSyncExternalStore(subscribe, readUnlocked, () => false);
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
@@ -43,7 +47,6 @@ export function BriefSheetGate({ pdfHref, downloadName }: { pdfHref: string; dow
     event.preventDefault();
     setError(null);
     const data = new FormData(event.currentTarget);
-    if (String(data.get("website") || "")) return;
 
     if (!isEmail(email)) {
       setError("Please enter a valid email address.");
@@ -51,26 +54,36 @@ export function BriefSheetGate({ pdfHref, downloadName }: { pdfHref: string; dow
     }
 
     setSending(true);
-    await submitLead({
-      source: "Cheat sheet: How to Brief AI Like a Strategist",
-      email,
-      details: { newsletter_opt_in: optIn ? "yes" : "no" },
-    });
-    if (optIn) await joinBriefing(email, "cheat-sheet");
     try {
-      window.localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // The download still appears below this visit.
+      // The server records the lead and, only if it says yes, opens the PDF for this browser.
+      const response = await fetch("/api/resources/brief-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, optIn, website: String(data.get("website") || "") }),
+      });
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Something went wrong. Please try again.");
+
+      trackEvent("generate_lead", { form: "cheat-sheet" });
+      if (optIn) trackEvent("newsletter_signup", { source: "cheat-sheet" });
+      try {
+        window.localStorage.setItem(STORAGE_KEY, String(Date.now() + REMEMBER_DAYS * 86_400_000));
+      } catch {
+        // The download still appears for this visit.
+      }
+      window.dispatchEvent(new Event(CHANGE_EVENT));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Something went wrong. Please try again.");
+    } finally {
+      setSending(false);
     }
-    window.dispatchEvent(new Event(CHANGE_EVENT));
-    setSending(false);
   }
 
   if (unlocked) {
     return (
       <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
         <a
-          href={pdfHref}
+          href={`${DOWNLOAD_URL}?dl=1`}
           download={downloadName}
           data-track="download_brief_pdf"
           className="inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
@@ -78,7 +91,7 @@ export function BriefSheetGate({ pdfHref, downloadName }: { pdfHref: string; dow
           Download the PDF
         </a>
         <a
-          href={pdfHref}
+          href={DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
           data-track="open_brief_pdf"
@@ -92,6 +105,7 @@ export function BriefSheetGate({ pdfHref, downloadName }: { pdfHref: string; dow
 
   return (
     <form
+      id="cheat-sheet"
       onSubmit={(event) => void handleSubmit(event)}
       onFocus={() => trackEvent("lead_form_start", { form: "cheat-sheet" })}
       className="mt-10 max-w-xl rounded-2xl border border-[#d4af5a]/35 bg-[#d4af5a]/[0.07] p-5 sm:p-6"

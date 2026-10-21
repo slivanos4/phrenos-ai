@@ -22,7 +22,6 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: pageTitle, description: pageDescription },
 };
 
-const briefPdfHref = "/products/brief-ai-like-a-strategist.pdf";
 
 export default function ResourcesPage() {
   return (
@@ -90,10 +89,7 @@ export default function ResourcesPage() {
               </li>
             </ul>
 
-            <BriefSheetGate
-              pdfHref={briefPdfHref}
-              downloadName="How-to-Brief-AI-Like-a-Strategist.pdf"
-            />
+            <BriefSheetGate downloadName="How-to-Brief-AI-Like-a-Strategist.pdf" />
 
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-sage">
               Take it. Use it. Stress-test it. If it breaks, tell us where:{" "}
