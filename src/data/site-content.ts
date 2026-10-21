@@ -71,10 +71,10 @@ export const services = [
     title: "AI Strategy & Adoption",
     short: "Strategy",
     description:
-      "Clarify where Generative AI creates commercial value, set priorities that leadership can act on, and build a practical path from ambition to adoption.",
+      "Clarify where Generative AI creates commercial value, set priorities your leadership team can act on, and build a practical path from ambition to adoption.",
     points: [
       "Board-ready opportunity maps with clear commercial bets.",
-      "Prioritised adoption roadmaps leadership can fund and follow.",
+      "Prioritised adoption roadmaps your leadership team can fund and follow.",
       "Governance that protects judgement while unlocking speed.",
       "Measurable milestones from ambition to operating rhythm.",
     ],
@@ -372,7 +372,7 @@ export const homePage = {
     heading: "What it looks like when it works.",
     items: [
       {
-        title: "A plan leadership can fund and follow",
+        title: "A plan your leadership team will back",
         service: "AI Strategy & Adoption",
         body: "Board-ready opportunity maps and a staged roadmap, with the governance to move quickly and safely.",
       },

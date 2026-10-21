@@ -7,7 +7,7 @@ import { booking, bookCallIsExternal, contactPage } from "@/data/site-content";
 const contactHelpItems = [
   {
     label: "AI Strategy & Adoption",
-    detail: "turning ambition into a plan leadership can fund.",
+    detail: "turning ambition into a plan your leadership team can fund.",
   },
   {
     label: "Workflow Automation",

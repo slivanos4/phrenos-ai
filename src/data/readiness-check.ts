@@ -149,7 +149,7 @@ export const readinessTiers: readonly ReadinessTier[] = [
     label: "Building momentum",
     headline: "You have real energy. Now it needs direction and structure.",
     summary:
-      "You’re using AI in places and people are keen, but results are uneven. The next step is turning scattered effort into a plan leadership can fund, measure and repeat.",
+      "You’re using AI in places and people are keen, but results are uneven. The next step is turning scattered effort into a plan your leadership team can fund, measure and repeat.",
     nextSteps: [
       "Rank your current ideas by value and effort, and stop the ones that won’t pay back.",
       "Turn your best pilot into a repeatable workflow with a human checkpoint.",
