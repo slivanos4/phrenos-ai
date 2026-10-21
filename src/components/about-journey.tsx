@@ -1,14 +1,14 @@
 import { DrawOnView, Reveal } from "@/components/home/motion";
 
-// The first two lines are lifted from the About narrative in Sophia's own words; the last two she chose.
+// Each step is taken from the About narrative: where the work began and where it leads.
 const steps = [
   {
     title: "Osteopathy",
-    line: "Taught me how the nervous system drives behaviour.",
+    line: "How the nervous system drives behaviour.",
   },
   {
     title: "Neuroscience & neurolinguistics",
-    line: "The mechanics of how people process language and make decisions.",
+    line: "How people process language and make decisions.",
   },
   {
     title: "Generative AI",
