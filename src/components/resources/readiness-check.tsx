@@ -124,17 +124,20 @@ export function ReadinessCheck() {
       <div className="rounded-2xl border border-[#d4af5a]/40 bg-[linear-gradient(135deg,rgba(212,175,90,0.2),rgba(11,20,14,0.9)_60%)] p-6 sm:p-10">
         <p className="text-xs font-semibold tracking-[0.28em] text-[#e0c078] uppercase">Your result</p>
         <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-2">
-          <p className="font-serif text-6xl leading-none text-[#e0c078] sm:text-7xl">{result!.percent}%</p>
-          <p className="pb-1 font-serif text-2xl text-ivory sm:text-3xl">{result!.tier.label}</p>
+          <p className="lining font-serif text-6xl leading-none text-[#e0c078] sm:text-7xl">{result!.percent}%</p>
+          <div className="pb-1">
+            <p className="text-[11px] font-semibold tracking-[0.22em] text-sage uppercase">AI readiness</p>
+            <p className="font-serif text-2xl text-ivory sm:text-3xl">{result!.tier.label}</p>
+          </div>
         </div>
-        <p className="mt-6 font-serif text-2xl leading-snug text-ivory sm:text-[1.7rem]">{result!.tier.headline}</p>
+        <p className="mt-6 font-serif text-2xl leading-snug text-balance text-ivory sm:text-[1.7rem]">{result!.tier.headline}</p>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-ivory/85">{result!.tier.summary}</p>
 
         <p className="mt-8 text-xs font-semibold tracking-[0.22em] text-[#e0c078] uppercase">Your next three moves</p>
         <ol className="mt-4 space-y-3">
           {result!.tier.nextSteps.map((item, index) => (
             <li key={item} className="flex gap-3 text-sm leading-relaxed text-ivory/90 sm:text-base">
-              <span className="font-serif text-lg text-[#d4af5a]">{index + 1}</span>
+              <span className="lining w-5 shrink-0 font-serif text-2xl leading-none font-semibold text-[#d4af5a]">{index + 1}</span>
               <span>{item}</span>
             </li>
           ))}
@@ -149,7 +152,7 @@ export function ReadinessCheck() {
               <li key={area.area}>
                 <div className="flex items-baseline justify-between gap-4 text-sm text-ivory">
                   <span>{area.label}</span>
-                  <span className="font-semibold text-[#e0c078]">{area.percent}%</span>
+                  <span className="lining font-semibold text-[#e0c078]">{area.percent}%</span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-ivory/10" aria-hidden>
                   <div className="h-full rounded-full bg-[#d4af5a]" style={{ width: `${area.percent}%` }} />
@@ -173,7 +176,7 @@ export function ReadinessCheck() {
         >
           <p className="font-serif text-2xl text-[#e0c078]">Unlock your full breakdown</p>
           <p className="mt-2 text-sm leading-relaxed text-ivory/85 sm:text-base">
-            See how you scored in each of the five areas, and the one place to start. Enter your email to
+            See your score in each of the five areas, and the one place to start. Enter your email to
             unlock it.
           </p>
           <input
@@ -227,7 +230,7 @@ export function ReadinessCheck() {
       <div className="rounded-2xl border border-[#d4af5a]/40 bg-[linear-gradient(135deg,rgba(212,175,90,0.22),rgba(11,20,14,0.9))] p-6 text-center sm:p-10">
         <p className="font-serif text-2xl text-[#e0c078] sm:text-3xl">Want to talk it through?</p>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ivory/85 sm:text-base">
-          A free 30-minute call is a good place to turn this result into a plan.
+          A free 30-minute call is a good place to turn this result into a plan, with no preparation needed.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link

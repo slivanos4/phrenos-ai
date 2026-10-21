@@ -11,7 +11,7 @@ export const readinessAreas: Record<ReadinessArea, { label: string; firstStep: s
   data: {
     label: "Data you can trust",
     firstStep:
-      "Choose one decision your leaders make every week and make its data reliable and easy to reach before you automate anything around it.",
+      "Choose one decision your leaders make every week and make its data reliable and easy to reach, before you automate anything around it.",
   },
   workflows: {
     label: "Workflows and automation",
@@ -54,7 +54,7 @@ export const readinessQuestions: readonly ReadinessQuestion[] = [
     area: "strategy",
     question: "How do you decide which AI opportunities to pursue?",
     options: [
-      "We don’t, ideas come up ad hoc",
+      "We don’t. Ideas just come up",
       "Case by case, led by whoever is keenest",
       "We rank ideas by value and effort",
       "A tracked pipeline with clear owners and measures",
@@ -106,7 +106,7 @@ export const readinessQuestions: readonly ReadinessQuestion[] = [
     options: [
       "There’s no guidance",
       "Informal advice only",
-      "A written policy that is rarely followed up",
+      "A written policy that’s rarely enforced",
       "Clear rules, named owners and human sign-off",
     ],
   },
@@ -135,9 +135,9 @@ export const readinessTiers: readonly ReadinessTier[] = [
   {
     key: "starting",
     label: "Starting out",
-    headline: "You have room to move fast, once the foundations are in place.",
+    headline: "The biggest gains are still ahead, and the foundations come first.",
     summary:
-      "AI is mostly ad hoc in your organisation right now. That’s a common place to be, and it means the biggest gains come from choosing a few well-aimed bets rather than doing more of everything.",
+      "AI is mostly ad hoc in your organisation right now. That’s a common place to be. It means the most valuable move is to choose a few well-aimed bets, not to do more of everything.",
     nextSteps: [
       "Agree two or three priority use cases with the clearest commercial return.",
       "Fix the data behind one weekly decision so the first project has something solid to stand on.",
@@ -147,21 +147,21 @@ export const readinessTiers: readonly ReadinessTier[] = [
   {
     key: "building",
     label: "Building momentum",
-    headline: "You have real energy. Now it needs direction and structure.",
+    headline: "You have real energy. Now it needs direction.",
     summary:
       "You’re using AI in places and people are keen, but results are uneven. The next step is turning scattered effort into a plan your leadership team can fund, measure and repeat.",
     nextSteps: [
       "Rank your current ideas by value and effort, and stop the ones that won’t pay back.",
       "Turn your best pilot into a repeatable workflow with a human checkpoint.",
-      "Agree how you will measure return, and review it every month.",
+      "Agree how you’ll measure return, and review it every month.",
     ],
   },
   {
     key: "scaling",
     label: "Ready to scale",
-    headline: "Your foundations are strong. The question is where to point them.",
+    headline: "Your foundations are strong. The question is where to aim them.",
     summary:
-      "You have strategy, data and habits in decent shape. The opportunity now is deeper automation and sharper competitive advantage, while keeping oversight tight as the systems do more.",
+      "Strategy, data and habits are in good shape. The opportunity now is deeper automation and sharper competitive advantage, while keeping oversight tight as the systems do more.",
     nextSteps: [
       "Look for the next high-value workflow to automate end to end.",
       "Stress-test your governance as AI takes on more autonomous work.",

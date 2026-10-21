@@ -184,7 +184,7 @@ export function ProofSection() {
               className="rounded-2xl border border-[#d4af5a]/35 bg-[linear-gradient(135deg,rgba(212,175,90,0.14),rgba(16,28,20,0.4))] px-6 py-6"
             >
               <dt
-                className={`font-serif leading-none text-[#e0c078] ${stat.value.length > 6 ? "text-3xl sm:text-4xl" : "text-5xl sm:text-6xl"}`}
+                className={`lining font-serif leading-none text-[#e0c078] ${stat.value.length > 6 ? "text-3xl sm:text-4xl" : "text-5xl sm:text-6xl"}`}
               >
                 {counts[index] ? (
                   <CountUp target={counts[index].target} suffix={counts[index].suffix} />

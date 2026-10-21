@@ -914,3 +914,9 @@ body {
     transition: none;
   }
 }
+
+/* Cormorant's default numerals sit low and uneven (old-style). Use lining figures where numbers carry meaning. */
+.lining {
+  font-variant-numeric: lining-nums;
+  font-feature-settings: "lnum" 1;
+}
