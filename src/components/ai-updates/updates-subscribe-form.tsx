@@ -5,6 +5,8 @@ import { FormEvent, useState } from "react";
 type UpdatesSubscribeFormProps = {
   source?: string;
   compact?: boolean;
+  /** Field above button even on wide screens, for narrow spaces such as a sidebar. */
+  stacked?: boolean;
 };
 
 const fieldClass =
@@ -117,6 +119,7 @@ function SubscribeSuccess({
 export function UpdatesSubscribeForm({
   source = "ai-updates",
   compact = false,
+  stacked = false,
 }: UpdatesSubscribeFormProps) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -222,8 +225,9 @@ export function UpdatesSubscribeForm({
               Don&apos;t miss the next insight.
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-sage sm:text-base">
-              One note when we publish something worth your attention. No weekly
-              clutter. Unsubscribe whenever you like.
+              The AI briefing for business leaders: plain-English analysis of the AI
+              news that matters, sent when we publish. No clutter. Unsubscribe
+              whenever you like.
             </p>
           </div>
         </div>
@@ -233,10 +237,11 @@ export function UpdatesSubscribeForm({
             Stay in the loop
           </p>
           <h2 className="mt-2 font-serif text-xl leading-snug text-ivory">
-            Want the next update first?
+            Get the AI briefing for business leaders.
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-sage">
-            Drop your email and we&apos;ll send it the moment it goes live.
+            Plain-English analysis of the AI news that matters, sent the moment we
+            publish. No clutter.
           </p>
         </div>
       )}
@@ -253,7 +258,7 @@ export function UpdatesSubscribeForm({
           aria-hidden
           className="absolute -left-[9999px] h-0 w-0 opacity-0"
         />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className={`flex flex-col gap-3 ${stacked ? "" : "sm:flex-row sm:items-center"}`}>
           <label className="sr-only" htmlFor={`subscribe-email-${source}`}>
             Email
           </label>

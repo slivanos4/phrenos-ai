@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { ConditionalFooter } from "@/components/conditional-footer";
 import { SiteAnalytics } from "@/components/site-analytics";
+import { TrackClicks } from "@/components/track-clicks";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ConditionalFooter />
         <Analytics />
         <SiteAnalytics />
+        <TrackClicks />
       </body>
     </html>
   );

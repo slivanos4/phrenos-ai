@@ -73,7 +73,9 @@ export function SiteHeader() {
         <div className="flex items-center gap-3">
           <Link
             href={headerCta.href}
-            className={`hidden rounded-full border px-3.5 py-1.5 text-xs font-medium tracking-[0.04em] transition-colors sm:inline-flex ${
+            data-track="cta_book_call"
+            data-track-location="header"
+            className={`hidden rounded-full border px-3.5 py-1.5 text-xs font-medium tracking-[0.04em] whitespace-nowrap transition-colors sm:inline-flex ${
               isActivePath(pathname, headerCta.href)
                 ? "border-gold bg-gold text-forest"
                 : "border-gold text-ivory hover:bg-gold/10"
@@ -128,6 +130,8 @@ export function SiteHeader() {
             })}
             <Link
               href={headerCta.href}
+              data-track="cta_book_call"
+              data-track-location="mobile-menu"
               className={`mt-2 inline-flex w-fit rounded-full border px-4 py-2 text-sm font-medium tracking-wide sm:hidden ${
                 isActivePath(pathname, headerCta.href)
                   ? "border-gold bg-gold text-forest"

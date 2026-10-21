@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { ContactCta } from "@/components/contact-cta";
+import { BriefSheetGate } from "@/components/resources/brief-sheet-gate";
+import { leadMagnets } from "@/data/site-content";
 
 const pageTitle = "Resources";
 const pageDescription =
@@ -72,23 +74,10 @@ export default function ResourcesPage() {
               </li>
             </ul>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <a
-                href={briefPdfHref}
-                download="How-to-Brief-AI-Like-a-Strategist.pdf"
-                className="inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
-              >
-                Download the PDF
-              </a>
-              <a
-                href={briefPdfHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-full border border-[#d4af5a]/55 px-7 py-3.5 text-sm font-semibold tracking-wide text-ivory transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10"
-              >
-                Open in browser
-              </a>
-            </div>
+            <BriefSheetGate
+              pdfHref={briefPdfHref}
+              downloadName="How-to-Brief-AI-Like-a-Strategist.pdf"
+            />
 
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-sage">
               Take it. Use it. Stress-test it. If it breaks, tell us where:{" "}
@@ -100,6 +89,26 @@ export default function ResourcesPage() {
               </a>
               .
             </p>
+          </div>
+
+          <div className="mt-16 border-t border-[#d4af5a]/25 pt-10 sm:pt-12">
+            <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">
+              {leadMagnets.readiness.eyebrow}
+            </p>
+            <h2 className="mt-3 font-serif text-3xl leading-snug text-ivory sm:text-4xl">
+              {leadMagnets.readiness.title}
+            </h2>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-sage sm:text-lg">
+              {leadMagnets.readiness.description}
+            </p>
+            <Link
+              href={leadMagnets.readiness.href}
+              data-track="cta_readiness_check"
+              data-track-location="resources"
+              className="mt-8 inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
+            >
+              Take the readiness check
+            </Link>
           </div>
 
           <div className="mt-16 border-t border-[#d4af5a]/20 pt-12">
@@ -117,7 +126,7 @@ export default function ResourcesPage() {
                 href="/contact"
                 className="text-sm font-semibold tracking-wide text-ivory transition-colors hover:text-[#e0c078]"
               >
-                Build Your AI Strategy →
+                Book a free AI call →
               </Link>
             </div>
           </div>

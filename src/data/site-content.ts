@@ -19,8 +19,18 @@ export const navigation = [
   { label: "Contact", href: "/contact" },
 ] as const;
 
+/** Optional booking page (Cal.com, Calendly...). Set NEXT_PUBLIC_BOOKING_URL in Vercel to switch it on. */
+export const booking = {
+  url: process.env.NEXT_PUBLIC_BOOKING_URL?.trim() || "",
+  label: "Book a free 30-minute call",
+} as const;
+
+/** Where a "book a call" button goes: the booking page when set, otherwise the contact form. */
+export const bookCallHref = booking.url || "/contact#contact-form";
+export const bookCallIsExternal = Boolean(booking.url);
+
 export const headerCta = {
-  label: "Build Your AI Strategy",
+  label: "Book a free AI call",
   href: "/contact",
 } as const;
 
@@ -35,10 +45,10 @@ export const hero = {
       "the best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
   },
   primaryCta: {
-    prefix: "",
+    prefix: "Book a free ",
     ai: "AI",
-    suffix: "m for Impact",
-    href: "/contact",
+    suffix: " call",
+    href: "/contact#contact-form",
   },
   secondaryCta: {
     prefix: "Meet the ",
@@ -281,7 +291,7 @@ export const aboutPage = {
     "AI Product Strategy & Innovation",
   ],
   cta: {
-    label: "Build Your AI Strategy",
+    label: "Book a free AI call",
     href: "/contact",
   },
 } as const;
@@ -291,8 +301,12 @@ export const contactCta = {
   supporting:
     "A short note is enough to begin. Tell us where the friction is, and we’ll help find the leverage.",
   button: {
-    label: "Build Your AI Strategy",
+    label: "Book a free AI call",
     href: "/contact#contact-form",
+  },
+  secondary: {
+    label: "Or take the free AI readiness check",
+    href: "/resources/ai-readiness",
   },
 } as const;
 
@@ -310,6 +324,12 @@ export const contactPage = {
     submit: "Send message",
   },
   success: "Thank you. Your message has been sent. We’ll be in touch shortly.",
+  optional: "Optional",
+  nextSteps: [
+    "Every message is read personally.",
+    "You will hear back within a couple of business days, with a few questions or a time to talk.",
+    "If it looks like a fit, we book a free 30-minute call to find where AI can create real leverage.",
+  ],
 } as const;
 
 export const footer = {
@@ -321,4 +341,105 @@ export const footer = {
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ],
+} as const;
+
+export const homePage = {
+  problems: {
+    eyebrow: "Sound familiar?",
+    heading: "AI is everywhere. Impact still is not.",
+    items: [
+      {
+        title: "Pilots that never leave the pilot stage",
+        body: "Plenty of experimenting, but little that changes how the business runs or what it earns.",
+      },
+      {
+        title: "Days lost to manual reporting and research",
+        body: "Skilled people copy data between tools when they should be making the decisions.",
+      },
+      {
+        title: "Knowledge nobody can find",
+        body: "Answers scattered across systems, so a simple question takes far longer than it should.",
+      },
+      {
+        title: "No clear line between AI and judgement",
+        body: "Teams unsure what AI may do, who approves it, and who is accountable when it acts.",
+      },
+    ],
+  },
+  outcomes: {
+    eyebrow: "What you get",
+    heading: "Outcomes, not just advice.",
+    items: [
+      {
+        title: "A plan leadership can fund and follow",
+        service: "AI Strategy & Adoption",
+        body: "Board-ready opportunity maps and a staged roadmap, with the governance to move quickly and safely.",
+      },
+      {
+        title: "Manual work that runs itself",
+        service: "Intelligent Workflow Automation",
+        body: "Repetitive processes redesigned into reliable AI-assisted workflows, with humans checking what matters.",
+      },
+      {
+        title: "Content and websites that scale with your voice intact",
+        service: "AI-Powered Content & Digital Systems",
+        body: "Governed content engines and digital products, built end to end.",
+      },
+      {
+        title: "Market signals turned into briefings",
+        service: "Competitive Intelligence & Analytics",
+        body: "Structured, decision-ready insight instead of scattered screenshots and noise.",
+      },
+      {
+        title: "A team that uses AI with confidence and good judgement",
+        service: "AI Training & Team Enablement",
+        body: "Practical fluency and habits that stay with your people after we leave.",
+      },
+    ],
+    link: { label: "See all services", href: "/consultancy" },
+  },
+  proof: {
+    eyebrow: "Proof",
+    heading: "Real systems, real time given back.",
+    stats: [
+      { value: "40+", label: "custom GPTs and AI assistants built" },
+      { value: "5", label: "AI systems in the solutions portfolio" },
+      { value: "Days to minutes", label: "on report building and competitor research" },
+    ],
+    link: { label: "See the work", href: "/work" },
+  },
+  latest: {
+    eyebrow: "AI Updates",
+    heading: "What is happening in AI, in plain English.",
+    link: { label: "All AI Updates", href: "/ai-updates" },
+  },
+  approach: {
+    eyebrow: "How we work",
+    heading: "Four stages. One standard.",
+    link: { label: "See the approach", href: "/approach" },
+  },
+} as const;
+
+export const leadMagnets = {
+  briefSheet: {
+    heading: "Get the cheat sheet",
+    description: "Enter your email and the PDF is yours straight away.",
+    button: "Send me the PDF",
+    newsletterOptIn: "Also send me the Phrenos.ai AI briefing for business leaders.",
+  },
+  readiness: {
+    eyebrow: "Free tool",
+    title: "How ready is your organisation for AI?",
+    description:
+      "Eight quick questions. See where you stand across strategy, data, workflows, people and governance, and what to do first.",
+    href: "/resources/ai-readiness",
+  },
+} as const;
+
+export const authorBox = {
+  name: "Sophia Livanos",
+  role: "Founder, Phrenos.ai",
+  photo: "/brand/sophia-livanos.jpg",
+  bio: "I have built more than 40 custom GPTs and AI assistants, designed agentic workflows and automation platforms, and helped organisations adopt AI in ways that create measurable business value.",
+  cta: "Book a free AI call",
 } as const;

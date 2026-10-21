@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ContactForm } from "@/components/contact-form";
-import { contactPage } from "@/data/site-content";
+import { booking, bookCallIsExternal, contactPage } from "@/data/site-content";
 
 const contactHelpItems = [
   {
@@ -100,16 +100,39 @@ export function ContactSection() {
 
             <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-6">
               <p className="text-xs font-semibold tracking-[0.22em] text-[#e0c078] uppercase">
-                Response time
+                What happens next
               </p>
-              <p className="mt-3 text-sm leading-relaxed text-sage">
-                Every message is read personally. Expect a reply within a
-                couple of business days.
-              </p>
+              <ol className="mt-4 space-y-3 text-sm leading-relaxed text-sage">
+                {contactPage.nextSteps.map((step, index) => (
+                  <li key={step} className="flex gap-3">
+                    <span className="mt-0.5 font-serif text-base text-[#d4af5a]">{index + 1}</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
           </div>
 
           <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-8">
+            {bookCallIsExternal ? (
+              <div className="mb-8 rounded-xl border border-[#d4af5a]/40 bg-[#d4af5a]/[0.08] p-5">
+                <p className="font-serif text-xl text-[#e0c078]">Prefer to pick a time?</p>
+                <p className="mt-2 text-sm leading-relaxed text-ivory/85">
+                  Choose a slot that suits you for a free 30-minute call. No preparation needed.
+                </p>
+                <a
+                  href={booking.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-track="cta_booking_link"
+                  data-track-location="contact-page"
+                  className="mt-4 inline-flex items-center justify-center rounded-full border border-gold bg-gold px-6 py-3 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
+                >
+                  {booking.label}
+                </a>
+                <p className="mt-5 text-xs tracking-[0.18em] text-sage uppercase">Or send a note instead</p>
+              </div>
+            ) : null}
             <ContactForm
               onActiveChange={setActive}
               onSubmittedChange={setSubmitted}

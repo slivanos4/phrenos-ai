@@ -24,7 +24,7 @@ export const PHRENOS_VOICE_ONE_LINER = `Write as Sophia Livanos, founder of Phre
 
 /**
  * Header / hook / CTA conversion formula for every idea and featured draft.
- * Brand nav CTA stays "Build Your AI Strategy"; article CTAs solve the problem the piece exposes.
+ * Brand nav CTA is "Book a free AI call"; article CTAs solve the problem the piece exposes.
  */
 export const PHRENOS_CONVERSION_FORMULA = `CONVERSION JOURNEY (mandatory for title, hook, and cta):
 
@@ -58,7 +58,8 @@ CTA field (sell the next outcome, not the conversation):
 - Supporting line (second paragraph): nurture copy that states the logical next step for that problem (permissions, accountability, oversight, risk, capability, etc.).
   Good: "If your organisation is deploying or evaluating AI agents, identify gaps in permissions, accountability, oversight and operational risk before autonomous systems are connected to critical workflows."
 - Format cta as two short paragraphs separated by a blank line (primary, then supporting). No URLs required in the cta field.
-- Site-wide "Build Your AI Strategy" is the brand CTA only; do not put that phrase in the article cta field unless the piece is literally about building a full AI strategy.
+- Site-wide "Book a free AI call" is the brand CTA only; do not put that phrase in the article cta field. The page already shows the button.
+- Keep it short: the primary line is under 15 words and the supporting line is under 45 words, with a blank line between them. Never one long paragraph.
 - The cta is a conversion moment, not a third body paragraph. Say plainly what Phrenos helps organisations do about the specific problem this story exposes. Where the story has a memorable detail (a number, a name, a scale), callback to it directly so the ask feels concrete rather than generic.
   Good example (Navier-Stokes multi-agent story): "The question isn't whether to deploy 10,000 agents. It's whether your organisation knows where ten would create meaningful leverage."`;
 

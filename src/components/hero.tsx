@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { HeroNetwork } from "@/components/hero-network";
-import { hero } from "@/data/site-content";
+import { bookCallHref, bookCallIsExternal, hero } from "@/data/site-content";
 
 function AiEmphasis({
   prefix,
@@ -11,14 +11,15 @@ function AiEmphasis({
   ai: string;
   suffix: string;
 }) {
+  // One flex item with preserved spaces, so the gaps around the gold "AI" are not collapsed.
   return (
-    <>
+    <span className="whitespace-pre">
       {prefix}
       <span className="text-[1.15em] font-semibold tracking-tight text-[#b88b36]">
         {ai}
       </span>
       {suffix}
-    </>
+    </span>
   );
 }
 
@@ -64,7 +65,10 @@ function HeroCopy({ compact = false }: { compact?: boolean }) {
         }`}
       >
         <Link
-          href={hero.primaryCta.href}
+          href={bookCallHref}
+          {...(bookCallIsExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+          data-track="cta_book_call"
+          data-track-location="hero"
           className="cta-shimmer inline-flex items-center justify-center rounded-full border border-[#d4af5a] bg-ivory px-6 py-3.5 text-sm font-semibold tracking-wide text-forest transition-transform duration-300 hover:scale-[1.02] hover:bg-[#f7f0e2]"
         >
           <AiEmphasis

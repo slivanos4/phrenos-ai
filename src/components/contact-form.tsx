@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { contactPage, site } from "@/data/site-content";
+import { trackEvent } from "@/lib/site/analytics";
 
 const WEB3FORMS_ACCESS_KEY =
   process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY ||
@@ -85,6 +86,7 @@ export function ContactForm({
         throw new Error(result.message || "Something went wrong. Please try again.");
       }
 
+      trackEvent("generate_lead", { form: "contact", has_organisation: Boolean(organisation) });
       form.reset();
       setSubmittedState(true);
     } catch (err) {
@@ -177,7 +179,10 @@ export function ContactForm({
         </label>
         <label className="block space-y-2">
           <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
-            {contactPage.fields.organisation}
+            {contactPage.fields.organisation}{" "}
+            <span className="font-normal tracking-normal text-sage/70 normal-case">
+              ({contactPage.optional})
+            </span>
           </span>
           <input
             name="organisation"
@@ -189,7 +194,10 @@ export function ContactForm({
         </label>
         <label className="block space-y-2">
           <span className="text-xs font-medium tracking-[0.18em] text-[#e0c078] uppercase">
-            {contactPage.fields.role}
+            {contactPage.fields.role}{" "}
+            <span className="font-normal tracking-normal text-sage/70 normal-case">
+              ({contactPage.optional})
+            </span>
           </span>
           <input
             name="role"

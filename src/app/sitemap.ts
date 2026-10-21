@@ -12,6 +12,7 @@ const staticRoutes: Array<{ path: string; priority: number }> = [
   { path: "/work", priority: 0.8 },
   { path: "/ai-updates", priority: 0.8 },
   { path: "/resources", priority: 0.7 },
+  { path: "/resources/ai-readiness", priority: 0.7 },
   { path: "/about", priority: 0.7 },
   { path: "/contact", priority: 0.6 },
 ];

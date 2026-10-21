@@ -6,8 +6,15 @@ import { enhanceArticle } from "@/lib/phrenos-updates/article-enhance";
 import { PostFeedback } from "@/components/ai-updates/post-feedback";
 import { UpdatesSubscribeForm } from "@/components/ai-updates/updates-subscribe-form";
 import {
+  authorBox,
+  bookCallHref,
+  bookCallIsExternal,
+  headerCta,
+} from "@/data/site-content";
+import {
   getPublishedPostBySlug,
   isServiceRoleConfigured,
+  listPublishedPosts,
   sanitizeEditorialText,
   type PublishedPost,
 } from "@/lib/phrenos-updates";
@@ -42,7 +49,22 @@ function toPlainText(html: string): string {
     .trim();
 }
 
-const DEFAULT_CTA_BUTTON_LABEL = "Build Your AI Strategy";
+const DEFAULT_CTA_BUTTON_LABEL = headerCta.label;
+
+const bookLinkProps = bookCallIsExternal
+  ? ({ target: "_blank", rel: "noopener noreferrer" } as const)
+  : {};
+
+/** The other articles to read next, newest first. */
+async function loadRelatedPosts(currentSlug: string): Promise<PublishedPost[]> {
+  if (!isServiceRoleConfigured()) return [];
+  try {
+    const posts = await listPublishedPosts(8);
+    return posts.filter((post) => post.slug !== currentSlug).slice(0, 3);
+  } catch {
+    return [];
+  }
+}
 
 /** A final CTA line ending in "→" becomes the button label; otherwise the default label is used. */
 function splitCta(cta: string): {
@@ -58,7 +80,7 @@ function splitCta(cta: string): {
     return { primary: "", supporting: null, buttonLabel: DEFAULT_CTA_BUTTON_LABEL };
   }
 
-  let buttonLabel = DEFAULT_CTA_BUTTON_LABEL;
+  let buttonLabel: string = DEFAULT_CTA_BUTTON_LABEL;
   if (parts.length > 1 && parts[parts.length - 1].endsWith("→")) {
     buttonLabel = parts.pop() as string;
   }
@@ -123,7 +145,11 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
   const summaryHtml = sanitizeEditorialText(post.summary_html);
   const bodyHtml = sanitizeEditorialText(post.body_html);
   const cta = splitCta(post.cta ?? "");
-  const { html: articleHtml, sections, minutes } = enhanceArticle(bodyHtml);
+  const inlineCta = `<aside class="ai-inline-cta"><p class="ai-inline-cta-title">Wondering what this means for your organisation?</p><p>A free 30-minute call is a good place to start.</p><a href="${bookCallHref}"${
+    bookCallIsExternal ? ' target="_blank" rel="noopener noreferrer"' : ""
+  } data-track="cta_book_call" data-track-location="article-inline">${headerCta.label}</a></aside>`;
+  const { html: articleHtml, sections, minutes } = enhanceArticle(bodyHtml, { inlineCta });
+  const related = await loadRelatedPosts(post.slug);
 
   const articleUrl = `https://phrenosai.com/ai-updates/${post.slug}`;
   const articleJsonLd = {
@@ -199,7 +225,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
             <span className="text-ivory/65">{formatPublishedDate(post.published_at)}</span>
             <span className="text-ivory/65">{minutes} min read</span>
           </div>
-          <h1 className="mt-5 max-w-4xl font-serif text-4xl leading-tight tracking-tight text-ivory sm:text-5xl">
+          <h1 className="mt-5 max-w-4xl font-serif text-4xl leading-tight tracking-tight text-[#f0d9a0] sm:text-5xl">
             {title}
           </h1>
           {hook ? (
@@ -207,6 +233,13 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
               {hook}
             </p>
           ) : null}
+          <a
+            href="#subscribe"
+            data-track="article_subscribe_chip"
+            className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#d4af5a]/50 px-4 py-2 text-xs font-semibold tracking-[0.14em] text-[#e0c078] uppercase transition-colors hover:bg-[#d4af5a]/10"
+          >
+            Get the AI briefing in your inbox ↓
+          </a>
         </header>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -219,6 +252,31 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
                 />
               ) : null}
               <div className="ai-article" dangerouslySetInnerHTML={{ __html: articleHtml }} />
+            </div>
+
+            <div className="mt-8 flex flex-col gap-5 rounded-2xl border border-[#d4af5a]/25 bg-[#0b140e]/80 p-6 sm:flex-row sm:items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={authorBox.photo}
+                alt={`${authorBox.name}, ${authorBox.role}`}
+                className="h-24 w-24 shrink-0 rounded-full border border-[#d4af5a]/50 object-cover object-top"
+                loading="lazy"
+              />
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold tracking-[0.22em] text-sage uppercase">Written by</p>
+                <p className="mt-1 font-serif text-2xl text-[#e0c078]">{authorBox.name}</p>
+                <p className="text-xs tracking-[0.14em] text-sage uppercase">{authorBox.role}</p>
+                <p className="mt-3 text-sm leading-relaxed text-ivory/85">{authorBox.bio}</p>
+                <Link
+                  href={bookCallHref}
+                  {...bookLinkProps}
+                  data-track="cta_book_call"
+                  data-track-location="article-author"
+                  className="mt-4 inline-flex text-xs font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline"
+                >
+                  {authorBox.cta} →
+                </Link>
+              </div>
             </div>
 
             {cta.primary ? (
@@ -236,7 +294,10 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
                   </p>
                 ) : null}
                 <Link
-                  href="/contact#contact-form"
+                  href={bookCallHref}
+                  {...bookLinkProps}
+                  data-track="cta_book_call"
+                  data-track-location="article-bottom"
                   className="mt-7 inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
                 >
                   {cta.buttonLabel}
@@ -246,9 +307,30 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
 
             <PostFeedback postId={post.id} />
 
-            <div className="mt-12 border-t border-[#d4af5a]/20 pt-10">
+            <div id="subscribe" className="mt-12 scroll-mt-28 border-t border-[#d4af5a]/20 pt-10">
               <UpdatesSubscribeForm source="ai-update-article" compact />
             </div>
+
+            {related.length > 0 ? (
+              <div className="mt-12 border-t border-[#d4af5a]/20 pt-10">
+                <p className="text-xs font-semibold tracking-[0.28em] text-gold uppercase">Keep reading</p>
+                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                  {related.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/ai-updates/${item.slug}`}
+                      data-track="related_article_click"
+                      className="flex flex-col rounded-xl border border-[#d4af5a]/25 bg-[#0b140e]/70 p-4 transition-colors hover:border-[#d4af5a]/60"
+                    >
+                      <p className="text-[10px] font-semibold tracking-[0.2em] text-[#d4af5a] uppercase">
+                        {formatPublishedDate(item.published_at)}
+                      </p>
+                      <p className="mt-2 font-serif text-lg leading-snug text-ivory">{item.title}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-10 border-t border-[#d4af5a]/20 pt-6">
               <Link
@@ -285,6 +367,9 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
                   ))}
                 </ol>
               </nav>
+              <div className="mt-6 rounded-2xl border border-[#d4af5a]/25 bg-[#0b140e]/80 p-5">
+                <UpdatesSubscribeForm source="ai-update-sidebar" compact stacked />
+              </div>
             </aside>
           ) : null}
         </div>

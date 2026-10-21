@@ -27,13 +27,21 @@ function pullQuote(html: string): string {
   );
 }
 
-export function enhanceArticle(html: string): { html: string; sections: ArticleSection[]; minutes: number } {
+/**
+ * inlineCta is HTML placed after the middle section, for a call to action part-way through a long piece.
+ * It is only added when the article has at least three sections.
+ */
+export function enhanceArticle(
+  html: string,
+  options: { inlineCta?: string } = {},
+): { html: string; sections: ArticleSection[]; minutes: number } {
   const words = stripTags(html).split(" ").filter(Boolean).length;
   const minutes = Math.max(1, Math.round(words / 210));
   const parts = html.split(/(<h2[^>]*>[\s\S]*?<\/h2>)/i);
   const sections: ArticleSection[] = [];
   const used = new Set<string>();
-  let out = highlightQuotes(pullQuote(parts[0] ?? ""));
+  const intro = highlightQuotes(pullQuote(parts[0] ?? ""));
+  const rendered: string[] = [];
   let number = 0;
   for (let i = 1; i < parts.length; i += 2) {
     const title = stripTags(parts[i]);
@@ -44,9 +52,12 @@ export function enhanceArticle(html: string): { html: string; sections: ArticleS
     sections.push({ id, title });
     const body = highlightQuotes(parts[i + 1] ?? "");
     const callout = CALLOUT.test(title);
-    out += `<section id="${id}" class="ai-section${callout ? " ai-callout" : ""}"><h2><span class="ai-num">${String(number).padStart(2, "0")}</span>${title
+    rendered.push(`<section id="${id}" class="ai-section${callout ? " ai-callout" : ""}"><h2><span class="ai-num">${String(number).padStart(2, "0")}</span>${title
       .replace(/&/g, "&amp;")
-      .replace(/&amp;(amp|lt|gt|quot|#\d+);/g, "&$1;")}</h2>${body}</section>`;
+      .replace(/&amp;(amp|lt|gt|quot|#\d+);/g, "&$1;")}</h2>${body}</section>`);
   }
-  return { html: out, sections, minutes };
+  if (options.inlineCta && rendered.length >= 3) {
+    rendered.splice(Math.ceil(rendered.length / 2), 0, options.inlineCta);
+  }
+  return { html: intro + rendered.join(""), sections, minutes };
 }
