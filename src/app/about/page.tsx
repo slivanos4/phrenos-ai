@@ -28,7 +28,7 @@ export default function AboutPage() {
       <AboutJourney />
       <AboutFocus />
       <ContactCta
-        heading="Let’s find where AI can amplify your people."
+        heading="Let’s find where AI can make your people more capable."
         supporting="A short note is enough to begin. Tell us where the friction is, and we’ll help find the leverage."
       />
     </>

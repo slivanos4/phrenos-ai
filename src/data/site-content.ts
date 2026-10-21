@@ -441,6 +441,6 @@ export const authorBox = {
   name: "Sophia Livanos",
   role: "Founder, Phrenos.ai",
   photo: "/brand/sophia-livanos.jpg",
-  bio: "Osteopathy taught me how people work. Neurolinguistics taught me how they think. I bring both to AI, so it amplifies your people instead of replacing their judgement.",
+  bio: "Osteopathy taught me how people work. Neurolinguistics taught me how they think. I bring both to AI, so it strengthens your people’s judgement instead of replacing it.",
   cta: "Book a free AI call",
 } as const;

@@ -16,7 +16,7 @@ const steps = [
   },
   {
     title: "Phrenos.ai",
-    line: "AI that amplifies people instead of replacing their judgement.",
+    line: "AI that strengthens people’s judgement instead of replacing it.",
   },
 ] as const;
 
