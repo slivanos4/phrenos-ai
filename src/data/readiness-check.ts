@@ -41,9 +41,9 @@ export const readinessQuestions: readonly ReadinessQuestion[] = [
   {
     id: "q1",
     area: "strategy",
-    question: "How would you describe your organisation's AI strategy today?",
+    question: "How would you describe your organisation’s AI strategy today?",
     options: [
-      "We do not have one",
+      "We don’t have one",
       "Individuals experiment on their own",
       "We have priorities, but no funded plan",
       "A funded roadmap tied to commercial goals",
@@ -54,7 +54,7 @@ export const readinessQuestions: readonly ReadinessQuestion[] = [
     area: "strategy",
     question: "How do you decide which AI opportunities to pursue?",
     options: [
-      "We do not, ideas come up ad hoc",
+      "We don’t, ideas come up ad hoc",
       "Case by case, led by whoever is keenest",
       "We rank ideas by value and effort",
       "A tracked pipeline with clear owners and measures",
@@ -75,14 +75,14 @@ export const readinessQuestions: readonly ReadinessQuestion[] = [
     id: "q4",
     area: "workflows",
     question: "How much of your recurring reporting and admin is still done by hand?",
-    options: ["Most of it", "A large share", "Some of it", "Very little, it is automated"],
+    options: ["Most of it", "A large share", "Some of it", "Very little, it’s automated"],
   },
   {
     id: "q5",
     area: "workflows",
     question: "Where you already use AI, is it part of a repeatable process?",
     options: [
-      "We do not use AI yet",
+      "We don’t use AI yet",
       "Only as one-off prompts",
       "In a few workflows",
       "Built into core workflows, with human checkpoints",
@@ -104,7 +104,7 @@ export const readinessQuestions: readonly ReadinessQuestion[] = [
     area: "governance",
     question: "Do your people know what AI may and may not be used for?",
     options: [
-      "There is no guidance",
+      "There’s no guidance",
       "Informal advice only",
       "A written policy that is rarely followed up",
       "Clear rules, named owners and human sign-off",
@@ -115,7 +115,7 @@ export const readinessQuestions: readonly ReadinessQuestion[] = [
     area: "governance",
     question: "How do you know whether your AI efforts are paying off?",
     options: [
-      "We do not measure it",
+      "We don’t measure it",
       "Mostly anecdotes",
       "Some metrics on some projects",
       "Clear measures, reviewed regularly",
@@ -137,7 +137,7 @@ export const readinessTiers: readonly ReadinessTier[] = [
     label: "Starting out",
     headline: "You have room to move fast, once the foundations are in place.",
     summary:
-      "AI is mostly ad hoc in your organisation right now. That is a common place to be, and it means the biggest gains come from choosing a few well-aimed bets rather than doing more of everything.",
+      "AI is mostly ad hoc in your organisation right now. That’s a common place to be, and it means the biggest gains come from choosing a few well-aimed bets rather than doing more of everything.",
     nextSteps: [
       "Agree two or three priority use cases with the clearest commercial return.",
       "Fix the data behind one weekly decision so the first project has something solid to stand on.",
@@ -149,9 +149,9 @@ export const readinessTiers: readonly ReadinessTier[] = [
     label: "Building momentum",
     headline: "You have real energy. Now it needs direction and structure.",
     summary:
-      "You are using AI in places and people are keen, but results are uneven. The next step is turning scattered effort into a plan leadership can fund, measure and repeat.",
+      "You’re using AI in places and people are keen, but results are uneven. The next step is turning scattered effort into a plan leadership can fund, measure and repeat.",
     nextSteps: [
-      "Rank your current ideas by value and effort, and stop the ones that will not pay back.",
+      "Rank your current ideas by value and effort, and stop the ones that won’t pay back.",
       "Turn your best pilot into a repeatable workflow with a human checkpoint.",
       "Agree how you will measure return, and review it every month.",
     ],

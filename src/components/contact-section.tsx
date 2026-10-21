@@ -93,8 +93,17 @@ export function ContactSection() {
                 Not sure where to start?
               </p>
               <p className="mt-3 text-sm leading-relaxed text-sage">
-                Tell us where the friction is, and we&rsquo;ll help find the
-                leverage.
+                Take the{" "}
+                <a
+                  href="/resources/ai-readiness"
+                  data-track="cta_readiness_check"
+                  data-track-location="contact-page"
+                  className="text-[#e0c078] underline-offset-4 hover:underline"
+                >
+                  free AI readiness check
+                </a>{" "}
+                to see where you stand, or simply tell us where the friction
+                is and we&rsquo;ll help find the leverage.
               </p>
             </div>
 

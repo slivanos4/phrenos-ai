@@ -323,7 +323,7 @@ export const contactPage = {
     message: "Where should we look first?",
     submit: "Send message",
   },
-  success: "Thank you. Your message has been sent. We’ll be in touch shortly.",
+  success: "Thank you. Your message has been sent. We’ll reply within a couple of business days.",
   optional: "Optional",
   nextSteps: [
     "Every message is read personally.",
@@ -346,29 +346,30 @@ export const footer = {
 export const homePage = {
   problems: {
     eyebrow: "Sound familiar?",
-    heading: "AI is everywhere. Impact still is not.",
+    heading: "AI is everywhere. Impact still isn’t.",
     items: [
       {
         title: "Pilots that never leave the pilot stage",
-        body: "Plenty of experimenting, but little that changes how the business runs or what it earns.",
+        body: "Plenty of experimenting, little that changes how the business runs or what it earns.",
       },
       {
         title: "Days lost to manual reporting and research",
-        body: "Skilled people copy data between tools when they should be making the decisions.",
+        body: "Skilled people copy data between tools when they should be making decisions.",
       },
       {
         title: "Knowledge nobody can find",
         body: "Answers scattered across systems, so a simple question takes far longer than it should.",
       },
       {
-        title: "No clear line between AI and judgement",
-        body: "Teams unsure what AI may do, who approves it, and who is accountable when it acts.",
+        title: "Autonomy without accountability",
+        body: "Teams unsure what AI may do, who approves it, and who answers for it when it acts.",
       },
     ],
+    bridge: { from: "Noise", to: "Signal", line: "Our job is to find the signal." },
   },
   outcomes: {
-    eyebrow: "What you get",
-    heading: "Outcomes, not just advice.",
+    eyebrow: "What changes",
+    heading: "What it looks like when it works.",
     items: [
       {
         title: "A plan leadership can fund and follow",
@@ -381,9 +382,9 @@ export const homePage = {
         body: "Repetitive processes redesigned into reliable AI-assisted workflows, with humans checking what matters.",
       },
       {
-        title: "Content and websites that scale with your voice intact",
+        title: "Content and websites that scale, with your voice intact",
         service: "AI-Powered Content & Digital Systems",
-        body: "Governed content engines and digital products, built end to end.",
+        body: "Governed content engines and digital products, designed and built end to end.",
       },
       {
         title: "Market signals turned into briefings",
@@ -400,7 +401,7 @@ export const homePage = {
   },
   proof: {
     eyebrow: "Proof",
-    heading: "Real systems, real time given back.",
+    heading: "Systems already at work.",
     stats: [
       { value: "40+", label: "custom GPTs and AI assistants built" },
       { value: "5", label: "AI systems in the solutions portfolio" },
@@ -410,12 +411,12 @@ export const homePage = {
   },
   latest: {
     eyebrow: "AI Updates",
-    heading: "What is happening in AI, in plain English.",
+    heading: "The signal, not the noise.",
     link: { label: "All AI Updates", href: "/ai-updates" },
   },
   approach: {
     eyebrow: "How we work",
-    heading: "Four stages. One standard.",
+    heading: "Built to keep working after we leave.",
     link: { label: "See the approach", href: "/approach" },
   },
 } as const;
@@ -431,7 +432,7 @@ export const leadMagnets = {
     eyebrow: "Free tool",
     title: "How ready is your organisation for AI?",
     description:
-      "Eight quick questions. See where you stand across strategy, data, workflows, people and governance, and what to do first.",
+      "Eight quick questions. See where you stand across strategy, data, workflows, people and governance, and where to start.",
     href: "/resources/ai-readiness",
   },
 } as const;
@@ -440,6 +441,6 @@ export const authorBox = {
   name: "Sophia Livanos",
   role: "Founder, Phrenos.ai",
   photo: "/brand/sophia-livanos.jpg",
-  bio: "I have built more than 40 custom GPTs and AI assistants, designed agentic workflows and automation platforms, and helped organisations adopt AI in ways that create measurable business value.",
+  bio: "Osteopathy taught me how people work. Neurolinguistics taught me how they think. I bring both to AI, so it amplifies your people instead of replacing their judgement.",
   cta: "Book a free AI call",
 } as const;
