@@ -35,12 +35,12 @@ export const headerCta = {
 } as const;
 
 export const hero = {
-  eyebrow: "AI STRATEGY, AUTOMATION & INNOVATION",
-  headline: "The Mind in the Machine.",
+  eyebrow: "THE MIND IN THE MACHINE",
+  headline: "Put AI to work in your business.",
   supporting:
-    "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
+    "Phrenos.ai is an independent AI consultancy. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
   secondary: {
-    lead: "Phrenos.ai is an independent AI consultancy. We help leaders turn Generative AI, data and automation into measurable impact, from the first strategy to the systems and training that keep it working. ",
+    lead: "",
     emphasis:
       "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
   },
@@ -49,12 +49,6 @@ export const hero = {
     ai: "15-minute",
     suffix: " intro call",
     href: "/contact#contact-form",
-  },
-  secondaryCta: {
-    prefix: "Meet the ",
-    ai: "AI",
-    suffix: " Mind",
-    href: "/about",
   },
 } as const;
 
@@ -345,8 +339,56 @@ export const footer = {
 } as const;
 
 export const homePage = {
+  audience: {
+    eyebrow: "Who it's for",
+    heading: "For leaders who want to stay ahead.",
+    intro:
+      "Phrenos.ai works with business leaders who want to stay ahead, introduce AI into the company, or expand what it can do.",
+    goals: [
+      {
+        title: "Stay ahead",
+        body: "Know where AI is heading and what it means for your market, before your competitors do.",
+      },
+      {
+        title: "Introduce AI",
+        body: "Bring Generative AI into your company in a way your people trust and your leaders can fund.",
+      },
+      {
+        title: "Expand",
+        body: "Use AI, data and automation to grow what the business can do.",
+      },
+    ],
+  },
+  ways: {
+    eyebrow: "Ways to work together",
+    heading: "However you want to start, it starts with a call.",
+    intro:
+      "Timing and cost depend on the scope of the work, so each engagement is shaped around your goals. The first call is free.",
+    items: [
+      {
+        title: "One-off projects",
+        body: "A defined piece of work with a clear outcome, such as an AI strategy, an automation or a system built end to end.",
+      },
+      {
+        title: "Ongoing support",
+        body: "A steady partner as you adopt, extend and govern AI over time.",
+      },
+      {
+        title: "Workshops",
+        body: "Hands-on sessions that turn ideas into priorities and a plan.",
+      },
+      {
+        title: "Training",
+        body: "AI fluency and good judgement for leaders and teams.",
+      },
+      {
+        title: "Talks",
+        body: "Keynotes and sessions for events and leadership teams.",
+      },
+    ],
+  },
   problems: {
-    eyebrow: "Sound familiar?",
+    eyebrow: "Where most teams start",
     heading: "AI is everywhere. Impact still isn’t.",
     items: [
       {

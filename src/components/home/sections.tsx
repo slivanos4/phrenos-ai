@@ -22,8 +22,8 @@ function SectionHeading({ label, heading }: { label: string; heading: string }) 
   );
 }
 
-export function ProblemSection() {
-  const { problems } = homePage;
+export function AudienceSection() {
+  const { audience, problems } = homePage;
   return (
     <section className="relative overflow-hidden bg-forest py-20 lg:py-28">
       <div
@@ -32,13 +32,31 @@ export function ProblemSection() {
       />
       <div className="relative mx-auto max-w-6xl px-6 lg:px-8">
         <Reveal>
-          <SectionHeading label={problems.eyebrow} heading={problems.heading} />
+          <SectionHeading label={audience.eyebrow} heading={audience.heading} />
+          <p className="mt-5 max-w-3xl text-base leading-relaxed text-ivory/85 sm:text-lg">{audience.intro}</p>
         </Reveal>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {audience.goals.map((goal, index) => (
+            <Reveal
+              key={goal.title}
+              delay={index * 110}
+              className="rounded-2xl border border-[#d4af5a]/35 bg-[linear-gradient(135deg,rgba(212,175,90,0.14),rgba(16,28,20,0.4))] p-6"
+            >
+              <h3 className="font-serif text-2xl text-[#e0c078]">{goal.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-ivory/90">{goal.body}</p>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal className="mt-16">
+          <p className={eyebrow}>{problems.eyebrow}</p>
+          <h3 className="mt-3 font-serif text-2xl leading-tight text-ivory sm:text-3xl">{problems.heading}</h3>
+        </Reveal>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {problems.items.map((item, index) => (
             <Reveal key={item.title} delay={index * 110} className={card}>
               <span className="block h-1.5 w-8 rounded-full bg-[#d4af5a]" aria-hidden />
-              <h3 className="mt-5 font-serif text-xl leading-snug text-[#e0c078]">{item.title}</h3>
+              <h4 className="mt-5 font-serif text-xl leading-snug text-[#e0c078]">{item.title}</h4>
               <p className="mt-3 text-sm leading-relaxed text-sage">{item.body}</p>
             </Reveal>
           ))}
@@ -55,8 +73,75 @@ export function ProblemSection() {
   );
 }
 
+export function WaysToWorkSection() {
+  const { ways } = homePage;
+  return (
+    <section className="border-y border-ivory/10 bg-forest-secondary py-20 lg:py-28">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8">
+        <Reveal>
+          <SectionHeading label={ways.eyebrow} heading={ways.heading} />
+          <p className="mt-5 max-w-3xl text-base leading-relaxed text-ivory/85 sm:text-lg">{ways.intro}</p>
+        </Reveal>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          {ways.items.map((item, index) => (
+            <Reveal key={item.title} delay={index * 90} className="h-full">
+              <div className={`${card} flex h-full flex-col bg-forest/60`}>
+                <span className="lining font-serif text-sm text-[#d4af5a]">{String(index + 1).padStart(2, "0")}</span>
+                <h3 className="mt-3 font-serif text-2xl leading-snug text-[#e0c078]">{item.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-ivory/85">{item.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function HowItStartsSection() {
+  const { howItStarts } = homePage;
+  return (
+    <section className="bg-forest py-20 lg:py-28">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8">
+        <div>
+          <Reveal>
+            <p className={eyebrow}>{howItStarts.eyebrow}</p>
+            <h3 className="mt-3 font-serif text-2xl leading-tight text-ivory sm:text-3xl">{howItStarts.heading}</h3>
+          </Reveal>
+          <ol className="mt-8 grid gap-5 md:grid-cols-3">
+            {howItStarts.steps.map((step, index) => (
+              <Reveal key={step.title} delay={index * 110} as="li" className="rounded-2xl border border-[#d4af5a]/25 bg-forest/60 p-6">
+                <span className="lining font-serif text-4xl leading-none text-[#d4af5a]">{index + 1}</span>
+                <h4 className="mt-4 font-serif text-xl leading-snug text-[#e0c078]">{step.title}</h4>
+                <p className="mt-2 text-sm leading-relaxed text-ivory/85">{step.body}</p>
+              </Reveal>
+            ))}
+          </ol>
+          <Reveal className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href={bookCallHref}
+              {...(bookCallIsExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              data-track="cta_book_call"
+              data-track-location="home-offer"
+              className="inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
+            >
+              {headerCta.label}
+            </Link>
+            <Link
+              href="/consultancy"
+              className="inline-flex items-center justify-center rounded-full border border-[#d4af5a]/60 px-7 py-3.5 text-sm font-semibold tracking-wide text-ivory transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10"
+            >
+              See all five services
+            </Link>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function OfferSection() {
-  const { outcomes, howItStarts } = homePage;
+  const { outcomes } = homePage;
   return (
     <section className="border-y border-ivory/10 bg-forest-secondary py-20 lg:py-28">
       <div className="mx-auto max-w-6xl px-6 lg:px-8">
@@ -111,38 +196,6 @@ export function OfferSection() {
           </Reveal>
         </div>
 
-        <div className="mt-16 border-t border-[#d4af5a]/25 pt-12 lg:mt-20 lg:pt-14">
-          <Reveal>
-            <p className={eyebrow}>{howItStarts.eyebrow}</p>
-            <h3 className="mt-3 font-serif text-2xl leading-tight text-ivory sm:text-3xl">{howItStarts.heading}</h3>
-          </Reveal>
-          <ol className="mt-8 grid gap-5 md:grid-cols-3">
-            {howItStarts.steps.map((step, index) => (
-              <Reveal key={step.title} delay={index * 110} as="li" className="rounded-2xl border border-[#d4af5a]/25 bg-forest/60 p-6">
-                <span className="lining font-serif text-4xl leading-none text-[#d4af5a]">{index + 1}</span>
-                <h4 className="mt-4 font-serif text-xl leading-snug text-[#e0c078]">{step.title}</h4>
-                <p className="mt-2 text-sm leading-relaxed text-ivory/85">{step.body}</p>
-              </Reveal>
-            ))}
-          </ol>
-          <Reveal className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
-              href={bookCallHref}
-              {...(bookCallIsExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              data-track="cta_book_call"
-              data-track-location="home-offer"
-              className="inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
-            >
-              {headerCta.label}
-            </Link>
-            <Link
-              href="/consultancy"
-              className="inline-flex items-center justify-center rounded-full border border-[#d4af5a]/60 px-7 py-3.5 text-sm font-semibold tracking-wide text-ivory transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10"
-            >
-              See all five services
-            </Link>
-          </Reveal>
-        </div>
       </div>
     </section>
   );
@@ -284,7 +337,7 @@ export function LatestUpdatesSection({ posts }: { posts: PublishedPost[] }) {
   const { latest } = homePage;
   if (posts.length === 0) return null;
   return (
-    <section className="border-y border-ivory/10 bg-forest-secondary py-20 lg:py-28">
+    <section className="bg-forest py-20 lg:py-28">
       <div className="mx-auto max-w-6xl px-6 lg:px-8">
         <Reveal className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading label={latest.eyebrow} heading={latest.heading} />
@@ -322,7 +375,7 @@ export function LatestUpdatesSection({ posts }: { posts: PublishedPost[] }) {
 export function ApproachPreviewSection() {
   const section = homePage.approach;
   return (
-    <section className="relative bg-forest py-20 lg:py-28">
+    <section className="relative border-y border-ivory/10 bg-forest-secondary py-20 lg:py-28">
       <div className="mx-auto max-w-6xl px-6 lg:px-8">
         <Reveal className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading label={section.eyebrow} heading={section.heading} />

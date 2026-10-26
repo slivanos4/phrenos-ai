@@ -4,10 +4,12 @@ import { CredibilityStrip } from "@/components/credibility-strip";
 import { Hero } from "@/components/hero";
 import {
   ApproachPreviewSection,
+  AudienceSection,
+  HowItStartsSection,
   LatestUpdatesSection,
   OfferSection,
-  ProblemSection,
   ProofSection,
+  WaysToWorkSection,
 } from "@/components/home/sections";
 import { isServiceRoleConfigured, listPublishedPosts } from "@/lib/phrenos-updates";
 import type { PublishedPost } from "@/lib/phrenos-updates/types";
@@ -36,7 +38,9 @@ export default async function Home() {
       <Hero />
       <CredibilityStrip />
       <OfferSection />
-      <ProblemSection />
+      <AudienceSection />
+      <WaysToWorkSection />
+      <HowItStartsSection />
       <ProofSection />
       <LatestUpdatesSection posts={posts} />
       <ApproachPreviewSection />
