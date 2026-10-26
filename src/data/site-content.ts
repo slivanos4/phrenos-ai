@@ -22,7 +22,7 @@ export const navigation = [
 /** Optional booking page (Cal.com, Calendly...). Set NEXT_PUBLIC_BOOKING_URL in Vercel to switch it on. */
 export const booking = {
   url: process.env.NEXT_PUBLIC_BOOKING_URL?.trim() || "",
-  label: "Book a free 30-minute call",
+  label: "Book a free 15-minute intro call",
 } as const;
 
 /** Where a "book a call" button goes: the booking page when set, otherwise the contact form. */
@@ -30,7 +30,7 @@ export const bookCallHref = booking.url || "/contact#contact-form";
 export const bookCallIsExternal = Boolean(booking.url);
 
 export const headerCta = {
-  label: "Book a free AI call",
+  label: "Book a free intro call",
   href: "/contact",
 } as const;
 
@@ -46,8 +46,8 @@ export const hero = {
   },
   primaryCta: {
     prefix: "Book a free ",
-    ai: "AI",
-    suffix: " call",
+    ai: "15-minute",
+    suffix: " intro call",
     href: "/contact#contact-form",
   },
   secondaryCta: {
@@ -291,7 +291,7 @@ export const aboutPage = {
     "AI Product Strategy & Innovation",
   ],
   cta: {
-    label: "Book a free AI call",
+    label: "Book a free intro call",
     href: "/contact",
   },
 } as const;
@@ -301,7 +301,7 @@ export const contactCta = {
   supporting:
     "A short note is enough to begin. Tell us where the friction is, and we’ll help find the leverage.",
   button: {
-    label: "Book a free AI call",
+    label: "Book a free intro call",
     href: "/contact#contact-form",
   },
   secondary: {
@@ -328,7 +328,7 @@ export const contactPage = {
   nextSteps: [
     "Every message is read personally.",
     "You will hear back within a couple of business days, with a few questions or a time to talk.",
-    "If it looks like a fit, we book a free 30-minute call to find where AI can create real leverage.",
+    "If it looks like a fit, we book a free 15-minute intro call to find where AI can create real leverage.",
   ],
 } as const;
 
@@ -442,5 +442,5 @@ export const authorBox = {
   role: "Founder, Phrenos.ai",
   photo: "/brand/sophia-livanos.jpg",
   bio: "Osteopathy taught me how people work. Neurolinguistics taught me how they think. I bring both to AI, so it strengthens your people’s judgement instead of replacing it.",
-  cta: "Book a free AI call",
+  cta: "Book a free intro call",
 } as const;

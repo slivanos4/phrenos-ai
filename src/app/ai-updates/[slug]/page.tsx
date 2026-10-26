@@ -145,7 +145,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
   const summaryHtml = sanitizeEditorialText(post.summary_html);
   const bodyHtml = sanitizeEditorialText(post.body_html);
   const cta = splitCta(post.cta ?? "");
-  const inlineCta = `<aside class="ai-inline-cta"><p class="ai-inline-cta-title">Wondering what this means for your organisation?</p><p>A free 30-minute call is a good place to start.</p><a href="${bookCallHref}"${
+  const inlineCta = `<aside class="ai-inline-cta"><p class="ai-inline-cta-title">Wondering what this means for your organisation?</p><p>A free 15-minute intro call is a good place to start.</p><a href="${bookCallHref}"${
     bookCallIsExternal ? ' target="_blank" rel="noopener noreferrer"' : ""
   } data-track="cta_book_call" data-track-location="article-inline">${headerCta.label}</a></aside>`;
   const { html: articleHtml, sections, minutes } = enhanceArticle(bodyHtml, { inlineCta });

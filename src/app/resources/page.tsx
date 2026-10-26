@@ -139,7 +139,7 @@ export default function ResourcesPage() {
                 href="/contact"
                 className="text-sm font-semibold tracking-wide text-ivory transition-colors hover:text-[#e0c078]"
               >
-                Book a free AI call →
+                Book a free intro call →
               </Link>
             </div>
           </div>

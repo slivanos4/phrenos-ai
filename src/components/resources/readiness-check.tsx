@@ -230,7 +230,7 @@ export function ReadinessCheck() {
       <div className="rounded-2xl border border-[#d4af5a]/40 bg-[linear-gradient(135deg,rgba(212,175,90,0.22),rgba(11,20,14,0.9))] p-6 text-center sm:p-10">
         <p className="font-serif text-2xl text-[#e0c078] sm:text-3xl">Want to talk it through?</p>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ivory/85 sm:text-base">
-          A free 30-minute call is a good place to turn this result into a plan, with no preparation needed.
+          A free 15-minute intro call is a good place to turn this result into a plan, with no preparation needed.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
@@ -240,7 +240,7 @@ export function ReadinessCheck() {
             data-track-location="readiness-result"
             className="inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
           >
-            Book a free AI call
+            Book a free intro call
           </Link>
           <button
             type="button"

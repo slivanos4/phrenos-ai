@@ -127,7 +127,7 @@ export function ContactSection() {
               <div className="mb-8 rounded-xl border border-[#d4af5a]/40 bg-[#d4af5a]/[0.08] p-5">
                 <p className="font-serif text-xl text-[#e0c078]">Prefer to pick a time?</p>
                 <p className="mt-2 text-sm leading-relaxed text-ivory/85">
-                  Choose a slot that suits you for a free 30-minute call. No preparation needed.
+                  Choose a slot that suits you for a free 15-minute intro call. No preparation needed.
                 </p>
                 <a
                   href={booking.url}

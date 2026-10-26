@@ -65,7 +65,7 @@ export default function ConsultancyPage() {
       <Services hideIntro />
       <ContactCta
         heading="Not sure which capability comes first?"
-        supporting="Most organisations start with one. A free 30-minute call is the quickest way to find yours, or take the readiness check to see where you stand."
+        supporting="Most organisations start with one. A free 15-minute intro call is the quickest way to find yours, or take the readiness check to see where you stand."
       />
     </>
   );
