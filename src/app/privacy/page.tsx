@@ -81,8 +81,9 @@ export default function PrivacyPage() {
             </li>
           ) : (
             <li className={li}>
-              <strong className="text-[#e0c078]">Visit counts.</strong> We count visits with Vercel Web Analytics, which
-              does not use cookies and does not identify you. We do not currently use analytics cookies.
+              <strong className="text-[#e0c078]">Visit counts.</strong> We count visits, and clicks on key buttons and
+              forms, with Vercel Web Analytics and Umami. Neither uses cookies or identifies you, and Umami stores its
+              data in the EU. We do not currently use analytics cookies.
             </li>
           )}
         </ul>
@@ -97,6 +98,7 @@ export default function PrivacyPage() {
         </p>
         <ul className="mt-4 list-disc pl-5">
           <li className={li}>Vercel, which hosts the website.</li>
+          <li className={li}>Umami, which counts visits and clicks without cookies, with its data stored in the EU.</li>
           <li className={li}>Supabase, which stores enquiries, sign-ups and subscribers in our database.</li>
           <li className={li}>Resend, which sends our emails.</li>
           <li className={li}>Web3Forms, which delivers form notifications to us.</li>
