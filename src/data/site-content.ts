@@ -43,6 +43,8 @@ export const hero = {
     lead: "",
     emphasis:
       "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
+    emphasisTwo:
+      "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
   },
   primaryCta: {
     prefix: "Book a free ",

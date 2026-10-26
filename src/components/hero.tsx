@@ -57,6 +57,9 @@ function HeroCopy({ compact = false }: { compact?: boolean }) {
         <span className="block text-base font-medium text-[#e0c078]">
           {hero.secondary.emphasis}
         </span>
+        <span className="mt-2 block text-base font-medium text-[#e0c078]">
+          {hero.secondary.emphasisTwo}
+        </span>
       </p>
 
       <div
@@ -187,7 +190,7 @@ export function Hero() {
         <PhiRitual className="top-[18%] right-[12%] hidden h-56 w-56 lg:block xl:right-[16%] xl:h-64 xl:w-64" />
 
         <div className="relative z-[3] mx-auto flex min-h-[100svh] max-w-7xl items-center px-8 pt-36 pb-28">
-          <div className="-translate-y-16">
+          <div className="-translate-y-4">
             <HeroCopy />
           </div>
         </div>
