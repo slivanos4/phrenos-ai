@@ -42,7 +42,7 @@ export const hero = {
   secondary: {
     lead: "",
     emphasis:
-      "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
+      "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
   },
   primaryCta: {
     prefix: "Book a free ",
@@ -343,7 +343,7 @@ export const homePage = {
     eyebrow: "Who it's for",
     heading: "For leaders who want to stay ahead.",
     intro:
-      "Phrenos.ai works with business leaders who want to stay ahead, introduce AI into the company, or expand what it can do.",
+      "Whether you want to stay ahead of your market, bring AI into your business for the first time, or take what you already do further, this is where to start.",
     goals: [
       {
         title: "Stay ahead",
@@ -414,7 +414,7 @@ export const homePage = {
     eyebrow: "What we offer",
     heading: "Five services. One aim.",
     intro:
-      "AI that changes what your business can do, not just how it talks about the future. Each service is a clear piece of work with a clear thing you walk away with.",
+      "Five services, one aim: AI that makes a real difference to how your business runs. Each is a defined piece of work with a clear outcome, so you always know what you're getting.",
     whoFor:
       "For business leaders who want AI to change how the work gets done and what it earns.",
     items: [
