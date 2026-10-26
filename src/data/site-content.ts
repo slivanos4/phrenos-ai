@@ -41,7 +41,7 @@ export const hero = {
     "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
   offerLead: "AI that actually works for your business.",
   offer:
-    " Phrenos.ai is an independent AI consultancy. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
+    "Phrenos.ai is an independent AI consultancy. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
   secondary: {
     emphasis:
       "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
