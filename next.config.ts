@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   // The cheat sheet PDF is kept out of /public and read by the download route, so make sure it ships with it.
   outputFileTracingIncludes: {
     "/api/resources/brief-sheet/download": ["./private-assets/**/*"],
+    "/api/resources/readiness-pdf": ["./public/brand/phrenos_logo_white.png"],
+    "/api/leads": ["./public/brand/phrenos_logo_white.png"],
   },
   async redirects() {
     return [

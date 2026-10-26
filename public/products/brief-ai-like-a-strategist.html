@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'/>
+<title>How to Brief AI Like a Strategist</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1a221c; font-size: 11pt; line-height: 1.45; max-width: 720px; margin: 0 auto; }
+  img.logo { height: 52px; margin-bottom: 8px; }
+  h1 { font-size: 22pt; margin: 0.4em 0 0.3em; color: #101c14; }
+  h2 { font-size: 14pt; margin-top: 1.4em; color: #101c14; border-bottom: 1px solid #d4af5a55; padding-bottom: 0.2em; }
+  h3 { font-size: 12pt; margin-top: 1.1em; color: #101c14; }
+  p { margin: 0.55em 0; }
+  ul { margin: 0.4em 0 0.8em 1.2em; }
+  li { margin: 0.25em 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 9.5pt; background: #f4f1ea; padding: 0.1em 0.3em; }
+  pre { background: #f4f1ea; border: 1px solid #d4af5a44; padding: 12px; overflow: hidden; white-space: pre-wrap; font-size: 9pt; }
+  table { width: 100%; border-collapse: collapse; margin: 0.8em 0 1em; font-size: 10pt; }
+  th, td { border: 1px solid #c9c6ba; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #101c14; color: #f1e8d6; }
+  hr { border: none; border-top: 1px solid #d4af5a66; margin: 1.2em 0; }
+  a { color: #8a7028; }
+  .num { margin: 0.35em 0; }
+</style></head>
+<body>
+<img class="logo" src="file:///Users/sophialivanos/Documents/phrenos-ai/public/brand/phrenos_logo_green.png" alt="Phrenos.ai" />
+<h1>How to Brief AI Like a Strategist</h1>
+<p><strong>Phrenos.ai</strong> · Cheat sheet  </p>
+<p>For leaders and operators who want better outputs without becoming prompt hobbyists.</p>
+<p><em>Paid digital product · For the purchaser’s use</em>  </p>
+<p><em>phrenosai.com</em></p>
+<hr />
+<h2>The idea in one line</h2>
+<p>AI does not need clever wording. It needs a clear brief: outcome, audience, constraints, and what “good” looks like.</p>
+<hr />
+<h2>Before you type anything</h2>
+<p>Answer these four questions (PAST):</p>
+<table>
+<tr><th></th><th>Question</th><th>Example</th></tr>
+<tr><td><strong>P</strong>urpose</td><td>What decision or deliverable do you need?</td><td>“A one-page options memo for the leadership team”</td></tr>
+<tr><td><strong>A</strong>udience</td><td>Who will use or judge the output?</td><td>“CFO and COO; sceptical of hype”</td></tr>
+<tr><td><strong>S</strong>cope</td><td>What is in and out?</td><td>“UK retail ops only; no marketing use cases”</td></tr>
+<tr><td><strong>T</strong>one</td><td>How should it sound?</td><td>“Direct, board-ready, British English”</td></tr>
+</table>
+<p>If you cannot answer PAST, you are not ready to brief the model. You are still clarifying the work.</p>
+<hr />
+<h2>The briefing template (copy and reuse)</h2>
+<pre><code>
+Role: Act as a [specific expert] advising [who].
+
+
+
+Objective: Produce [exact deliverable] so that [named person] can [decision or action].
+
+
+
+Context:
+
+- Organisation / situation: […]
+
+- What we already know: […]
+
+- What must not be assumed: […]
+
+
+
+Constraints:
+
+- Include: […]
+
+- Exclude: […]
+
+- Length / format: […]
+
+- Tone: […]
+
+- Language: British English
+
+
+
+Definition of done:
+
+- Must contain: […]
+
+- Must avoid: […]
+
+- Success looks like: […]
+
+
+
+Sources / inputs (if any):
+
+- [paste facts, notes, or say “use only what I provide”]
+
+</code></pre>
+<hr />
+<h2>Five upgrades that change the quality</h2>
+<p class='num'>1. <strong>Name the decision.</strong>  </p>
+<p>   Weak: “Tell me about AI for customer service.”  </p>
+<p>   Strong: “Recommend whether we pilot an AI assistant for Tier-1 support this quarter. Give a yes/no recommendation and three risks.”</p>
+<p class='num'>2. <strong>Force structure.</strong>  </p>
+<p>   Ask for headings, tables, or a fixed outline. Ambiguous asks produce essay sludge.</p>
+<p class='num'>3. <strong>Separate inventing from analysing.</strong>  </p>
+<p>   If the facts matter, paste them and say: “Use only the information below. If something is missing, list questions. Do not invent numbers.”</p>
+<p class='num'>4. <strong>Demand options, not one answer.</strong>  </p>
+<p>   “Give three options with trade-offs, then your recommendation.” Leaders need choice architecture, not a single confident paragraph.</p>
+<p class='num'>5. <strong>Add a review pass.</strong>  </p>
+<p>   After the first draft: “Challenge this as a sceptical CFO. What is weak, missing, or overclaimed?”</p>
+<hr />
+<h2>Prompt patterns that earn their keep</h2>
+<h3>Strategy memo</h3>
+<p>“Draft a one-page memo for [audience]. Situation, complication, question, recommendation, risks, next step. Max 400 words.”</p>
+<h3>Process redesign</h3>
+<p>“Map the current workflow for [process] in steps. Mark where judgement is required. Propose where AI assists vs where a human must remain accountable.”</p>
+<h3>Risk scan</h3>
+<p>“List failure modes for [use case]. For each: likelihood (H/M/L), impact (H/M/L), early warning, owner role.”</p>
+<h3>Meeting prep</h3>
+<p>“I have a 30-minute meeting with [role] about [topic]. Give: 5 questions I should ask, 3 traps to avoid, 1 crisp opening line.”</p>
+<h3>Output quality check</h3>
+<p>“Score the draft below 1–5 on clarity, evidence, actionability, and risk honesty. Then rewrite only what fails.”</p>
+<hr />
+<h2>Red flags (your briefing is broken)</h2>
+<ul>
+<li>You ask for “ideas” with no decision attached  </li>
+<li>You accept the first polished answer without a challenge pass  </li>
+<li>The model invents metrics and you keep them  </li>
+<li>Nobody is named as the human accountable for the result  </li>
+<li>The output could belong to any company in any industry  </li>
+<hr />
+<h2>One-week practice</h2>
+<table>
+<tr><th>Day</th><th>Practice</th></tr>
+<tr><td>1</td><td>Rewrite one vague ask using PAST</td></tr>
+<tr><td>2</td><td>Brief AI for a real memo; paste real constraints</td></tr>
+<tr><td>3</td><td>Run a CFO challenge pass on the draft</td></tr>
+<tr><td>4</td><td>Convert a recurring task into a reusable template</td></tr>
+<tr><td>5</td><td>Share the template with one colleague and refine</td></tr>
+</table>
+<hr />
+<h2>Remember</h2>
+<p>Prompt engineering for professionals is not wordplay. It is <strong>work briefing</strong>: clear outcomes, honest constraints, and human judgement at the end.</p>
+<p>When the brief is sharp, almost any capable model looks smarter.  </p>
+<p>When the brief is vague, no model will save you.</p>
+<hr />
+<h2>Now break it</h2>
+<p>This sheet is a starting brief, not a finished one. It gets interesting the moment you run it against real work.</p>
+<p>Use it once this week. Then tell me where it failed.</p>
+<p class='num'>1. Where did the brief break on a real task?  </p>
+<p class='num'>2. Which upgrade did the most work: decision, structure, evidence, options, or the challenge pass?  </p>
+<p class='num'>3. Where did you have to improvise?</p>
+<p>Email <strong>hello@phrenosai.com</strong> — subject: <strong>Brief AI feedback</strong>.</p>
+<p>Your reply does not get filed. It gets read, argued with, and ends up in the next brief.</p>
+<p><a href="https://phrenosai.com/ai-updates">AI Updates</a> · <a href="https://phrenosai.com/contact">Build Your AI Strategy</a></p>
+<hr />
+<p>© 2026 Phrenos.ai. All rights reserved.  </p>
+<p>Licensed to the purchaser for personal or internal business use. Do not redistribute, resell, or publish without written permission.  </p>
+<p>hello@phrenosai.com · phrenosai.com</p>
+<p><em>Phrenos.ai · Mind, intellect, reason</em>  </p>
+<p><em>Next in the series: 90-Day Gen AI Adoption for Leaders</em></p>
+</body></html>

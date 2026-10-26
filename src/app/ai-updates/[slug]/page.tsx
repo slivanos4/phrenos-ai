@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { enhanceArticle } from "@/lib/phrenos-updates/article-enhance";
 import { PostFeedback } from "@/components/ai-updates/post-feedback";
+import { ShareButtons } from "@/components/ai-updates/share-buttons";
 import { UpdatesSubscribeForm } from "@/components/ai-updates/updates-subscribe-form";
 import {
   authorBox,
@@ -252,6 +253,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
                 />
               ) : null}
               <div className="ai-article" dangerouslySetInnerHTML={{ __html: articleHtml }} />
+              <ShareButtons url={articleUrl} />
             </div>
 
             <div className="mt-8 flex flex-col gap-5 rounded-2xl border border-[#d4af5a]/25 bg-[#0b140e]/80 p-6 sm:flex-row sm:items-center">

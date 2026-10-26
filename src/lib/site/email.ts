@@ -18,7 +18,12 @@ export function fromAddress(): string {
 }
 
 /** Sends one email through Resend. Returns false (and logs) rather than throwing, so a hiccup never breaks a form. */
-export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<boolean> {
+export async function sendEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+  attachments?: { filename: string; content: string }[];
+}): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     console.info("Email skipped: RESEND_API_KEY is not set.");
@@ -34,6 +39,7 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
         reply_to: "hello@phrenosai.com",
         subject: input.subject,
         html: input.html,
+        ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       }),
     });
     if (!response.ok) {

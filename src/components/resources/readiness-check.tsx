@@ -38,6 +38,28 @@ export function ReadinessCheck() {
     setStep(step + 1);
   }
 
+  async function downloadPdf() {
+    try {
+      const response = await fetch("/api/resources/readiness-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      if (!response.ok) throw new Error("failed");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "AI-readiness-result.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      trackEvent("download_readiness_pdf");
+    } catch {
+      setError("Could not make the PDF just now. Your result is also in your inbox.");
+    }
+  }
+
   async function handleUnlock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -172,7 +194,15 @@ export function ReadinessCheck() {
               </li>
             ))}
           </ul>
-          <div className="mt-8 rounded-xl border border-[#d4af5a]/35 bg-[#d4af5a]/[0.08] p-5">
+          <button
+            type="button"
+            onClick={() => void downloadPdf()}
+            className="mt-8 inline-flex items-center justify-center rounded-full border border-[#d4af5a]/55 px-6 py-3 text-sm font-semibold tracking-wide text-ivory transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10"
+          >
+            Download your result (PDF)
+          </button>
+          {error ? <p className="mt-3 text-sm text-[#e8b4a0]" role="alert">{error}</p> : null}
+          <div className="mt-6 rounded-xl border border-[#d4af5a]/35 bg-[#d4af5a]/[0.08] p-5">
             <p className="text-xs font-semibold tracking-[0.22em] text-[#e0c078] uppercase">
               Start here: {readinessAreas[weakest].label}
             </p>

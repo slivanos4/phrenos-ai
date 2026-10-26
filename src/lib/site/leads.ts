@@ -3,6 +3,7 @@ import { createServiceRoleClient, isServiceRoleConfigured } from "@/lib/phrenos-
 import { isValidSubscriberEmail, normalizeSubscriberEmail, subscribeToUpdates } from "@/lib/phrenos-updates";
 import { cheatSheetEmail, contactConfirmation, readinessEmail } from "@/lib/site/lead-emails";
 import { sendEmail } from "@/lib/site/email";
+import { buildReadinessPdf } from "@/lib/site/readiness-pdf";
 import { WEB3FORMS_ACCESS_KEY } from "@/lib/site/web3forms-key";
 
 export const LEADS_TABLE = "phrenos_leads";
@@ -144,5 +145,16 @@ export async function processLead(input: LeadInput): Promise<void> {
         : input.source === "cheat-sheet"
           ? cheatSheetEmail()
           : null;
-  if (email) await sendEmail({ to: input.email, ...email });
+  if (email) {
+    let attachments: { filename: string; content: string }[] | undefined;
+    if (input.source === "readiness-check" && result) {
+      try {
+        const pdf = await buildReadinessPdf(result);
+        attachments = [{ filename: "AI-readiness-result.pdf", content: Buffer.from(pdf).toString("base64") }];
+      } catch (error) {
+        console.error("leads: could not build the readiness PDF:", error);
+      }
+    }
+    await sendEmail({ to: input.email, ...email, attachments });
+  }
 }

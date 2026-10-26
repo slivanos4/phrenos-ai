@@ -18,7 +18,10 @@ const pageDescription =
 export const metadata: Metadata = {
   title: pageTitle,
   description: pageDescription,
-  alternates: { canonical: "/ai-updates" },
+  alternates: {
+    canonical: "/ai-updates",
+    types: { "application/rss+xml": "/ai-updates/feed.xml" },
+  },
   openGraph: {
     title: pageTitle,
     description: pageDescription,
@@ -154,6 +157,13 @@ export default async function AiUpdatesPage({ searchParams }: AiUpdatesPageProps
 
           <div className="mt-16 border-t border-[#d4af5a]/20 pt-12">
             <UpdatesSubscribeForm source="ai-updates" />
+            <p className="mt-6 text-sm text-sage">
+              Prefer a feed reader?{" "}
+              <a href="/ai-updates/feed.xml" className="text-[#e0c078] underline-offset-4 hover:underline">
+                Subscribe by RSS
+              </a>
+              .
+            </p>
           </div>
         </div>
       </section>
