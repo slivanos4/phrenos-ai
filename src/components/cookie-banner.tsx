@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import { readConsent, setConsent, subscribeConsent } from "@/lib/site/consent";
+import { ANALYTICS_COOKIES_ENABLED, readConsent, setConsent, subscribeConsent } from "@/lib/site/consent";
 
 /** Asks once. Declining is as easy as accepting, and nothing but essentials runs until the visitor says yes. */
 export function CookieBanner() {
   const pathname = usePathname();
   // On the server we assume a choice exists, so the banner never flashes into the page.
   const consent = useSyncExternalStore(subscribeConsent, readConsent, () => "granted" as const);
-  if (consent !== null || pathname?.startsWith("/admin")) return null;
+  if (!ANALYTICS_COOKIES_ENABLED || consent !== null || pathname?.startsWith("/admin")) return null;
 
   return (
     <div

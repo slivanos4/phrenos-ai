@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import { site } from "@/data/site-content";
+import { ANALYTICS_COOKIES_ENABLED } from "@/lib/site/consent";
 
 const pageTitle = "Privacy and cookies";
 const pageDescription =
@@ -71,12 +72,19 @@ export default function PrivacyPage() {
             <strong className="text-[#e0c078]">Article reactions.</strong> If you press the thumbs up or down on an
             article, we store that reaction with a random code kept in your browser. It does not identify you.
           </li>
-          <li className={li}>
-            <strong className="text-[#e0c078]">Analytics, only if you accept.</strong> Pages viewed, clicks, device and
-            browser, approximate location and, through Microsoft Clarity, anonymised recordings and heatmaps of how
-            people use pages. We use these to improve the site, and rely on your consent. Vercel Web Analytics also
-            counts visits without using cookies.
-          </li>
+          {ANALYTICS_COOKIES_ENABLED ? (
+            <li className={li}>
+              <strong className="text-[#e0c078]">Analytics, only if you accept.</strong> Pages viewed, clicks, device and
+              browser, approximate location and, through Microsoft Clarity, anonymised recordings and heatmaps of how
+              people use pages. We use these to improve the site, and rely on your consent. Vercel Web Analytics also
+              counts visits without using cookies.
+            </li>
+          ) : (
+            <li className={li}>
+              <strong className="text-[#e0c078]">Visit counts.</strong> We count visits with Vercel Web Analytics, which
+              does not use cookies and does not identify you. We do not currently use analytics cookies.
+            </li>
+          )}
         </ul>
         <p className={p}>
           We do not sell your information, and we do not use it to make automated decisions about you.
@@ -92,7 +100,9 @@ export default function PrivacyPage() {
           <li className={li}>Supabase, which stores enquiries, sign-ups and subscribers in our database.</li>
           <li className={li}>Resend, which sends our emails.</li>
           <li className={li}>Web3Forms, which delivers form notifications to us.</li>
-          <li className={li}>Google (Analytics) and Microsoft (Clarity), only if you accept analytics cookies.</li>
+          {ANALYTICS_COOKIES_ENABLED ? (
+            <li className={li}>Google (Analytics) and Microsoft (Clarity), only if you accept analytics cookies.</li>
+          ) : null}
         </ul>
         <p className={p}>
           Some of these providers are based in, or process information in, countries outside the UK, including the
@@ -108,12 +118,18 @@ export default function PrivacyPage() {
         </ul>
 
         <h2 className={h2}>Cookies and similar technologies</h2>
-        <p className={p}>
-          Essential items work without your consent. Analytics cookies are only set if you choose{" "}
-          <strong className="text-[#e0c078]">Accept</strong> on the banner. You can change your mind at any
-          time:{" "}
-          <CookieSettingsButton className="text-[#e0c078] underline underline-offset-4 hover:text-[#f0d9a0]" />.
-        </p>
+        {ANALYTICS_COOKIES_ENABLED ? (
+          <p className={p}>
+            Essential items work without your consent. Analytics cookies are only set if you choose{" "}
+            <strong className="text-[#e0c078]">Accept</strong> on the banner. You can change your mind at any time:{" "}
+            <CookieSettingsButton className="text-[#e0c078] underline underline-offset-4 hover:text-[#f0d9a0]" />.
+          </p>
+        ) : (
+          <p className={p}>
+            This site only uses the essential items below, which work without your consent. We do not use advertising or
+            analytics cookies.
+          </p>
+        )}
         <div className="mt-6 overflow-x-auto">
           <table className="w-full min-w-[34rem] border-collapse">
             <thead>
@@ -124,11 +140,13 @@ export default function PrivacyPage() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className={td}>phrenos-cookie-consent (stored in your browser)</td>
-                <td className={td}>Remembers your cookie choice. Essential.</td>
-                <td className={td}>Until you clear it</td>
-              </tr>
+              {ANALYTICS_COOKIES_ENABLED ? (
+                <tr>
+                  <td className={td}>phrenos-cookie-consent (stored in your browser)</td>
+                  <td className={td}>Remembers your cookie choice. Essential.</td>
+                  <td className={td}>Until you clear it</td>
+                </tr>
+              ) : null}
               <tr>
                 <td className={td}>phrenos_brief_access</td>
                 <td className={td}>Lets you download the cheat sheet after you have given your email. Essential.</td>
@@ -139,16 +157,20 @@ export default function PrivacyPage() {
                 <td className={td}>Stops the same browser reacting to an article twice. Essential.</td>
                 <td className={td}>Until you clear it</td>
               </tr>
-              <tr>
-                <td className={td}>_ga, _ga_*</td>
-                <td className={td}>Google Analytics: tells visits apart and measures how the site is used. Analytics, only with consent.</td>
-                <td className={td}>Up to 2 years</td>
-              </tr>
-              <tr>
-                <td className={td}>_clck, _clsk, CLID, MUID</td>
-                <td className={td}>Microsoft Clarity: anonymised recordings and heatmaps. Analytics, only with consent.</td>
-                <td className={td}>Up to 1 year</td>
-              </tr>
+              {ANALYTICS_COOKIES_ENABLED ? (
+                <>
+                  <tr>
+                    <td className={td}>_ga, _ga_*</td>
+                    <td className={td}>Google Analytics: tells visits apart and measures how the site is used. Analytics, only with consent.</td>
+                    <td className={td}>Up to 2 years</td>
+                  </tr>
+                  <tr>
+                    <td className={td}>_clck, _clsk, CLID, MUID</td>
+                    <td className={td}>Microsoft Clarity: anonymised recordings and heatmaps. Analytics, only with consent.</td>
+                    <td className={td}>Up to 1 year</td>
+                  </tr>
+                </>
+              ) : null}
             </tbody>
           </table>
         </div>

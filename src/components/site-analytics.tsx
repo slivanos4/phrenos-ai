@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { useSyncExternalStore } from "react";
-import { readConsent, subscribeConsent } from "@/lib/site/consent";
+import { ANALYTICS_COOKIES_ENABLED, readConsent, subscribeConsent } from "@/lib/site/consent";
 
 /**
  * Optional free analytics, loaded only after the visitor accepts cookies. Set IDs in env to enable; omit to keep the site clean.
@@ -14,7 +14,7 @@ export function SiteAnalytics() {
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID?.trim();
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
 
-  if (consent !== "granted") return null;
+  if (!ANALYTICS_COOKIES_ENABLED || consent !== "granted") return null;
   if (!clarityId && !gaId) return null;
 
   return (

@@ -1,5 +1,12 @@
 /** The visitor's cookie choice, kept in their own browser. Analytics only runs when this is "granted". */
 
+/**
+ * Analytics cookies (Google Analytics and Microsoft Clarity) are switched off. Without them the site sets no
+ * non-essential cookies, so no cookie banner is needed. To turn them back on, set NEXT_PUBLIC_ANALYTICS_COOKIES=on
+ * in Vercel: the banner returns and the scripts load only after a visitor accepts.
+ */
+export const ANALYTICS_COOKIES_ENABLED = process.env.NEXT_PUBLIC_ANALYTICS_COOKIES === "on";
+
 export type Consent = "granted" | "denied" | null;
 
 const KEY = "phrenos-cookie-consent";
