@@ -16,28 +16,26 @@ export function CookieBanner() {
     <div
       role="dialog"
       aria-label="Cookie choices"
-      className="fixed right-4 bottom-4 left-4 z-[60] rounded-2xl border border-[#d4af5a]/45 bg-[#0b140e]/95 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-md sm:right-auto sm:max-w-md"
+      className="fixed right-4 bottom-4 left-4 z-[60] flex flex-col gap-3 rounded-2xl border border-[#d4af5a]/45 bg-[#0b140e]/95 px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-md sm:right-auto sm:max-w-2xl sm:flex-row sm:items-center sm:gap-5"
     >
-      <p className="font-serif text-xl text-[#e0c078]">Cookies</p>
-      <p className="mt-2 text-sm leading-relaxed text-ivory/85">
-        With your permission we use analytics cookies (Google Analytics and Microsoft Clarity) to see how the site is
-        used and to improve it. Nothing else runs until you choose.{" "}
-        <Link href="/privacy" className="text-[#e0c078] underline-offset-4 hover:underline">
+      <p className="text-sm leading-snug text-ivory/90">
+        We use analytics cookies to improve this site.{" "}
+        <Link href="/privacy" className="whitespace-nowrap text-[#e0c078] underline-offset-4 hover:underline">
           Privacy policy
         </Link>
       </p>
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className="flex shrink-0 gap-2">
         <button
           type="button"
           onClick={() => setConsent("granted")}
-          className="rounded-full border border-gold bg-gold px-4 py-2.5 text-sm font-semibold text-forest transition-colors hover:bg-[#e0c078]"
+          className="rounded-full border border-gold bg-gold px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-[#e0c078]"
         >
-          Accept analytics
+          Accept
         </button>
         <button
           type="button"
           onClick={() => setConsent("denied")}
-          className="rounded-full border border-gold px-4 py-2.5 text-sm font-semibold text-ivory transition-colors hover:bg-[#d4af5a]/10"
+          className="rounded-full border border-gold px-4 py-2 text-sm font-semibold text-ivory transition-colors hover:bg-[#d4af5a]/10"
         >
           Decline
         </button>

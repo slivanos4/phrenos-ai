@@ -110,7 +110,7 @@ export default function PrivacyPage() {
         <h2 className={h2}>Cookies and similar technologies</h2>
         <p className={p}>
           Essential items work without your consent. Analytics cookies are only set if you choose{" "}
-          <strong className="text-[#e0c078]">Accept analytics</strong> on the banner. You can change your mind at any
+          <strong className="text-[#e0c078]">Accept</strong> on the banner. You can change your mind at any
           time:{" "}
           <CookieSettingsButton className="text-[#e0c078] underline underline-offset-4 hover:text-[#f0d9a0]" />.
         </p>
