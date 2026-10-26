@@ -145,7 +145,8 @@ export function AboutFocus() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-sage sm:text-base">
               Strategy, systems and enablement, designed to turn AI from
-              spectacle into lasting capability.
+              spectacle into lasting capability. These are the areas of
+              expertise behind the five capabilities on the Consultancy page.
             </p>
           </div>
 

@@ -121,7 +121,7 @@ function polar(radius: number, angleDeg: number) {
 }
 
 export function Services({ hideIntro = false }: ServicesProps) {
-  const [active, setActive] = useState(2);
+  const [active, setActive] = useState(0);
   const [phase, setPhase] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -438,6 +438,9 @@ export function Services({ hideIntro = false }: ServicesProps) {
                 );
               })}
             </svg>
+            <p className="mt-1 text-center text-[11px] tracking-[0.2em] text-sage uppercase">
+              Five capabilities. Select a point on the orbit to explore each one.
+            </p>
           </div>
 
           <div

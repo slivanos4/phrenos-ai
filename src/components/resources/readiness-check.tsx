@@ -83,7 +83,9 @@ export function ReadinessCheck() {
 
         <h2 className="mt-8 font-serif text-2xl leading-snug text-ivory sm:text-3xl">{question.question}</h2>
 
-        <div className="mt-8 grid gap-3" role="radiogroup" aria-label={question.question}>
+        <p className="mt-3 text-sm text-sage">Choose the closest fit. You can go back and change an answer.</p>
+
+        <div className="mt-6 grid gap-3" role="radiogroup" aria-label={question.question}>
           {question.options.map((option, index) => {
             const selected = answers[question.id] === index;
             return (

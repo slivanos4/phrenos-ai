@@ -334,6 +334,7 @@ export const contactPage = {
 
 export const footer = {
   links: [
+    { label: "Consultancy", href: "/consultancy" },
     { label: "Work", href: "/work" },
     { label: "Approach", href: "/approach" },
     { label: "AI Updates", href: "/ai-updates" },
@@ -407,7 +408,7 @@ export const homePage = {
       { value: "5", label: "AI systems in the solutions portfolio" },
       { value: "Days to minutes", label: "on report building and competitor research" },
     ],
-    link: { label: "See the work", href: "/work" },
+    link: { label: "See all five systems", href: "/work" },
   },
   latest: {
     eyebrow: "AI Updates",

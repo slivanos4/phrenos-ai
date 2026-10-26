@@ -15,11 +15,7 @@ const contactHelpItems = [
   },
   {
     label: "Content & Digital Systems",
-    detail: "governed content engines that scale production without losing brand voice.",
-  },
-  {
-    label: "Website Development",
-    detail: "designed and built end-to-end, with AI features built in wherever they add real value.",
+    detail: "governed content engines and AI-assisted websites, designed and built end to end.",
   },
   {
     label: "Competitive Intelligence",
@@ -68,7 +64,7 @@ export function ContactSection() {
           <div className="flex flex-col gap-6">
             <div className="rounded-sm border border-[#d4af5a]/25 bg-forest-secondary/40 p-5 sm:p-6">
               <p className="text-xs font-semibold tracking-[0.22em] text-[#e0c078] uppercase">
-                What we help with
+                The five capabilities
               </p>
               <ul className="mt-4 space-y-3 text-sm leading-relaxed text-sage">
                 {contactHelpItems.map((item) => (

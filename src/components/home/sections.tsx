@@ -78,6 +78,7 @@ export function OutcomesSection() {
                 <h3 className="mt-5 font-serif text-2xl leading-snug text-[#e0c078]">{item.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-ivory/85">{item.body}</p>
                 <p className="mt-auto pt-5 text-[11px] font-semibold tracking-[0.18em] text-sage uppercase transition-colors group-hover:text-[#e0c078]">
+                  <span className="text-ivory/50">Capability: </span>
                   {item.service}
                 </p>
               </Link>

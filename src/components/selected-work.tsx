@@ -288,8 +288,8 @@ export function SelectedWork({
               </h2>
             </div>
             <p className="max-w-sm text-sm leading-relaxed text-sage sm:text-right">
-              Drag a corner to curl the paper. Turned pages stay in your left
-              hand as the next leaf opens on the right.
+              Drag a corner, or use the arrows, to turn the page. Five systems,
+              one per spread.
             </p>
           </div>
         ) : (
@@ -305,8 +305,8 @@ export function SelectedWork({
 
         <div className="mb-7 flex items-center justify-between gap-4">
           <p className="font-serif text-sm tracking-[0.18em] text-[#e0c078]">
-            Leaf {Math.min(page + 1, pageCount)}{" "}
-            <span className="text-ivory/35">/</span> {pageCount}
+            Page {Math.min(page + 1, pageCount)}{" "}
+            <span className="text-ivory/35">of</span> {pageCount}
           </p>
           <div className="flex items-center gap-2">
             <button

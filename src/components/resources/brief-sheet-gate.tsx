@@ -81,7 +81,9 @@ export function BriefSheetGate({ downloadName }: { downloadName: string }) {
 
   if (unlocked) {
     return (
-      <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="mt-10">
+        <p className="font-serif text-2xl text-[#e0c078]">Thank you. Your cheat sheet is ready.</p>
+        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
         <a
           href={`${DOWNLOAD_URL}?dl=1`}
           download={downloadName}
@@ -99,6 +101,7 @@ export function BriefSheetGate({ downloadName }: { downloadName: string }) {
         >
           Open in browser
         </a>
+        </div>
       </div>
     );
   }
