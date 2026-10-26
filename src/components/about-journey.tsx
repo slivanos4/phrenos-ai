@@ -4,18 +4,22 @@ import { DrawOnView, Reveal } from "@/components/home/motion";
 const steps = [
   {
     title: "Osteopathy",
+    label: "What it taught me",
     line: "How the nervous system drives behaviour.",
   },
   {
     title: "Neuroscience & neurolinguistics",
+    label: "What it taught me",
     line: "How people process language and make decisions.",
   },
   {
     title: "Generative AI",
+    label: "What I build",
     line: "Custom GPTs, agentic workflows, automation platforms and reporting.",
   },
   {
     title: "Phrenos.ai",
+    label: "What it stands for",
     line: "AI that strengthens people’s judgement instead of replacing it.",
   },
 ] as const;
@@ -33,6 +37,9 @@ export function AboutJourney() {
           <h2 className="mt-3 max-w-2xl font-serif text-3xl leading-tight tracking-tight text-ivory sm:text-4xl lg:text-[2.75rem]">
             From the nervous system to the neural network.
           </h2>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-sage">
+            Four stages, and what each one brought to the work.
+          </p>
         </Reveal>
 
         <DrawOnView className="relative mt-14">
@@ -58,8 +65,11 @@ export function AboutJourney() {
                 >
                   <span className={`h-2 w-2 rounded-full ${index === steps.length - 1 ? "bg-forest" : "bg-[#d4af5a]"}`} />
                 </span>
-                <h3 className="font-serif text-2xl leading-snug text-[#e0c078]">{step.title}</h3>
-                <p className="mt-2 max-w-xs text-sm leading-relaxed text-ivory/85">{step.line}</p>
+                <h3 className="font-serif text-2xl leading-snug text-[#e0c078] lg:min-h-[4.25rem]">{step.title}</h3>
+                <div className="mt-4 max-w-xs border-l border-[#d4af5a]/45 pl-4">
+                  <p className="text-[11px] font-semibold tracking-[0.2em] text-[#d4af5a] uppercase">{step.label}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ivory/85">{step.line}</p>
+                </div>
               </li>
             ))}
           </ol>
