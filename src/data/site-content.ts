@@ -36,14 +36,13 @@ export const headerCta = {
 
 export const hero = {
   eyebrow: "THE MIND IN THE MACHINE",
-  headline: "Put AI to work in your business.",
+  headline: "Stay ahead.\nPut AI to work.",
   supporting:
+    "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
+  offer:
     "Phrenos.ai is an independent AI consultancy. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
   secondary: {
-    lead: "",
     emphasis:
-      "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
-    emphasisTwo:
       "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
   },
   primaryCta: {

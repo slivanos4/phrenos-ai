@@ -31,7 +31,7 @@ function HeroCopy({ compact = false }: { compact?: boolean }) {
       </p>
 
       <h1
-        className={`animate-fade-up-delay-1 mt-5 font-serif leading-[1.05] tracking-tight text-balance text-ivory ${
+        className={`animate-fade-up-delay-1 mt-5 font-serif leading-[1.05] tracking-tight whitespace-pre-line text-ivory ${
           compact
             ? "text-4xl sm:text-5xl"
             : "mt-6 text-5xl sm:text-6xl lg:text-[4.25rem]"
@@ -53,12 +53,9 @@ function HeroCopy({ compact = false }: { compact?: boolean }) {
           compact ? "mt-4 text-sm sm:text-base" : "mt-5 text-base"
         }`}
       >
-        {hero.secondary.lead}
-        <span className="block text-base font-medium text-[#e0c078]">
+        {hero.offer}
+        <span className="mt-3 block text-base font-medium text-[#e0c078]">
           {hero.secondary.emphasis}
-        </span>
-        <span className="mt-2 block text-base font-medium text-[#e0c078]">
-          {hero.secondary.emphasisTwo}
         </span>
       </p>
 
