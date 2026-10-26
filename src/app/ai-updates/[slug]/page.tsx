@@ -125,7 +125,6 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.published_at,
       url: `/ai-updates/${post.slug}`,
-      images: ["/opengraph-image"],
     },
     twitter: {
       card: "summary_large_image",

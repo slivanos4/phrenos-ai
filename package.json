@@ -16,7 +16,8 @@
     "pdf-lib": "^1.17.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-pageflip": "^2.0.3"
+    "react-pageflip": "^2.0.3",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

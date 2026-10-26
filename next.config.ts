@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     "/api/resources/brief-sheet/download": ["./private-assets/**/*"],
     "/api/resources/readiness-pdf": ["./public/brand/phrenos_logo_white.png"],
     "/api/leads": ["./public/brand/phrenos_logo_white.png"],
+    "/opengraph-image": ["./public/brand/og-bg.jpg", "./public/brand/phrenos_logo_white.png", "./src/assets/fonts/*"],
+    "/ai-updates/[slug]/opengraph-image": ["./public/brand/og-bg.jpg", "./public/brand/phrenos_logo_white.png", "./src/assets/fonts/*"],
   },
   async redirects() {
     return [
