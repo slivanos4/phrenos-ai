@@ -1,6 +1,6 @@
 export const site = {
   name: "Phrenos.ai",
-  tagline: "AI Strategy & Automation",
+  tagline: "AI Strategy, Automation & Innovation",
   definition: "phren·os (n.): mind, intellect, reason",
   description:
     "An independent AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
