@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ContactCta } from "@/components/contact-cta";
 import { ProofStats } from "@/components/home/sections";
+import { CaseStudyGrid } from "@/components/work/case-study-grid";
 import { SelectedWork } from "@/components/selected-work";
 
 const pageTitle = "Work";
@@ -63,6 +64,8 @@ export default function WorkPage() {
       <div className="relative z-10">
         <SelectedWork hideIntro continuous />
       </div>
+
+      <CaseStudyGrid />
 
       <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20 lg:px-8 lg:pb-28">
         <ProofStats />

@@ -28,12 +28,7 @@ export function createAccessCookieValue(): string | null {
   return `${expiresAt}.${sign(String(expiresAt), key)}`;
 }
 
-export function hasBriefAccess(request: Request): boolean {
-  const key = secret();
-  if (!key) return false;
-  const header = request.headers.get("cookie") ?? "";
-  const part = header.split(";").map((item) => item.trim()).find((item) => item.startsWith(`${BRIEF_COOKIE}=`));
-  const value = part?.slice(BRIEF_COOKIE.length + 1);
+function tokenIsValid(value: string | null | undefined, key: string): boolean {
   if (!value) return false;
   const [expires, signature] = value.split(".");
   if (!expires || !signature) return false;
@@ -42,6 +37,16 @@ export function hasBriefAccess(request: Request): boolean {
   const a = Buffer.from(signature);
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Access comes from the cookie set at sign-up, or from the signed link in the confirmation email. */
+export function hasBriefAccess(request: Request): boolean {
+  const key = secret();
+  if (!key) return false;
+  const header = request.headers.get("cookie") ?? "";
+  const part = header.split(";").map((item) => item.trim()).find((item) => item.startsWith(`${BRIEF_COOKIE}=`));
+  if (tokenIsValid(part?.slice(BRIEF_COOKIE.length + 1), key)) return true;
+  return tokenIsValid(new URL(request.url).searchParams.get("t"), key);
 }
 
 export async function readBriefPdf(): Promise<Buffer> {

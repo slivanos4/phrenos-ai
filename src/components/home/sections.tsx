@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ServiceIcon, SignalNoise } from "@/components/home/graphics";
 import { CountUp, Reveal, StageShowcase } from "@/components/home/motion";
+import { caseStudyHref } from "@/data/case-studies";
 import { approach, homePage, selectedWork } from "@/data/site-content";
 import type { PublishedPost } from "@/lib/phrenos-updates/types";
 
@@ -209,7 +210,7 @@ export function ProofSection() {
           {cases.map((item, index) => (
             <Reveal key={item.title} delay={index * 120} className="h-full">
               <Link
-                href="/work"
+                href={caseStudyHref(item.title)}
                 className={`${card} group flex h-full flex-col overflow-hidden p-0 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(212,175,90,0.12)]`}
               >
                 <picture className="relative block aspect-[4/3] overflow-hidden border-b border-[#d4af5a]/25">

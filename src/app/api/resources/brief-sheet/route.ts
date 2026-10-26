@@ -4,25 +4,8 @@ import {
   BRIEF_COOKIE,
   createAccessCookieValue,
 } from "@/lib/site/brief-access";
-import { WEB3FORMS_ACCESS_KEY } from "@/lib/site/web3forms-key";
-import {
-  isServiceRoleConfigured,
-  isValidSubscriberEmail,
-  subscribeToUpdates,
-} from "@/lib/phrenos-updates";
-
-// Best effort on serverless: stops one visitor hammering the form from one instance.
-const recent = new Map<string, number[]>();
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_PER_WINDOW = 8;
-
-function tooMany(ip: string): boolean {
-  const now = Date.now();
-  const hits = (recent.get(ip) ?? []).filter((time) => now - time < WINDOW_MS);
-  hits.push(now);
-  recent.set(ip, hits);
-  return hits.length > MAX_PER_WINDOW;
-}
+import { processLead, validateLead } from "@/lib/site/leads";
+import { tooManyRequests } from "@/lib/site/rate-limit";
 
 /** Someone gives their email; the server records the lead and opens the cheat sheet for this browser. */
 export async function POST(request: Request) {
@@ -36,45 +19,20 @@ export async function POST(request: Request) {
   if (body.website) return NextResponse.json({ ok: true });
 
   const ip = (request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
-  if (tooMany(ip)) {
+  if (tooManyRequests(`brief:${ip}`)) {
     return NextResponse.json({ error: "Too many tries. Please try again later." }, { status: 429 });
   }
 
-  const email = typeof body.email === "string" ? body.email.trim() : "";
-  if (!isValidSubscriberEmail(email)) {
-    return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
-  }
+  const checked = validateLead({ source: "cheat-sheet", email: body.email, optIn: body.optIn });
+  if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 });
 
   const cookieValue = createAccessCookieValue();
   if (!cookieValue) {
     return NextResponse.json({ error: "The download is not set up yet. Please email hello@phrenosai.com." }, { status: 503 });
   }
 
-  // Tell Sophia about the lead. A hiccup here must not stop the person getting their download.
-  try {
-    await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        access_key: WEB3FORMS_ACCESS_KEY,
-        subject: "Phrenos.ai lead: Cheat sheet: How to Brief AI Like a Strategist",
-        from_name: "Phrenos.ai website",
-        email,
-        source: "Cheat sheet: How to Brief AI Like a Strategist",
-        newsletter_opt_in: body.optIn ? "yes" : "no",
-      }),
-    });
-  } catch (error) {
-    console.error("brief-sheet: lead notification failed:", error);
-  }
-
-  if (body.optIn && isServiceRoleConfigured()) {
-    try {
-      await subscribeToUpdates({ email, source: "cheat-sheet" });
-    } catch (error) {
-      console.error("brief-sheet: newsletter signup failed:", error);
-    }
-  }
+  // Save the lead, tell Sophia, honour the newsletter tick box and send the confirmation email.
+  await processLead(checked.lead);
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set(BRIEF_COOKIE, cookieValue, {

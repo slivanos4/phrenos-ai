@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/brand-lockup";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import { footer, site } from "@/data/site-content";
 
 export function SiteFooter() {
@@ -75,6 +76,13 @@ export function SiteFooter() {
           </p>
           <div className="flex items-center gap-4">
             <p>Independent AI consultancy.</p>
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-ivory"
+            >
+              Privacy
+            </Link>
+            <CookieSettingsButton className="transition-colors hover:text-ivory" />
             <Link
               href="/admin/ai-updates"
               className="text-sage/35 transition-colors hover:text-sage/70"

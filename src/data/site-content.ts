@@ -323,7 +323,7 @@ export const contactPage = {
     message: "Where should we look first?",
     submit: "Send message",
   },
-  success: "Thank you. Your message has been sent. We’ll reply within a couple of business days.",
+  success: "Thank you. Your message has been sent. We’ll reply within a couple of business days, and a confirmation is on its way to your inbox.",
   optional: "Optional",
   nextSteps: [
     "Every message is read personally.",

@@ -9,7 +9,7 @@ import {
   scoreReadiness,
 } from "@/data/readiness-check";
 import { trackEvent } from "@/lib/site/analytics";
-import { isEmail, joinBriefing, submitLead } from "@/lib/site/lead";
+import { isEmail } from "@/lib/site/lead";
 
 const fieldClass =
   "min-w-0 flex-1 rounded-full border border-[#d4af5a]/55 bg-[#101c14]/55 px-5 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-sage/55 focus:border-[#e0c078] focus:bg-[#101c14]/75";
@@ -42,7 +42,6 @@ export function ReadinessCheck() {
     event.preventDefault();
     setError(null);
     const data = new FormData(event.currentTarget);
-    if (String(data.get("website") || "")) return;
     if (!result) return;
     if (!isEmail(email)) {
       setError("Please enter a valid email address.");
@@ -50,18 +49,28 @@ export function ReadinessCheck() {
     }
 
     setSending(true);
-    const details: Record<string, string | number> = {
-      overall_score_percent: result.percent,
-      tier: result.tier.label,
-      newsletter_opt_in: optIn ? "yes" : "no",
-    };
-    for (const area of result.areas) details[`score_${area.area}_percent`] = area.percent;
-    for (const question of readinessQuestions) {
-      const chosen = answers[question.id];
-      details[question.id] = `${question.question} => ${question.options[chosen] ?? "no answer"}`;
+    try {
+      // The server scores the answers itself, saves the lead and emails the result.
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "readiness-check",
+          email,
+          optIn,
+          answers,
+          website: String(data.get("website") || ""),
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || "Something went wrong. Please try again.");
+      trackEvent("generate_lead", { form: "readiness-check", tier: result.tier.key });
+      if (optIn) trackEvent("newsletter_signup", { source: "readiness-check" });
+    } catch (cause) {
+      setSending(false);
+      setError(cause instanceof Error ? cause.message : "Something went wrong. Please try again.");
+      return;
     }
-    await submitLead({ source: "AI readiness check", email, details });
-    if (optIn) await joinBriefing(email, "readiness-check");
     setSending(false);
     setUnlocked(true);
   }
@@ -149,6 +158,7 @@ export function ReadinessCheck() {
       {unlocked ? (
         <div className="rounded-2xl border border-[#d4af5a]/30 bg-[#0b140e]/70 p-6 sm:p-10" role="status">
           <p className="text-xs font-semibold tracking-[0.28em] text-[#e0c078] uppercase">Your full breakdown</p>
+          <p className="mt-2 text-sm text-sage">A copy of your result is on its way to your inbox.</p>
           <ul className="mt-6 space-y-5">
             {result!.areas.map((area) => (
               <li key={area.area}>
@@ -179,7 +189,7 @@ export function ReadinessCheck() {
           <p className="font-serif text-2xl text-[#e0c078]">Unlock your full breakdown</p>
           <p className="mt-2 text-sm leading-relaxed text-ivory/85 sm:text-base">
             See your score in each of the five areas, and the one place to start. Enter your email to
-            unlock it.
+            unlock it, and we’ll send you a copy of your result.
           </p>
           <input
             type="text"
@@ -221,6 +231,13 @@ export function ReadinessCheck() {
             />
             <span>Also send me the Phrenos.ai AI briefing for business leaders.</span>
           </label>
+          <p className="mt-3 text-xs leading-relaxed text-sage/80">
+            We use your email to give you access, and to follow up if it looks useful. See our{" "}
+            <a href="/privacy" className="text-[#e0c078] underline-offset-2 hover:underline">
+              privacy policy
+            </a>
+            .
+          </p>
           {error ? (
             <p className="mt-3 text-sm text-[#e8b4a0]" role="alert">
               {error}

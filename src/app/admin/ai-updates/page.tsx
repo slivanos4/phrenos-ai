@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AiUpdatesPanel } from "@/components/admin/ai-updates-panel";
 import { ResourceNotifyForm } from "@/components/admin/resource-notify-form";
 
@@ -36,6 +37,11 @@ export default function AdminAiUpdatesPage() {
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#a9b0a3] sm:text-base">
           Research the week, auto-draft the strongest featured blog and LinkedIn
           pack, then approve and publish the blog on its own.
+        </p>
+        <p className="mt-3 text-xs font-semibold tracking-[0.18em] uppercase">
+          <Link href="/admin/leads" className="text-[#e0c078] underline-offset-4 hover:underline">
+            Leads →
+          </Link>
         </p>
         <div className="mt-10 max-w-3xl">
           <AiUpdatesPanel />

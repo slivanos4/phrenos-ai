@@ -4,10 +4,6 @@ import { FormEvent, useState } from "react";
 import { contactPage, site } from "@/data/site-content";
 import { trackEvent } from "@/lib/site/analytics";
 
-const WEB3FORMS_ACCESS_KEY =
-  process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY ||
-  "5aa18ac3-e2ed-4643-bf2f-a251364db741";
-
 const fieldClass =
   "w-full rounded-full border border-[#d4af5a]/55 bg-[#101c14]/55 px-5 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-sage/55 focus:border-[#e0c078] focus:bg-[#101c14]/75";
 
@@ -45,12 +41,6 @@ export function ContactForm({
       return;
     }
 
-    const accessKey = WEB3FORMS_ACCESS_KEY;
-    if (!accessKey) {
-      setError("Form is not configured yet. Please email us directly.");
-      return;
-    }
-
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
     const organisation = String(data.get("organisation") || "").trim();
@@ -59,31 +49,17 @@ export function ContactForm({
 
     setSending(true);
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
+      // The server saves the enquiry, tells Sophia and sends you a confirmation email.
+      const response = await fetch("/api/leads", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          access_key: accessKey,
-          subject: `Phrenos.ai enquiry${organisation ? `: ${organisation}` : ""}`,
-          from_name: "Phrenos.ai contact form",
-          name,
-          email,
-          organisation: organisation || "Not provided",
-          role: role || "Not provided",
-          message,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "contact", name, email, organisation, role, message }),
       });
 
-      const result = (await response.json()) as {
-        success?: boolean;
-        message?: string;
-      };
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Something went wrong. Please try again.");
+      if (!response.ok) {
+        throw new Error(result.error || "Something went wrong. Please try again.");
       }
 
       trackEvent("generate_lead", { form: "contact", has_organisation: Boolean(organisation) });
@@ -233,6 +209,14 @@ export function ContactForm({
           </a>
         </p>
       ) : null}
+
+      <p className="text-xs leading-relaxed text-sage/80">
+        By sending this you agree that we may use your details to reply to you. See our{" "}
+        <a href="/privacy" className="text-[#e0c078] underline-offset-2 hover:underline">
+          privacy policy
+        </a>
+        .
+      </p>
 
       <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-sage">

@@ -83,6 +83,7 @@ export function BriefSheetGate({ downloadName }: { downloadName: string }) {
     return (
       <div className="mt-10">
         <p className="font-serif text-2xl text-[#e0c078]">Thank you. Your cheat sheet is ready.</p>
+        <p className="mt-2 text-sm text-sage">We’ve also emailed you a link that works on any device.</p>
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
         <a
           href={`${DOWNLOAD_URL}?dl=1`}
@@ -155,6 +156,13 @@ export function BriefSheetGate({ downloadName }: { downloadName: string }) {
         />
         <span>{leadMagnets.briefSheet.newsletterOptIn}</span>
       </label>
+      <p className="mt-3 text-xs leading-relaxed text-sage/80">
+        We use your email to give you access, and to follow up if it looks useful. See our{" "}
+        <a href="/privacy" className="text-[#e0c078] underline-offset-2 hover:underline">
+          privacy policy
+        </a>
+        .
+      </p>
       {error ? (
         <p className="mt-3 text-sm text-[#e8b4a0]" role="alert">
           {error}

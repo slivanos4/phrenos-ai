@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { ConditionalFooter } from "@/components/conditional-footer";
+import { CookieBanner } from "@/components/cookie-banner";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { TrackClicks } from "@/components/track-clicks";
 import { SiteHeader } from "@/components/site-header";
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Analytics />
         <SiteAnalytics />
         <TrackClicks />
+        <CookieBanner />
       </body>
     </html>
   );
