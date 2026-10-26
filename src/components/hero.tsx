@@ -50,11 +50,11 @@ function HeroCopy({ compact = false }: { compact?: boolean }) {
 
       <p
         className={`animate-fade-up-delay-2 max-w-xl leading-relaxed text-ivory/88 ${
-          compact ? "mt-4 text-sm sm:text-base" : "mt-5 text-base"
+          compact ? "mt-4 text-sm sm:text-base" : "mt-6 text-lg"
         }`}
       >
         {hero.secondary.lead}
-        <span className="font-medium text-[#e0c078]">
+        <span className="mt-3 block text-base font-medium text-[#e0c078]">
           {hero.secondary.emphasis}
         </span>
       </p>

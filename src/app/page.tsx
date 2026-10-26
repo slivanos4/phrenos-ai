@@ -5,7 +5,7 @@ import { Hero } from "@/components/hero";
 import {
   ApproachPreviewSection,
   LatestUpdatesSection,
-  OutcomesSection,
+  OfferSection,
   ProblemSection,
   ProofSection,
 } from "@/components/home/sections";
@@ -35,8 +35,8 @@ export default async function Home() {
     <>
       <Hero />
       <CredibilityStrip />
+      <OfferSection />
       <ProblemSection />
-      <OutcomesSection />
       <ProofSection />
       <LatestUpdatesSection posts={posts} />
       <ApproachPreviewSection />

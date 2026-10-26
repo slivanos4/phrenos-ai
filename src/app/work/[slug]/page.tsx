@@ -25,7 +25,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: study.name,
       description: study.summary,
       url: `/work/${study.slug}`,
-      images: ["/opengraph-image"],
     },
     twitter: { card: "summary_large_image", title: study.name, description: study.summary },
   };

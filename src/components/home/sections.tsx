@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ServiceIcon, SignalNoise } from "@/components/home/graphics";
 import { CountUp, Reveal, StageShowcase } from "@/components/home/motion";
 import { caseStudyHref } from "@/data/case-studies";
-import { approach, homePage, selectedWork } from "@/data/site-content";
+import { approach, bookCallHref, bookCallIsExternal, headerCta, homePage, selectedWork } from "@/data/site-content";
 import type { PublishedPost } from "@/lib/phrenos-updates/types";
 
 const eyebrow = "text-xs font-semibold tracking-[0.28em] text-[#e0c078] uppercase";
@@ -55,8 +55,8 @@ export function ProblemSection() {
   );
 }
 
-export function OutcomesSection() {
-  const { outcomes } = homePage;
+export function OfferSection() {
+  const { outcomes, howItStarts } = homePage;
   return (
     <section className="border-y border-ivory/10 bg-forest-secondary py-20 lg:py-28">
       <div className="mx-auto max-w-6xl px-6 lg:px-8">
@@ -66,9 +66,14 @@ export function OutcomesSection() {
             {outcomes.link.label} →
           </Link>
         </Reveal>
+        <Reveal>
+          <p className="mt-5 max-w-3xl text-base leading-relaxed text-ivory/85 sm:text-lg">{outcomes.intro}</p>
+          <p className="mt-3 max-w-3xl text-base leading-relaxed text-[#e0c078] sm:text-lg">{outcomes.whoFor}</p>
+        </Reveal>
+
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {outcomes.items.map((item, index) => (
-            <Reveal key={item.title} delay={index * 90} className="h-full">
+            <Reveal key={item.service} delay={index * 90} className="h-full">
               <Link
                 href="/consultancy"
                 className={`${card} group flex h-full flex-col bg-forest/60 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(212,175,90,0.12)]`}
@@ -76,12 +81,10 @@ export function OutcomesSection() {
                 <span className="text-[#d4af5a] transition-colors group-hover:text-[#f0d9a0]">
                   <ServiceIcon index={index} />
                 </span>
-                <h3 className="mt-5 font-serif text-2xl leading-snug text-[#e0c078]">{item.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-ivory/85">{item.body}</p>
-                <p className="mt-auto pt-5 text-[11px] font-semibold tracking-[0.18em] text-sage uppercase transition-colors group-hover:text-[#e0c078]">
-                  <span className="text-ivory/50">Capability: </span>
-                  {item.service}
-                </p>
+                <h3 className="mt-5 font-serif text-2xl leading-snug text-[#e0c078]">{item.service}</h3>
+                <p className="mt-4 text-[11px] font-semibold tracking-[0.2em] text-sage uppercase">What you get</p>
+                <p className="mt-1 font-serif text-xl leading-snug text-ivory">{item.title}</p>
+                <p className="mt-3 text-sm leading-relaxed text-ivory/80">{item.body}</p>
               </Link>
             </Reveal>
           ))}
@@ -104,6 +107,39 @@ export function OutcomesSection() {
                 Take the free AI readiness check{" "}
                 <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
               </p>
+            </Link>
+          </Reveal>
+        </div>
+
+        <div className="mt-16 border-t border-[#d4af5a]/25 pt-12 lg:mt-20 lg:pt-14">
+          <Reveal>
+            <p className={eyebrow}>{howItStarts.eyebrow}</p>
+            <h3 className="mt-3 font-serif text-2xl leading-tight text-ivory sm:text-3xl">{howItStarts.heading}</h3>
+          </Reveal>
+          <ol className="mt-8 grid gap-5 md:grid-cols-3">
+            {howItStarts.steps.map((step, index) => (
+              <Reveal key={step.title} delay={index * 110} as="li" className="rounded-2xl border border-[#d4af5a]/25 bg-forest/60 p-6">
+                <span className="lining font-serif text-4xl leading-none text-[#d4af5a]">{index + 1}</span>
+                <h4 className="mt-4 font-serif text-xl leading-snug text-[#e0c078]">{step.title}</h4>
+                <p className="mt-2 text-sm leading-relaxed text-ivory/85">{step.body}</p>
+              </Reveal>
+            ))}
+          </ol>
+          <Reveal className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href={bookCallHref}
+              {...(bookCallIsExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              data-track="cta_book_call"
+              data-track-location="home-offer"
+              className="inline-flex items-center justify-center rounded-full border border-gold bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-forest transition-colors hover:bg-[#e0c078]"
+            >
+              {headerCta.label}
+            </Link>
+            <Link
+              href="/consultancy"
+              className="inline-flex items-center justify-center rounded-full border border-[#d4af5a]/60 px-7 py-3.5 text-sm font-semibold tracking-wide text-ivory transition-colors hover:border-[#e0c078] hover:bg-[#d4af5a]/10"
+            >
+              See all five services
             </Link>
           </Reveal>
         </div>

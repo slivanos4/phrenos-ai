@@ -40,9 +40,9 @@ export const hero = {
   supporting:
     "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
   secondary: {
-    lead: "We're helping businesses turn Generative AI, data and automation into measurable impact because ",
+    lead: "Phrenos.ai is an independent AI consultancy. We help leaders turn Generative AI, data and automation into measurable impact, from the first strategy to the systems and training that keep it working. ",
     emphasis:
-      "the best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
+      "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
   },
   primaryCta: {
     prefix: "Book a free ",
@@ -369,8 +369,12 @@ export const homePage = {
     bridge: { from: "Noise", to: "Signal", line: "Our job is to find the signal." },
   },
   outcomes: {
-    eyebrow: "What changes",
-    heading: "What it looks like when it works.",
+    eyebrow: "What we offer",
+    heading: "Five services. One aim.",
+    intro:
+      "AI that changes what your business can do, not just how it talks about the future. Each service is a clear piece of work with a clear thing you walk away with.",
+    whoFor:
+      "For business leaders who want AI to change how the work gets done and what it earns.",
     items: [
       {
         title: "A plan your leadership team will back",
@@ -399,6 +403,24 @@ export const homePage = {
       },
     ],
     link: { label: "See all services", href: "/consultancy" },
+  },
+  howItStarts: {
+    eyebrow: "How it starts",
+    heading: "Three steps from first call to working system.",
+    steps: [
+      {
+        title: "A free 15-minute intro call",
+        body: "You tell us where the friction is. No preparation needed.",
+      },
+      {
+        title: "We map where AI creates leverage",
+        body: "We understand your workflows and goals, then prioritise the opportunities with the strongest return.",
+      },
+      {
+        title: "We build it, and make it stick",
+        body: "Practical systems with human oversight, and the training that keeps them working after we leave.",
+      },
+    ],
   },
   proof: {
     eyebrow: "Proof",
