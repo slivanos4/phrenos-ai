@@ -76,6 +76,10 @@ export const caseStudies: readonly CaseStudy[] = [
         body: "Standardised competitor analysis across multiple industries, delivered as executive-ready reports.",
       },
     ],
+    moneySaved: {
+      title: "Cost saved",
+      body: "Analyst hours handed back to the team every month, and no need to hire or outsource research as the number of sites and reviews grows.",
+    },
     future: ["Real-time monitoring", "Agents", "Approval workflows", "AI summaries", "A data warehouse"],
   },
   {
