@@ -67,7 +67,11 @@ export default async function CaseStudyPage({ params }: PageProps) {
           >
             ← All case studies
           </Link>
-          <dl className="mt-6 grid gap-px overflow-hidden rounded-2xl border border-[#d4af5a]/30 bg-[#d4af5a]/20 sm:grid-cols-2 lg:grid-cols-4">
+          <dl
+            className={`mt-6 grid gap-px overflow-hidden rounded-2xl border border-[#d4af5a]/30 bg-[#d4af5a]/20 sm:grid-cols-2 ${
+              study.facts.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"
+            }`}
+          >
             {study.facts.map((fact) => (
               <div key={fact.label} className="bg-forest-secondary px-5 py-5">
                 <dt className="text-[11px] font-semibold tracking-[0.2em] text-sage uppercase">{fact.label}</dt>
@@ -208,18 +212,22 @@ export default async function CaseStudyPage({ params }: PageProps) {
             <h2 className={h2}>What changed.</h2>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-ivory/25 px-5 py-2 font-serif text-xl text-ivory/75 sm:text-2xl">
-                {work.transformation.from}
+                {study.resultHeadline?.from ?? work.transformation.from}
               </span>
               <span className="text-2xl text-[#d4af5a]" aria-hidden>
                 →
               </span>
               <span className="rounded-full border border-[#d4af5a]/70 bg-[#d4af5a]/12 px-5 py-2 font-serif text-xl text-[#f0d9a0] sm:text-2xl">
-                {work.transformation.to}
+                {study.resultHeadline?.to ?? work.transformation.to}
               </span>
             </div>
           </Reveal>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            {study.results.map((item, itemIndex) => (
+          <div
+            className={`mt-10 grid gap-5 ${
+              study.moneySaved ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"
+            }`}
+          >
+            {[...study.results, ...(study.moneySaved ? [study.moneySaved] : [])].map((item, itemIndex) => (
               <Reveal
                 key={item.title}
                 delay={itemIndex * 110}

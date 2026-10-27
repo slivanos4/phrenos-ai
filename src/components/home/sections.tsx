@@ -164,7 +164,7 @@ export function OfferSection() {
                 className={`${card} group flex h-full flex-col bg-forest/60 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(212,175,90,0.12)]`}
               >
                 <span className="text-[#d4af5a] transition-colors group-hover:text-[#f0d9a0]">
-                  <ServiceIcon index={index} />
+                  <ServiceIcon index={item.icon} />
                 </span>
                 <h3 className="mt-5 font-serif text-2xl leading-snug text-[#e0c078]">{item.service}</h3>
                 <p className="mt-4 text-[11px] font-semibold tracking-[0.2em] text-sage uppercase">What you get</p>

@@ -18,6 +18,10 @@ export type CaseStudy = {
   architectureNote: string;
   capabilities: { title: string; body: string }[];
   results: { title: string; body: string }[];
+  /** Replaces the shared "from, to" result line on this page only, for a more human framing. */
+  resultHeadline?: { from: string; to: string };
+  /** A real, quantified saving. Leave unset until there is a figure that can be defended. */
+  moneySaved?: { title: string; body: string };
   future: string[];
 };
 
@@ -30,7 +34,6 @@ export const caseStudies: readonly CaseStudy[] = [
     facts: [
       { label: "Business area", value: "Competitive intelligence" },
       { label: "Users", value: "Content, SEO and Product" },
-      { label: "Technology", value: "AI, Python, web crawling, NLP" },
       { label: "Outcome", value: "Executive intelligence reports" },
     ],
     problem:
@@ -58,10 +61,20 @@ export const caseStudies: readonly CaseStudy[] = [
       { title: "Trust signal detection", body: "Identifies credibility and trust indicators." },
       { title: "Structured executive reporting", body: "Turns findings into strategic recommendations." },
     ],
+    resultHeadline: { from: "Days of manual research", to: "Time back for people to be creative" },
     results: [
-      { title: "A standardised approach", body: "Standardised competitor analysis across multiple industries." },
-      { title: "Faster opportunity identification", body: "Identified market opportunities and content gaps faster." },
-      { title: "Executive-ready output", body: "Produced executive-ready strategic reports." },
+      {
+        title: "Time freed up for people",
+        body: "The team no longer spends days collecting and comparing competitor information. That time goes back to thinking, creating and deciding.",
+      },
+      {
+        title: "More room to be creative",
+        body: "With the research done automatically, people spot opportunities and content gaps faster, and put their energy into new ideas, better content and sharper strategy.",
+      },
+      {
+        title: "Insight everyone can use",
+        body: "Standardised competitor analysis across multiple industries, delivered as executive-ready reports.",
+      },
     ],
     future: ["Real-time monitoring", "Agents", "Approval workflows", "AI summaries", "A data warehouse"],
   },
