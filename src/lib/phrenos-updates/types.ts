@@ -60,6 +60,8 @@ export type ContentSuggestion = {
   is_full_draft: boolean;
   /** Slug of the published /ai-updates post for this suggestion's story, if its blog draft is live. */
   published_slug?: string | null;
+  /** Public URL of an image attached to this draft, uploaded in the admin. */
+  image_url?: string | null;
 };
 
 export type ResearchStory = {

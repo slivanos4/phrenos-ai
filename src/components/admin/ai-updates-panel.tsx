@@ -110,7 +110,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
     headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(init?.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -470,6 +470,8 @@ function SuggestionCard({
   articleUrl?: string | null;
 }) {
   const proofreadApi = useContext(ProofreadContext);
+  const imageApi = useContext(DraftImageContext);
+  const [imageBusy, setImageBusy] = useState(false);
   const { open: cardOpen, toggle: toggleCard } = useFold(`draft-${suggestion.id}`, true);
   const [showBody, setShowBody] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -656,6 +658,41 @@ function SuggestionCard({
         ? "Make this section noticeably longer, roughly 30% more words, by adding relevant depth or detail already supported by the sources. Do not invent new facts."
         : "Make this section noticeably shorter, roughly 30% fewer words, by tightening it without losing the core point.";
     return instruction.trim() ? `${canned} Also: ${instruction.trim()}` : canned;
+  }
+
+  async function handleImageFile(file: File | undefined) {
+    if (!file || !imageApi) return;
+    setImageBusy(true);
+    try {
+      await imageApi.upload(suggestion.id, file);
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  async function handleImageRemove() {
+    if (!imageApi || !window.confirm("Remove this image from the post?")) return;
+    setImageBusy(true);
+    try {
+      await imageApi.remove(suggestion.id);
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  async function handleImageDownload() {
+    if (!suggestion.image_url) return;
+    try {
+      const blob = await (await fetch(suggestion.image_url)).blob();
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = `${suggestion.suggestion_type}-image.png`;
+      link.click();
+      URL.revokeObjectURL(href);
+    } catch {
+      window.open(suggestion.image_url, "_blank", "noreferrer");
+    }
   }
 
   function handleDeleteBlock(index: number) {
@@ -1025,6 +1062,59 @@ function SuggestionCard({
           ) : null}
         </>
       )}
+
+      {!isIdea && imageApi ? (
+        <div className="mt-3 rounded-lg border border-[#d4af5a]/20 bg-[#0a100c]/50 px-3 py-2.5">
+          <span className="text-[10px] font-semibold tracking-[0.16em] text-[#a9b0a3] uppercase">
+            Image
+          </span>
+          {suggestion.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={suggestion.image_url}
+              alt="Attached to this post"
+              className="mt-2 max-h-80 w-auto max-w-full rounded-md border border-[#d4af5a]/20"
+            />
+          ) : (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-[#a9b0a3]/80">
+              No image yet. Add a PNG, JPG or WebP to post alongside this draft.
+            </p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label
+              className={`${microButtonClass} cursor-pointer ${imageBusy ? "pointer-events-none opacity-50" : ""}`}
+            >
+              {imageBusy ? "Working..." : suggestion.image_url ? "Replace image" : "Add image"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                disabled={imageBusy}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  void handleImageFile(file);
+                }}
+              />
+            </label>
+            {suggestion.image_url ? (
+              <>
+                <button type="button" className={microButtonClass} onClick={() => void handleImageDownload()}>
+                  Download image
+                </button>
+                <button
+                  type="button"
+                  className={microButtonClass}
+                  disabled={imageBusy}
+                  onClick={() => void handleImageRemove()}
+                >
+                  Remove
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {proofreadApi?.reports[suggestion.id] ? (
         <ProofreadStatus
@@ -1657,6 +1747,12 @@ function DeskBriefsPanel({
     </Collapsible>
   );
 }
+
+/** Lets any draft card attach or remove its image without threading props through every layer. */
+const DraftImageContext = createContext<{
+  upload: (suggestionId: string, file: File) => Promise<void>;
+  remove: (suggestionId: string) => Promise<void>;
+} | null>(null);
 
 /** Lets any draft card start a ChatGPT proofread and read its saved report without threading props through every layer. */
 const ProofreadContext = createContext<{
@@ -2352,6 +2448,37 @@ export function AiUpdatesPanel() {
     }
   }
 
+  async function handleUploadImage(suggestionId: string, file: File) {
+    setError(null);
+    setNotice(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      await requestJson(`/api/phrenos-updates/suggestions/${suggestionId}/image`, {
+        method: "POST",
+        body: form,
+      });
+      setNotice("Image attached.");
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    }
+  }
+
+  async function handleRemoveImage(suggestionId: string) {
+    setError(null);
+    setNotice(null);
+    try {
+      await requestJson(`/api/phrenos-updates/suggestions/${suggestionId}/image`, {
+        method: "DELETE",
+      });
+      setNotice("Image removed.");
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    }
+  }
+
   async function handleLinkedinFromArticle(suggestionId: string) {
     markBusy(suggestionId, true);
     setError(null);
@@ -2592,6 +2719,7 @@ export function AiUpdatesPanel() {
         reports: reviewReports,
       }}
     >
+    <DraftImageContext.Provider value={{ upload: handleUploadImage, remove: handleRemoveImage }}>
     <CollapseAllContext.Provider value={collapseSignal}>
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -3059,6 +3187,7 @@ export function AiUpdatesPanel() {
       ))}
     </div>
     </CollapseAllContext.Provider>
+    </DraftImageContext.Provider>
     </ProofreadContext.Provider>
   );
 }
