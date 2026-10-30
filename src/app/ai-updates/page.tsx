@@ -13,7 +13,7 @@ import {
 
 const pageTitle = "AI Updates";
 const pageDescription =
-  "Weekly AI news and analysis on Generative AI models, products and industry moves, written for leaders putting AI to work.";
+  "Fortnightly AI news and analysis on Generative AI models, products and industry moves, written for leaders putting AI to work.";
 
 export const metadata: Metadata = {
   title: pageTitle,

@@ -132,7 +132,7 @@ export default function ResourcesPage() {
                 href="/ai-updates"
                 className="text-sm font-semibold tracking-wide text-ivory transition-colors hover:text-[#e0c078]"
               >
-                Weekly AI Updates →
+                AI Updates →
               </Link>
               <Link
                 href="/contact"
