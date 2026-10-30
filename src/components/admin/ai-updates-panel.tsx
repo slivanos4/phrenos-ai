@@ -421,6 +421,7 @@ function SuggestionCard({
   suggestion,
   busy,
   onExpandIdea,
+  onLinkedinFromArticle,
   onSetStatus,
   onPublish,
   onSave,
@@ -431,6 +432,7 @@ function SuggestionCard({
   suggestion: ContentSuggestion;
   busy: boolean;
   onExpandIdea: (id: string) => void;
+  onLinkedinFromArticle?: (id: string) => void;
   onSetStatus: (id: string, status: "approved" | "rejected") => void;
   onPublish: (id: string) => void;
   onSave: (
@@ -1131,6 +1133,17 @@ function SuggestionCard({
             >
               Reject
             </button>
+            {suggestion.suggestion_type === "blog" && onLinkedinFromArticle ? (
+              <button
+                type="button"
+                className={microButtonClass}
+                disabled={busy || editing}
+                onClick={() => onLinkedinFromArticle(suggestion.id)}
+                title="Writes a new LinkedIn draft from this article's current text. Existing LinkedIn drafts are kept."
+              >
+                {busy ? "Working..." : "Write LinkedIn post"}
+              </button>
+            ) : null}
             {canPublish ? (
               <button
                 type="button"
@@ -1165,6 +1178,7 @@ function StoryCard({
   runActive,
   onGenerate,
   onExpandIdea,
+  onLinkedinFromArticle,
   onSetStatus,
   onPublish,
   onSaveSuggestion,
@@ -1178,6 +1192,7 @@ function StoryCard({
   runActive: boolean;
   onGenerate: (storyId: string, mode?: "full" | "hero-blog") => void;
   onExpandIdea: (id: string) => void;
+  onLinkedinFromArticle?: (id: string) => void;
   onSetStatus: (id: string, status: "approved" | "rejected") => void;
   onPublish: (id: string) => void;
   onSaveSuggestion: (
@@ -1465,6 +1480,7 @@ function StoryCard({
                 suggestion={draft}
                 busy={busyIds.has(draft.id)}
                 onExpandIdea={onExpandIdea}
+                onLinkedinFromArticle={onLinkedinFromArticle}
                 onSetStatus={onSetStatus}
                 onPublish={onPublish}
                 onSave={onSaveSuggestion}
@@ -1491,6 +1507,7 @@ function StoryCard({
                 suggestion={idea}
                 busy={busyIds.has(idea.id)}
                 onExpandIdea={onExpandIdea}
+                onLinkedinFromArticle={onLinkedinFromArticle}
                 onSetStatus={onSetStatus}
                 onPublish={onPublish}
                 onSave={onSaveSuggestion}
@@ -2311,6 +2328,26 @@ export function AiUpdatesPanel() {
     }
   }
 
+  async function handleLinkedinFromArticle(suggestionId: string) {
+    markBusy(suggestionId, true);
+    setError(null);
+    setNotice(null);
+    try {
+      await requestJson(
+        `/api/phrenos-updates/suggestions/${suggestionId}/linkedin`,
+        { method: "POST" },
+      );
+      setNotice(
+        "New LinkedIn draft written from this article. It is in Featured drafts, below the article.",
+      );
+      if (selectedRunId) await loadRun(selectedRunId, true);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      markBusy(suggestionId, false);
+    }
+  }
+
   async function handleSetStatus(
     suggestionId: string,
     status: "approved" | "rejected",
@@ -2897,6 +2934,7 @@ export function AiUpdatesPanel() {
             runActive={runActive}
             onGenerate={handleGenerateStory}
             onExpandIdea={handleExpandIdea}
+            onLinkedinFromArticle={handleLinkedinFromArticle}
             onSetStatus={handleSetStatus}
             onPublish={handlePublishSuggestion}
             onSaveSuggestion={handleSaveSuggestion}
@@ -2926,6 +2964,7 @@ export function AiUpdatesPanel() {
                 runActive={runActive}
                 onGenerate={handleGenerateStory}
                 onExpandIdea={handleExpandIdea}
+            onLinkedinFromArticle={handleLinkedinFromArticle}
                 onSetStatus={handleSetStatus}
                 onPublish={handlePublishSuggestion}
                 onSaveSuggestion={handleSaveSuggestion}

@@ -53,6 +53,7 @@ export {
 
 export {
   generateFullDraftFromIdea,
+  generateLinkedinFromArticle,
   generateHeroBlogPack,
   generateStoryContentPack,
   generateStoryFeaturedDrafts,

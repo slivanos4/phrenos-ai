@@ -208,12 +208,31 @@ ${JSON.stringify({ hook: draft.hook, body_html: draft.body_html, cta: draft.cta 
   }
 }
 
+/** The finished article a LinkedIn post is distilled from. It, not the seed, decides wording and claims. */
+function articleBlock(article: GeneratedSuggestion): string {
+  return `
+
+FINISHED ARTICLE (Sophia has reviewed and published this; the LinkedIn post is a short version of it):
+"""
+${article.title}
+
+${article.hook}
+
+${article.body_html}
+
+${article.cta}
+"""
+Distil this article. Make the post's single point the article's central argument, in its own framing. Every claim, figure and date must appear in the article, worded no more strongly than the article words it. Keep the article's caveats: keep independent evidence apart from the company's own claims, state no motives the company has not stated, and do not turn a hedged statement into an absolute. Where the article corrects the story summary or the seed idea, the article wins. Do not reuse the article's title word for word. Do not add figures the article leaves out.
+`;
+}
+
 /** Doc section 10: featured draft prompt. Returns why it failed, not just null, so callers can retry or report the real cause. */
 async function attemptFeaturedDraft(
   story: GeneratedStory,
   suggestionType: SuggestionType,
   seedIdea: GeneratedSuggestion,
-  retryNote?: string
+  retryNote?: string,
+  article?: GeneratedSuggestion
 ): Promise<DraftAttempt> {
   const target = suggestionType === "blog" ? BLOG_TARGET_WORDS : LINKEDIN_TARGET_WORDS;
   const minimum = suggestionType === "blog" ? BLOG_MIN_WORDS : LINKEDIN_MIN_WORDS;
@@ -229,7 +248,7 @@ Story:
 ${JSON.stringify(storyContext(story), null, 2)}
 
 Seed idea to expand:
-${JSON.stringify(seedIdea, null, 2)}${authorBriefBlock(story, "draft")}
+${JSON.stringify(seedIdea, null, 2)}${authorBriefBlock(story, "draft")}${article ? articleBlock(article) : ""}
 
 Return ONLY one JSON object:
 {"suggestion_type":"${suggestionType}","title":"...","hook":"...","body_html":"...","cta":"...","hashtags":"...","image_ideas":"..."}
@@ -358,6 +377,30 @@ export async function generateFullDraftFromIdea(
     console.warn(`Full draft attempt 2 failed for "${story.title}" (${idea.suggestion_type}): ${second.reason}`);
   }
   return second;
+}
+
+/**
+ * Write a fresh LinkedIn post from a finished blog article, so the post follows the final wording
+ * and not the original sources. Retries once with the reason the first attempt was rejected.
+ */
+export async function generateLinkedinFromArticle(
+  story: GeneratedStory,
+  article: GeneratedSuggestion
+): Promise<DraftAttempt> {
+  const seed: GeneratedSuggestion = {
+    suggestion_type: "linkedin",
+    title: article.title,
+    hook: article.hook,
+    body_html: "",
+    cta: "",
+    hashtags: article.hashtags,
+    image_ideas: article.image_ideas,
+    is_full_draft: false,
+  };
+  const first = await attemptFeaturedDraft(story, "linkedin", seed, undefined, article);
+  if (first.draft) return first;
+  console.warn(`LinkedIn-from-article attempt 1 failed for "${story.title}": ${first.reason}`);
+  return attemptFeaturedDraft(story, "linkedin", seed, first.reason, article);
 }
 
 /** Fast pass: four blog ideas and four LinkedIn ideas (snippets only). */
