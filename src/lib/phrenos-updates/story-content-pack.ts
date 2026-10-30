@@ -42,6 +42,12 @@ export const IDEA_COUNT = 4;
 const LINKEDIN_TIGHTEN_ABOVE_WORDS = 250;
 const LINKEDIN_HARD_MAX_WORDS = 270;
 
+/** A post distilled from a finished article is shorter and punchier than one built from sources. */
+const ARTICLE_POST_TARGET_WORDS = 150;
+const ARTICLE_POST_MIN_BODY_WORDS = 90;
+const ARTICLE_POST_TIGHTEN_ABOVE_WORDS = 175;
+const ARTICLE_POST_HARD_MAX_WORDS = 200;
+
 function tovFor(suggestionType: SuggestionType): string {
   return suggestionType === "blog" ? PHRENOS_BLOG_TOV : PHRENOS_LINKEDIN_TOV;
 }
@@ -175,10 +181,11 @@ type DraftAttempt =
  */
 async function tightenLinkedinDraft(
   draft: GeneratedSuggestion,
-  words: number
+  words: number,
+  targetWords = 205
 ): Promise<GeneratedSuggestion | null> {
   const text = await callAnthropicSafe(
-    `You are editing a LinkedIn post that is ${words} words. Cut it to about 205 words by DELETING, not rewriting.
+    `You are editing a LinkedIn post that is ${words} words. Cut it to about ${targetWords} words by DELETING, not rewriting.
 
 Keep exactly as they are: the opening lines (hook), the single mid-post question, the pointer line ending in a colon, the paragraph containing only [link], and the closing question (cta).
 Delete first: any sentence about a risk, incident, statistic or comparison that is not the post's single central point; any repeated restatement of the same idea; the longest explanatory paragraph.
@@ -222,6 +229,10 @@ ${article.body_html}
 
 ${article.cta}
 """
+This is a SHORT, scroll-stopping post of about ${ARTICLE_POST_TARGET_WORDS} words, not a summary of the article. Format:
+- hook: two short sentences, no more than 20 words together, no figures, no list of results. One plain contrast or sequence, for example "[Strong thing happened]. [Surprising consequence]." Never a long sentence that stacks three results.
+- body_html: about ten short one-line paragraphs at most. Use ONE figure in the whole post, the one that makes the point. Do not recite benchmark scores, percentages or product names beyond what that one point needs. One idea, said once.
+- The title field is a short working label for the post, never the article's title.
 Distil this article. Make the post's single point the article's central argument, in its own framing. Every claim, figure and date must appear in the article, worded no more strongly than the article words it. Keep the article's caveats: keep independent evidence apart from the company's own claims, state no motives the company has not stated, and do not turn a hedged statement into an absolute. Where the article corrects the story summary or the seed idea, the article wins. Do not reuse the article's title word for word. Do not add figures the article leaves out.
 `;
 }
@@ -234,8 +245,9 @@ async function attemptFeaturedDraft(
   retryNote?: string,
   article?: GeneratedSuggestion
 ): Promise<DraftAttempt> {
-  const target = suggestionType === "blog" ? BLOG_TARGET_WORDS : LINKEDIN_TARGET_WORDS;
-  const minimum = suggestionType === "blog" ? BLOG_MIN_WORDS : LINKEDIN_MIN_WORDS;
+  const fromArticle = Boolean(article);
+  const target = suggestionType === "blog" ? BLOG_TARGET_WORDS : fromArticle ? ARTICLE_POST_TARGET_WORDS : LINKEDIN_TARGET_WORDS;
+  const minimum = suggestionType === "blog" ? BLOG_MIN_WORDS : fromArticle ? ARTICLE_POST_MIN_BODY_WORDS : LINKEDIN_MIN_WORDS;
   const label = labelFor(suggestionType);
 
   const prompt = `Write the strongest featured ${label} for Phrenos.ai based on this story and seed idea.
@@ -258,13 +270,13 @@ Rules:
 - title must create strategic tension (not a news wire headline). Prefer "[Development]. [Consequence/question]." Aim for roughly 8-14 words
 ${
     suggestionType === "linkedin"
-      ? `- LinkedIn: follow the LINKEDIN POST STRUCTURE above exactly. hook = the opening lines only (do not restate the title). body_html = the signpost through the final [link] paragraph. cta = ONE closing question (ideally a binary choice) and nothing else, never a two-part pitch and never a service ask. Use only the seed idea's own angle as the single theme and leave the story's other angles for the blog. HARD MAXIMUM 250 words for the whole post (hook, body, cta), so cut rather than cover more ground
+      ? `- LinkedIn: follow the LINKEDIN POST STRUCTURE above exactly. hook = the opening lines only (do not restate the title). body_html = the signpost through the final [link] paragraph. cta = ONE closing question (ideally a binary choice) and nothing else, never a two-part pitch and never a service ask. Use only the seed idea's own angle as the single theme and leave the story's other angles for the blog. HARD MAXIMUM ${fromArticle ? ARTICLE_POST_HARD_MAX_WORDS : 250} words for the whole post (hook, body, cta), so cut rather than cover more ground
 - Never use the words "contact us", "get in touch", "book a call", "schedule a call", "reach out", or "learn more"`
       : `- hook must be concrete and executive-focused (what happened → what changed → why leaders should care). Do not restate the title
 - cta must be two paragraphs: (1) punchy problem-specific provocation, (2) supporting nurture line with the logical next step. Never soft contact CTAs, and never use the words "contact us", "get in touch", "book a call", "schedule a call", "reach out", or "learn more"`
   }
 - image_ideas is a creative brief for social artwork only; do not invent that an image file will be attached
-- Target ${target} words (minimum ${minimum})
+- Target ${target} words${fromArticle ? " in total (hook, body and closing question together)" : ""} (minimum ${minimum}${fromArticle ? " for body_html" : ""})
 - ${
     suggestionType === "blog"
       ? "The blog should feel ready for phrenosai.com/ai-updates with minimal edits"
@@ -312,7 +324,10 @@ ${
   if (isLowQualitySuggestionBody(cleaned.body_html)) {
     return { draft: null, reason: "The body content was flagged as low quality or boilerplate." };
   }
-  if (!meetsLengthTarget(cleaned)) {
+  const longEnough = fromArticle
+    ? countWords(cleaned.body_html) >= ARTICLE_POST_MIN_BODY_WORDS
+    : meetsLengthTarget(cleaned);
+  if (!longEnough) {
     return {
       draft: null,
       reason: `The draft was only ${countWords(cleaned.body_html)} words; it needs at least ${minimum}.`,
@@ -324,16 +339,28 @@ ${
     const wordsOf = (draft: GeneratedSuggestion) =>
       countWords(`${draft.hook} ${draft.body_html} ${draft.cta}`.replace(/\[link\]/gi, ""));
     const total = wordsOf(cleaned);
-    if (total > LINKEDIN_TIGHTEN_ABOVE_WORDS) {
-      const tightened = await tightenLinkedinDraft(cleaned, total);
-      if (tightened && meetsLengthTarget(tightened) && wordsOf(tightened) < total) {
+    const tightenAbove = fromArticle ? ARTICLE_POST_TIGHTEN_ABOVE_WORDS : LINKEDIN_TIGHTEN_ABOVE_WORDS;
+    const hardMax = fromArticle ? ARTICLE_POST_HARD_MAX_WORDS : LINKEDIN_HARD_MAX_WORDS;
+    if (total > tightenAbove) {
+      const tightened = await tightenLinkedinDraft(
+        cleaned,
+        total,
+        fromArticle ? ARTICLE_POST_TARGET_WORDS : undefined
+      );
+      const tightenedOk =
+        tightened &&
+        (fromArticle
+          ? countWords(tightened.body_html) >= ARTICLE_POST_MIN_BODY_WORDS
+          : meetsLengthTarget(tightened)) &&
+        wordsOf(tightened) < total;
+      if (tightened && tightenedOk) {
         finalDraft = tightened;
       }
       const after = wordsOf(finalDraft);
-      if (after > LINKEDIN_HARD_MAX_WORDS) {
+      if (after > hardMax) {
         return {
           draft: null,
-          reason: `The post was ${after} words after tightening. LinkedIn posts must be 250 words or fewer (hook, body and closing question together).`,
+          reason: `The post was ${after} words after tightening. This LinkedIn post must be ${fromArticle ? ARTICLE_POST_HARD_MAX_WORDS : 250} words or fewer (hook, body and closing question together).`,
         };
       }
     }
