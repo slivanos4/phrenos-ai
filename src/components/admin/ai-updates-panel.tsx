@@ -470,6 +470,7 @@ function SuggestionCard({
   articleUrl?: string | null;
 }) {
   const proofreadApi = useContext(ProofreadContext);
+  const { open: cardOpen, toggle: toggleCard } = useFold(`draft-${suggestion.id}`, true);
   const [showBody, setShowBody] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -680,20 +681,34 @@ function SuggestionCard({
 
   return (
     <div className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="border-[#d4af5a]/40 text-[#d4af5a]">
-          {suggestion.suggestion_type === "blog" ? "Blog" : "LinkedIn"}
-        </Badge>
-        <Badge tone="border-[#a9b0a3]/35 text-[#a9b0a3]">
-          {isIdea ? "Idea" : "Featured draft"}
-        </Badge>
-        <Badge tone={statusTone(suggestion.status)}>{suggestion.status}</Badge>
-        {!isIdea ? (
-          <span className="text-[11px] text-[#a9b0a3]">
-            {countWords(suggestion.body_html)} words
+      <button
+        type="button"
+        className="flex w-full items-start justify-between gap-3 text-left"
+        aria-expanded={cardOpen}
+        onClick={toggleCard}
+      >
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <Badge tone="border-[#d4af5a]/40 text-[#d4af5a]">
+              {suggestion.suggestion_type === "blog" ? "Blog" : "LinkedIn"}
+            </Badge>
+            <Badge tone="border-[#a9b0a3]/35 text-[#a9b0a3]">
+              {isIdea ? "Idea" : "Featured draft"}
+            </Badge>
+            <Badge tone={statusTone(suggestion.status)}>{suggestion.status}</Badge>
+            {!isIdea ? (
+              <span className="text-[11px] text-[#a9b0a3]">
+                {countWords(suggestion.body_html)} words
+              </span>
+            ) : null}
           </span>
-        ) : null}
-      </div>
+          {!cardOpen ? (
+            <span className="mt-1.5 block text-sm text-[#f1e8d6]">{suggestion.title}</span>
+          ) : null}
+        </span>
+        <FoldChevron open={cardOpen} />
+      </button>
+      <div hidden={!cardOpen}>
 
       {onRewrite ? (
         <input
@@ -1166,6 +1181,7 @@ function SuggestionCard({
             ) : null}
           </>
         )}
+      </div>
       </div>
     </div>
   );
@@ -1775,6 +1791,8 @@ export function AiUpdatesPanel() {
 
   const [runs, setRuns] = useState<ResearchRun[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"weekly" | "custom">("weekly");
+  const [lastWeeklyRunId, setLastWeeklyRunId] = useState<string | null>(null);
   const [run, setRun] = useState<ResearchRun | null>(null);
   const [loadingRun, setLoadingRun] = useState(false);
   const [startingRun, setStartingRun] = useState(false);
@@ -1825,7 +1843,13 @@ export function AiUpdatesPanel() {
           "/api/phrenos-updates/runs",
         );
         setRuns(result.runs);
-        setSelectedRunId((current) => current ?? result.runs[0]?.id ?? null);
+        setSelectedRunId(
+          (current) =>
+            current ??
+            result.runs.find((item) => !isCustomRun(item))?.id ??
+            result.runs[0]?.id ??
+            null,
+        );
       } catch (cause) {
         if (!quiet) reportError(cause);
       }
@@ -2537,6 +2561,28 @@ export function AiUpdatesPanel() {
   }
 
   const anyBusy = startingRun || rerunning || busyIds.size > 0;
+  const weeklyRuns = runs.filter((item) => !isCustomRun(item));
+
+  /** Each tab shows its own batch: the Custom topics run for one, the latest weekly run for the other. */
+  function switchTab(next: "weekly" | "custom") {
+    if (next === tab) return;
+    setTab(next);
+    const wanted =
+      next === "custom"
+        ? runs.find((item) => isCustomRun(item))
+        : weeklyRuns.find((item) => item.id === lastWeeklyRunId) ?? weeklyRuns[0];
+    if (next === "weekly" && !wanted) return;
+    if (wanted && wanted.id !== selectedRunId) {
+      if (next === "custom") {
+        const current = runs.find((item) => item.id === selectedRunId);
+        if (current && !isCustomRun(current)) setLastWeeklyRunId(current.id);
+      }
+      setRun(null);
+      setNotice(null);
+      setError(null);
+      setSelectedRunId(wanted.id);
+    }
+  }
 
   return (
     <ProofreadContext.Provider
@@ -2575,13 +2621,44 @@ export function AiUpdatesPanel() {
         </div>
       </div>
 
-      <DeskBriefsPanel
-        briefs={briefs}
-        busy={anyBusy}
-        onRefresh={() => void loadBriefs()}
-        onVerify={(id) => void handleVerifyBrief(id)}
-      />
+      <div
+        role="tablist"
+        aria-label="AI Updates sections"
+        className="sticky top-0 z-20 -mx-1 flex gap-2 bg-[#0a100c]/90 px-1 py-2 backdrop-blur"
+      >
+        {(
+          [
+            ["weekly", "Weekly research"],
+            ["custom", "Custom topics"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => switchTab(key)}
+            className={`rounded-full border px-4 py-2 text-xs font-semibold tracking-[0.16em] uppercase transition-colors ${
+              tab === key
+                ? "border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]"
+                : "border-[#d4af5a]/25 text-[#a9b0a3] hover:border-[#d4af5a]/60"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
+      {tab === "weekly" ? (
+        <DeskBriefsPanel
+          briefs={briefs}
+          busy={anyBusy}
+          onRefresh={() => void loadBriefs()}
+          onVerify={(id) => void handleVerifyBrief(id)}
+        />
+      ) : null}
+
+      {tab === "custom" ? (
       <Collapsible
         className={panelClass}
         storageKey="custom-topic"
@@ -2709,14 +2786,16 @@ export function AiUpdatesPanel() {
           </div>
         ) : null}
       </Collapsible>
+      ) : null}
 
+      {tab === "weekly" ? (
       <Collapsible
         className={panelClass}
         storageKey="batches"
         title="Research batches"
         summary={`${
-          runs.length > 0
-            ? `${runs.length} batch${runs.length === 1 ? "" : "es"} on record`
+          weeklyRuns.length > 0
+            ? `${weeklyRuns.length} batch${weeklyRuns.length === 1 ? "" : "es"} on record`
             : "No batches yet"
         }${
           selectedRunId
@@ -2747,9 +2826,9 @@ export function AiUpdatesPanel() {
           </button>
         </div>
 
-        {runs.length > 0 ? (
+        {weeklyRuns.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
-            {runs.map((item) => {
+            {weeklyRuns.map((item) => {
               const selected = item.id === selectedRunId;
               return (
                 <button
@@ -2783,6 +2862,7 @@ export function AiUpdatesPanel() {
           </div>
         ) : null}
       </Collapsible>
+      ) : null}
 
       {error ? (
         <div
@@ -2834,7 +2914,7 @@ export function AiUpdatesPanel() {
         />
       ) : null}
 
-      {run ? (
+      {run && tab === "weekly" ? (
         <Collapsible
           className={panelClass}
           storageKey="batch-details"
@@ -2917,7 +2997,7 @@ export function AiUpdatesPanel() {
         </div>
       ) : null}
 
-      {heroStory ? (
+      {heroStory && tab === "weekly" ? (
         <section className="space-y-3">
           <h2 className="font-serif text-2xl text-[#f1e8d6]">
             This week&apos;s feature
@@ -2964,7 +3044,7 @@ export function AiUpdatesPanel() {
                 runActive={runActive}
                 onGenerate={handleGenerateStory}
                 onExpandIdea={handleExpandIdea}
-            onLinkedinFromArticle={handleLinkedinFromArticle}
+                onLinkedinFromArticle={handleLinkedinFromArticle}
                 onSetStatus={handleSetStatus}
                 onPublish={handlePublishSuggestion}
                 onSaveSuggestion={handleSaveSuggestion}
