@@ -269,7 +269,16 @@ export async function getPublishedPostBySlug(slug: string): Promise<PublishedPos
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return (data as PublishedPost | null) ?? null;
+  const post = (data as PublishedPost | null) ?? null;
+  if (!post?.suggestion_id) return post;
+
+  // The image lives on the draft the post was published from, so editing it there needs no republish.
+  const { data: draft } = await supabase
+    .from(SUGGESTIONS_TABLE)
+    .select("image_url")
+    .eq("id", post.suggestion_id)
+    .maybeSingle();
+  return { ...post, image_url: (draft as { image_url?: string | null } | null)?.image_url ?? null };
 }
 
 export async function unpublishPost(postId: string): Promise<void> {

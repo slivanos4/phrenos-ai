@@ -125,11 +125,13 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.published_at,
       url: `/ai-updates/${post.slug}`,
+      ...(post.image_url ? { images: [{ url: post.image_url, alt: post.title }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
       description,
+      ...(post.image_url ? { images: [post.image_url] } : {}),
     },
   };
 }
@@ -159,6 +161,7 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
     description: hook || toPlainText(summaryHtml).slice(0, 180),
     datePublished: post.published_at,
     dateModified: post.published_at,
+    ...(post.image_url ? { image: post.image_url } : {}),
     author: {
       "@type": "Person",
       name: "Sophia Livanos",
@@ -245,6 +248,18 @@ export default async function AiUpdatePage({ params }: AiUpdatePageProps) {
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="min-w-0">
             <div className="rounded-2xl border border-[#d4af5a]/20 bg-[#0b140e]/80 p-6 backdrop-blur-sm md:p-10">
+              {post.image_url ? (
+                <figure className="mb-8 flex justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.image_url}
+                    alt={`Summary graphic: ${title}`}
+                    className="h-auto max-h-[44rem] w-auto max-w-full rounded-xl border border-[#d4af5a]/30"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </figure>
+              ) : null}
               {summaryHtml ? (
                 <div
                   className="mb-8 rounded-xl border border-[#d4af5a]/30 bg-[#d4af5a]/[0.07] px-5 py-5 text-sm leading-relaxed text-[#d5d0c1] [&_li]:mt-1.5 [&_li]:ml-4 [&_li]:list-disc [&_li]:marker:text-[#d4af5a] [&_p]:mt-2 [&_ul]:mt-0"

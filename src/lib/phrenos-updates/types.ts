@@ -102,6 +102,8 @@ export type PublishedPost = {
   cta: string;
   published_at: string;
   created_at: string;
+  /** Image attached to the source draft in the admin, shown on the article page. */
+  image_url?: string | null;
 };
 
 /** Editorial lenses from the pipeline doc: rotate across a batch. */
