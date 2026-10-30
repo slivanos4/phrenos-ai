@@ -502,8 +502,13 @@ function SuggestionCard({
     suggestion.suggestion_type === "blog" &&
     (suggestion.status === "approved" || suggestion.status === "published");
 
+  // While editing, Copy and Download use what is on screen, so unsaved changes are never left out.
+  const current: ContentSuggestion = editing
+    ? { ...suggestion, title, hook, body_html: bodyHtml, cta, hashtags, image_ideas: imageIdeas }
+    : suggestion;
+
   async function handleCopy() {
-    const ok = await copyTextToClipboard(formatSuggestionPlainText(suggestion, articleUrl));
+    const ok = await copyTextToClipboard(formatSuggestionPlainText(current, articleUrl));
     setCopyState(ok ? "copied" : "failed");
     window.setTimeout(() => setCopyState("idle"), 1600);
   }
@@ -522,15 +527,15 @@ function SuggestionCard({
     if (kind === "blog") {
       try {
         const { downloadDraftDocx } = await import("@/lib/phrenos-updates/export-docx");
-        await downloadDraftDocx(suggestion, suggestion.is_full_draft);
+        await downloadDraftDocx(current, current.is_full_draft);
         return;
       } catch {
         // Fall through to the plain text download rather than leave the user with nothing.
       }
     }
     downloadTextFile(
-      `${slugifyFilename(suggestion.title || kind)}-${kind}-${tier}.txt`,
-      formatSuggestionPlainText(suggestion, articleUrl),
+      `${slugifyFilename(current.title || kind)}-${kind}-${tier}.txt`,
+      formatSuggestionPlainText(current, articleUrl),
     );
   }
 
