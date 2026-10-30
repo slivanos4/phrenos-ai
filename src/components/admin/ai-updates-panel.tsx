@@ -9,6 +9,13 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import {
+  CollapseAllContext,
+  Collapsible,
+  FoldChevron,
+  useFold,
+  type CollapseSignal,
+} from "@/components/admin/collapsible";
 import { formatSourcePublishedDate, getDisplayPublishedDate } from "@/lib/phrenos-updates/source-dates";
 import {
   hasFeaturedBlogDraft,
@@ -1204,6 +1211,7 @@ function StoryCard({
     paragraphHtml?: string;
   }>;
 }) {
+  const { open, toggle } = useFold(null, true);
   const [showSources, setShowSources] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1279,23 +1287,47 @@ function StoryCard({
           : "border-[#d4af5a]/20"
       }`}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        {isHero ? (
-          <Badge tone="border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]">
-            This week&apos;s feature
-          </Badge>
-        ) : null}
-        <span className="text-[10px] font-semibold tracking-[0.22em] text-[#d4af5a] uppercase">
-          {SECTION_LABELS[story.section] ?? story.section}
+      <button
+        type="button"
+        className="flex w-full items-start justify-between gap-3 text-left"
+        aria-expanded={open}
+        onClick={toggle}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            {isHero ? (
+              <Badge tone="border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]">
+                This week&apos;s feature
+              </Badge>
+            ) : null}
+            <span className="text-[10px] font-semibold tracking-[0.22em] text-[#d4af5a] uppercase">
+              {SECTION_LABELS[story.section] ?? story.section}
+            </span>
+            <span className="text-[11px] text-[#a9b0a3]">Story {index + 1}</span>
+            {displayTags.map((tag) => (
+              <Badge key={tag} tone="border-[#a9b0a3]/30 text-[#a9b0a3]">
+                {tag}
+              </Badge>
+            ))}
+          </span>
+          {!open ? (
+            <>
+              <span className="mt-2 block font-serif text-xl leading-snug text-[#f1e8d6]">
+                {story.title}
+              </span>
+              <span className="mt-1 block text-xs text-[#a9b0a3]">
+                {drafts.length > 0
+                  ? `${drafts.length} featured draft${drafts.length === 1 ? "" : "s"}`
+                  : "No featured drafts"}
+                {ideas.length > 0 ? ` · ${ideas.length} post idea${ideas.length === 1 ? "" : "s"}` : ""}
+              </span>
+            </>
+          ) : null}
         </span>
-        <span className="text-[11px] text-[#a9b0a3]">Story {index + 1}</span>
-        {displayTags.map((tag) => (
-          <Badge key={tag} tone="border-[#a9b0a3]/30 text-[#a9b0a3]">
-            {tag}
-          </Badge>
-        ))}
-      </div>
+        <FoldChevron open={open} />
+      </button>
 
+      <div hidden={!open}>
       {editing ? (
         <div className="mt-3 space-y-3">
           <label className="block space-y-1.5">
@@ -1415,10 +1447,12 @@ function StoryCard({
       ) : null}
 
       {drafts.length > 0 ? (
-        <div className="mt-4">
-          <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
-            Featured drafts
-          </p>
+        <Collapsible
+          className="mt-4"
+          title="Featured drafts"
+          summary={`${drafts.length} draft${drafts.length === 1 ? "" : "s"}`}
+          summaryClassName="mt-0.5 block text-xs text-[#a9b0a3]"
+        >
           <div className="mt-2 space-y-2.5">
             {drafts.map((draft) => (
               <SuggestionCard
@@ -1435,14 +1469,16 @@ function StoryCard({
               />
             ))}
           </div>
-        </div>
+        </Collapsible>
       ) : null}
 
       {ideas.length > 0 ? (
-        <div className="mt-4">
-          <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
-            Post ideas
-          </p>
+        <Collapsible
+          className="mt-4"
+          title="Post ideas"
+          summary={`${ideas.length} idea${ideas.length === 1 ? "" : "s"}`}
+          summaryClassName="mt-0.5 block text-xs text-[#a9b0a3]"
+        >
           <div className="mt-2 grid gap-2.5 lg:grid-cols-2">
             {ideas.map((idea) => (
               <SuggestionCard
@@ -1459,7 +1495,7 @@ function StoryCard({
               />
             ))}
           </div>
-        </div>
+        </Collapsible>
       ) : null}
 
       {!hasContent && !generating ? (
@@ -1469,6 +1505,7 @@ function StoryCard({
             : "No content yet for this story. Generate content when you are ready."}
         </p>
       ) : null}
+      </div>
     </article>
   );
 }
@@ -1484,44 +1521,32 @@ function DeskBriefsPanel({
   onRefresh: () => void;
   onVerify: (id: string) => void;
 }) {
-  const [open, setOpen] = useState(true);
-
   return (
-    <div className={panelClass}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
-            Desk briefs
-          </p>
-          <p className="mt-1 text-sm text-[#f1e8d6]">
-            Generated automatically with each research run
-          </p>
-          <p className="mt-1 max-w-xl text-xs leading-relaxed text-[#a9b0a3]">
-            No paste needed. Running a new week drafts desk angles first, then
-            research uses them automatically.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={microButtonClass}
-            disabled={busy}
-            onClick={onRefresh}
-          >
-            Refresh
-          </button>
-          <button
-            type="button"
-            className={microButtonClass}
-            onClick={() => setOpen((current) => !current)}
-          >
-            {open ? "Hide" : "Show"}
-          </button>
-        </div>
-      </div>
-
-      {open ? (
-        <div className="mt-5 space-y-2.5">
+    <Collapsible
+      className={panelClass}
+      storageKey="desk-briefs"
+      title="Desk briefs"
+      summary={
+        briefs.length > 0
+          ? `${briefs.length} on record. Generated automatically with each research run`
+          : "Generated automatically with each research run"
+      }
+      actions={
+        <button
+          type="button"
+          className={microButtonClass}
+          disabled={busy}
+          onClick={onRefresh}
+        >
+          Refresh
+        </button>
+      }
+    >
+      <p className="mt-1 max-w-xl text-xs leading-relaxed text-[#a9b0a3]">
+        No paste needed. Running a new week drafts desk angles first, then
+        research uses them automatically.
+      </p>
+      <div className="mt-5 space-y-2.5">
           {briefs.length === 0 ? (
             <p className="text-sm text-[#a9b0a3]">
               No desk briefs yet. Run a new week and one will appear here
@@ -1590,9 +1615,8 @@ function DeskBriefsPanel({
               </div>
             ))
           )}
-        </div>
-      ) : null}
-    </div>
+      </div>
+    </Collapsible>
   );
 }
 
@@ -1731,15 +1755,6 @@ export function AiUpdatesPanel() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [run, setRun] = useState<ResearchRun | null>(null);
   const [loadingRun, setLoadingRun] = useState(false);
-  // The batch list can be folded away; the choice is remembered in this browser.
-  const [batchesOpen, setBatchesOpen] = useState(() => {
-    try {
-      return window.localStorage.getItem("phrenos-batches-open") !== "0";
-    } catch {
-      return true;
-    }
-  });
-
   const [startingRun, setStartingRun] = useState(false);
   const [rerunning, setRerunning] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
@@ -1751,6 +1766,8 @@ export function AiUpdatesPanel() {
   const [customSection, setCustomSection] = useState<ResearchSection>("products_industry");
   const [customPhase, setCustomPhase] = useState<"researching" | "writing" | null>(null);
   const [customResult, setCustomResult] = useState<CustomTopicResult | null>(null);
+
+  const [collapseSignal, setCollapseSignal] = useState<CollapseSignal>({ open: true, tick: 0 });
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -2487,16 +2504,33 @@ export function AiUpdatesPanel() {
         reports: reviewReports,
       }}
     >
+    <CollapseAllContext.Provider value={collapseSignal}>
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-[#a9b0a3]">Signed in to the portal</p>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className={ghostButtonClass}
-        >
-          Log out
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setCollapseSignal((current) => ({ open: false, tick: current.tick + 1 }))}
+            className={ghostButtonClass}
+          >
+            Collapse all
+          </button>
+          <button
+            type="button"
+            onClick={() => setCollapseSignal((current) => ({ open: true, tick: current.tick + 1 }))}
+            className={ghostButtonClass}
+          >
+            Expand all
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className={ghostButtonClass}
+          >
+            Log out
+          </button>
+        </div>
       </div>
 
       <DeskBriefsPanel
@@ -2506,13 +2540,20 @@ export function AiUpdatesPanel() {
         onVerify={(id) => void handleVerifyBrief(id)}
       />
 
-      <div className={panelClass}>
-        <p className="text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
-          Write about a specific topic
-        </p>
-        <p className="mt-1 text-sm text-[#f1e8d6]">
-          Tell me what the blog should address. I research it, then write the blog and the LinkedIn post.
-        </p>
+      <Collapsible
+        className={panelClass}
+        storageKey="custom-topic"
+        title="Write about a specific topic"
+        summary={
+          customPhase
+            ? customPhase === "researching"
+              ? "Researching your topic..."
+              : "Writing the blog and LinkedIn post..."
+            : customResult
+              ? `Last one: "${customResult.title}"`
+              : "Tell me what the blog should address. I research it, then write the blog and the LinkedIn post."
+        }
+      >
         <form onSubmit={handleCustomTopic} className="mt-4 space-y-4">
           <label className="block space-y-2">
             <span className={labelClass}>What should it address?</span>
@@ -2576,8 +2617,13 @@ export function AiUpdatesPanel() {
               {" "}&ldquo;{customResult.title}&rdquo;. It is saved under Custom topics below.
             </p>
             {customResult.claimChecks.length > 0 ? (
-              <div>
-                <p className={labelClass}>What the sources say about your claims</p>
+              <Collapsible
+                storageKey="custom-claims"
+                title="What the sources say about your claims"
+                titleClassName={`${labelClass} block`}
+                summary={`${customResult.claimChecks.length} claim${customResult.claimChecks.length === 1 ? "" : "s"} checked`}
+                summaryClassName="mt-1 block text-xs text-[#a9b0a3]"
+              >
                 <ul className="mt-2 space-y-2 text-sm">
                   {[...customResult.claimChecks]
                     .sort(
@@ -2611,7 +2657,7 @@ export function AiUpdatesPanel() {
                 <p className="mt-2 text-xs text-[#a9b0a3]">
                   Anything marked Conflicts or Not found is left out of the drafts.
                 </p>
-              </div>
+              </Collapsible>
             ) : null}
             {customResult.unreadableUrls.length > 0 ? (
               <p className="text-xs text-[#e0c078]">
@@ -2620,46 +2666,22 @@ export function AiUpdatesPanel() {
             ) : null}
           </div>
         ) : null}
-      </div>
+      </Collapsible>
 
-      <div className={panelClass}>
-        <button
-          type="button"
-          className="flex w-full items-start justify-between gap-4 text-left"
-          aria-expanded={batchesOpen}
-          aria-controls="weekly-batches-body"
-          onClick={() => {
-            const next = !batchesOpen;
-            setBatchesOpen(next);
-            try {
-              window.localStorage.setItem("phrenos-batches-open", next ? "1" : "0");
-            } catch {
-              // Remembering the choice is a convenience only.
-            }
-          }}
-        >
-          <span>
-            <span className="block text-[10px] font-semibold tracking-[0.22em] text-[#a9b0a3] uppercase">
-              Weekly batches
-            </span>
-            <span className="mt-1 block text-sm text-[#f1e8d6]">
-              {runs.length > 0
-                ? `${runs.length} batch${runs.length === 1 ? "" : "es"} on record`
-                : "No batches yet"}
-              {!batchesOpen && selectedRunId
-                ? ` · viewing ${formatWeek(runs.find((item) => item.id === selectedRunId) ?? runs[0])}`
-                : ""}
-            </span>
-          </span>
-          <span
-            aria-hidden
-            className={`mt-1 text-lg leading-none text-[#e0c078] transition-transform ${batchesOpen ? "rotate-180" : ""}`}
-          >
-            ▾
-          </span>
-        </button>
-
-        <div id="weekly-batches-body" hidden={!batchesOpen}>
+      <Collapsible
+        className={panelClass}
+        storageKey="batches"
+        title="Research batches"
+        summary={`${
+          runs.length > 0
+            ? `${runs.length} batch${runs.length === 1 ? "" : "es"} on record`
+            : "No batches yet"
+        }${
+          selectedRunId
+            ? ` · viewing ${formatWeek(runs.find((item) => item.id === selectedRunId) ?? runs[0])}`
+            : ""
+        }`}
+      >
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
@@ -2718,8 +2740,7 @@ export function AiUpdatesPanel() {
             })}
           </div>
         ) : null}
-        </div>
-      </div>
+      </Collapsible>
 
       {error ? (
         <div
@@ -2772,8 +2793,17 @@ export function AiUpdatesPanel() {
       ) : null}
 
       {run ? (
-        <div className={panelClass}>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Collapsible
+          className={panelClass}
+          storageKey="batch-details"
+          title="This batch"
+          summary={`${formatWeek(run)} · ${run.status}${
+            draftCounts.total > 0
+              ? ` · ${draftCounts.withDrafts} of ${draftCounts.total} stories drafted`
+              : ""
+          }`}
+        >
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             <Badge tone={statusTone(run.status)}>{run.status}</Badge>
             <span className="text-sm text-[#f1e8d6]">{formatWeek(run)}</span>
             <span className="text-xs text-[#a9b0a3]">
@@ -2827,7 +2857,7 @@ export function AiUpdatesPanel() {
               {run.error_message}
             </p>
           ) : null}
-        </div>
+        </Collapsible>
       ) : null}
 
       {loadingRun && !run ? (
@@ -2873,11 +2903,15 @@ export function AiUpdatesPanel() {
       ) : null}
 
       {storiesBySection.map((group) => (
-        <section key={group.section} className="space-y-3">
-          <h2 className="font-serif text-2xl text-[#f1e8d6]">
-            {SECTION_LABELS[group.section]}
-          </h2>
-          <div className="space-y-3">
+        <section key={group.section}>
+          <Collapsible
+            storageKey={`section-${group.section}`}
+            title={<h2 className="font-serif text-2xl text-[#f1e8d6]">{SECTION_LABELS[group.section]}</h2>}
+            titleClassName="block"
+            summary={`${group.stories.length} ${group.stories.length === 1 ? "story" : "stories"}`}
+            summaryClassName="mt-1 block text-xs text-[#a9b0a3]"
+          >
+          <div className="mt-3 space-y-3">
             {group.stories.map((story, index) => (
               <StoryCard
                 key={story.id}
@@ -2896,9 +2930,11 @@ export function AiUpdatesPanel() {
               />
             ))}
           </div>
+          </Collapsible>
         </section>
       ))}
     </div>
+    </CollapseAllContext.Provider>
     </ProofreadContext.Provider>
   );
 }
