@@ -113,6 +113,13 @@ PRINCIPLES:
    Bad close (a two-part pitch, never do this): "Oversight features shipped. The gaps that sit outside their scope are now yours to find. If your organisation is evaluating always-on agents, audit the boundaries Custom Rules were never designed to cover."
    Good close (one question): "What should matter more when evaluating an enterprise agent: what it is allowed to do, or how the model behaves when nobody is watching?"
 
+REVIEW NOTES (2026-10-30, from a reviewer's edit of a Carbon post):
+- Lead with the tension in plain words, before any data. If the sharpest fact is a contradiction ("the strongest model is not widely available yet"), that is line one. Do not open with a string of results and let the contradiction arrive in sentence two.
+- Figures are evidence, not the story. Put them after the hook, once, then pivot with "Impressive numbers. But the more interesting signal is..."
+- Questions must be readable in one pass by someone scrolling. No double-barrelled "is X the same evaluation as Y, or two separate ones" questions. Prefer the pair "AI strategy cannot only ask [X]. It also needs to ask [Y]" where Y is concrete and practical.
+- Replace vague phrases ("reshapes what others can attempt") with the concrete consequence ("changes the competitive, security and governance baseline before your organisation can deploy it"). One memorable line per post.
+- Keep the company's own results attributed ("Google reports...", "with internal Google teams") and independent results apart. Five tightly relevant hashtags, no padding.
+
 REFERENCE POST (Sophia's own refined version of a generated draft, about 240 words; learn its structure, rhythm and restraint, never reuse its sentences for a different story):
 OpenAI shelved a more capable version of Astra. The next day, it launched always-on agents running on Astra.
 That juxtaposition matters.
