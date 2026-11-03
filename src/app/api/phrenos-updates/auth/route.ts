@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import {
   AdminAuthError,
   clearAdminSession,
-  createAdminSession,
+  clearPendingSession,
+  createPendingSession,
   errorResponse,
   isAdminAuthConfigured,
   verifyAdminPassword,
   verifyAdminSession,
 } from "@/lib/phrenos-updates";
+import { isTwoStepEnrolled } from "@/lib/phrenos-updates/admin-security";
 
 export async function GET(request: Request) {
   try {
@@ -39,9 +41,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
     }
 
-    const session = await createAdminSession();
-    const response = NextResponse.json({ ok: true });
-    response.cookies.set(session.name, session.value, session.options);
+    // The password alone no longer opens the admin. It earns a few minutes to enter the authenticator code.
+    const enrolled = await isTwoStepEnrolled();
+    const pending = await createPendingSession();
+    const response = NextResponse.json({ step: enrolled ? "code" : "setup" });
+    response.cookies.set(pending.name, pending.value, pending.options);
     return response;
   } catch (error) {
     if (error instanceof AdminAuthError) {
@@ -55,7 +59,9 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const cleared = clearAdminSession();
+  const pending = clearPendingSession();
   const response = NextResponse.json({ ok: true });
   response.cookies.set(cleared.name, cleared.value, cleared.options);
+  response.cookies.set(pending.name, pending.value, pending.options);
   return response;
 }

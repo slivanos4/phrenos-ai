@@ -123,13 +123,16 @@ export {
   ADMIN_SESSION_COOKIE,
   AdminAuthError,
   clearAdminSession,
+  clearPendingSession,
   createAdminSession,
+  createPendingSession,
   isAdminAuthConfigured,
   requireAdminSession,
   verifyAdminPassword,
   verifyAdminSession,
   verifyCronOrAdmin,
   verifyCronSecret,
+  verifyPendingSession,
 } from "@/lib/phrenos-updates/admin-auth";
 
 export { errorResponse, formatApiError } from "@/lib/phrenos-updates/api-errors";

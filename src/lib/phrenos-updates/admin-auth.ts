@@ -1,5 +1,11 @@
 const COOKIE_NAME = "phrenos_admin_session";
+const PENDING_COOKIE_NAME = "phrenos_admin_pending";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
+const PENDING_TTL_SECONDS = 60 * 10;
+
+/** Sessions carry this marker only once the authenticator code has been checked. Older cookies lack it and stop working. */
+const MFA_MARK = "mfa";
+const PENDING_MARK = "pending";
 
 export const ADMIN_SESSION_COOKIE = COOKIE_NAME;
 
@@ -48,6 +54,11 @@ function signingSecret(): string {
   return `phrenos-admin-fallback:${password}`;
 }
 
+/** Key material for encrypting the authenticator secret at rest. */
+export function adminSecretMaterial(): string {
+  return signingSecret();
+}
+
 function toBase64Url(bytes: ArrayBuffer): string {
   const binary = String.fromCharCode(...new Uint8Array(bytes));
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -81,12 +92,12 @@ export function verifyAdminPassword(password: string | null | undefined): boolea
   return constantTimeEqual(String(password ?? ""), expected);
 }
 
-/** Signed, expiring session value. Apply with response.cookies.set(...). */
+/** Signed, expiring session value. Only issue this once password and authenticator code both passed. */
 export async function createAdminSession(
   ttlSeconds = SESSION_TTL_SECONDS
 ): Promise<AdminSessionCookie> {
   const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds;
-  const payload = String(expiresAt);
+  const payload = `${expiresAt}:${MFA_MARK}`;
   const signature = await sign(payload);
 
   return {
@@ -98,6 +109,39 @@ export async function createAdminSession(
       sameSite: "lax",
       path: "/",
       maxAge: ttlSeconds,
+    },
+  };
+}
+
+/** Short-lived proof that the password was right, so the authenticator step can follow. Grants no access by itself. */
+export async function createPendingSession(): Promise<AdminSessionCookie> {
+  const expiresAt = Math.floor(Date.now() / 1000) + PENDING_TTL_SECONDS;
+  const payload = `${expiresAt}:${PENDING_MARK}`;
+  const signature = await sign(payload);
+
+  return {
+    name: PENDING_COOKIE_NAME,
+    value: `${payload}.${signature}`,
+    options: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: PENDING_TTL_SECONDS,
+    },
+  };
+}
+
+export function clearPendingSession(): AdminSessionCookie {
+  return {
+    name: PENDING_COOKIE_NAME,
+    value: "",
+    options: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
     },
   };
 }
@@ -129,16 +173,20 @@ function readCookie(request: Request, name: string): string | null {
   return null;
 }
 
-export async function verifyAdminSession(request: Request): Promise<boolean> {
+async function verifySignedCookie(request: Request, name: string, mark: string): Promise<boolean> {
   if (!isAdminAuthConfigured()) return false;
 
-  const raw = readCookie(request, COOKIE_NAME);
+  const raw = readCookie(request, name);
   if (!raw) return false;
 
-  const [payload, signature] = raw.split(".");
-  if (!payload || !signature) return false;
+  const dot = raw.lastIndexOf(".");
+  if (dot < 0) return false;
+  const payload = raw.slice(0, dot);
+  const signature = raw.slice(dot + 1);
+  const [expiry, marker] = payload.split(":");
+  if (!signature || marker !== mark) return false;
 
-  const expiresAt = Number(payload);
+  const expiresAt = Number(expiry);
   if (!Number.isFinite(expiresAt) || expiresAt * 1000 <= Date.now()) return false;
 
   try {
@@ -146,6 +194,15 @@ export async function verifyAdminSession(request: Request): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function verifyAdminSession(request: Request): Promise<boolean> {
+  return verifySignedCookie(request, COOKIE_NAME, MFA_MARK);
+}
+
+/** True when the password was entered correctly in the last few minutes and the code is still owed. */
+export function verifyPendingSession(request: Request): Promise<boolean> {
+  return verifySignedCookie(request, PENDING_COOKIE_NAME, PENDING_MARK);
 }
 
 export async function requireAdminSession(request: Request): Promise<void> {

@@ -6,3 +6,4 @@ export const PUBLISHED_POSTS_TABLE = "phrenos_published_posts";
 export const FEEDBACK_TABLE = "phrenos_post_feedback";
 export const BRIEFS_TABLE = "phrenos_weekly_briefs";
 export const SUBSCRIBERS_TABLE = "phrenos_update_subscribers";
+export const ADMIN_SECURITY_TABLE = "phrenos_admin_security";

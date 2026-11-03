@@ -51,7 +51,7 @@ type WeeklyBriefSummary = {
   created_at: string;
 };
 
-type AuthState = "loading" | "unconfigured" | "signed-out" | "signed-in";
+type AuthState = "loading" | "unconfigured" | "signed-out" | "signed-in" | "code" | "setup";
 
 type PublishResponse = {
   published: number;
@@ -1884,6 +1884,8 @@ export function AiUpdatesPanel() {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [password, setPassword] = useState("");
   const [signingIn, setSigningIn] = useState(false);
+  const [code, setCode] = useState("");
+  const [setupInfo, setSetupInfo] = useState<{ qr: string; key: string } | null>(null);
 
   const [runs, setRuns] = useState<ResearchRun[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -2145,12 +2147,17 @@ export function AiUpdatesPanel() {
     setSigningIn(true);
     setError(null);
     try {
-      await requestJson("/api/phrenos-updates/auth", {
+      const result = await requestJson<{ step: "code" | "setup" }>("/api/phrenos-updates/auth", {
         method: "POST",
         body: JSON.stringify({ password }),
       });
       setPassword("");
-      setAuthState("signed-in");
+      if (result.step === "setup") {
+        const info = await requestJson<{ qr: string; key: string }>("/api/phrenos-updates/auth/totp");
+        setSetupInfo(info);
+      }
+      setCode("");
+      setAuthState(result.step);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Could not sign you in.",
@@ -2158,6 +2165,36 @@ export function AiUpdatesPanel() {
     } finally {
       setSigningIn(false);
     }
+  }
+
+  async function handleCode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSigningIn(true);
+    setError(null);
+    try {
+      await requestJson("/api/phrenos-updates/auth/totp", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      });
+      setCode("");
+      setSetupInfo(null);
+      setAuthState("signed-in");
+    } catch (cause) {
+      setCode("");
+      if (cause instanceof ApiError && cause.status === 401 && /password first/i.test(cause.message)) {
+        setAuthState("signed-out");
+      }
+      setError(cause instanceof Error ? cause.message : "Could not check that code.");
+    } finally {
+      setSigningIn(false);
+    }
+  }
+
+  function backToPassword() {
+    setCode("");
+    setSetupInfo(null);
+    setError(null);
+    setAuthState("signed-out");
   }
 
   async function handleSignOut() {
@@ -2645,6 +2682,83 @@ export function AiUpdatesPanel() {
           <code className="text-[#e0c078]">PHRENOS_ADMIN_SECRET</code> as well if
           you want session cookies signed with a separate key.
         </p>
+      </div>
+    );
+  }
+
+  if (authState === "code" || authState === "setup") {
+    const settingUp = authState === "setup";
+    return (
+      <div className={`${panelClass} max-w-md`}>
+        <h2 className="font-serif text-2xl text-[#f1e8d6]">
+          {settingUp ? "Set up two-step sign in" : "Enter your code"}
+        </h2>
+        {settingUp ? (
+          <div className="mt-3 space-y-3 text-sm leading-relaxed text-[#a9b0a3]">
+            <p>
+              Scan this with an authenticator app (Google Authenticator, Microsoft
+              Authenticator, 1Password, Authy), then type the 6-digit code it shows.
+            </p>
+            {setupInfo ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={setupInfo.qr}
+                  alt="QR code for your authenticator app"
+                  width={224}
+                  height={224}
+                  className="rounded-lg bg-white p-1"
+                />
+                <p className="text-xs">
+                  Cannot scan? Enter this key by hand:{" "}
+                  <code className="break-all text-[#e0c078]">{setupInfo.key}</code>
+                </p>
+              </>
+            ) : (
+              <p>Loading your setup code...</p>
+            )}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-[#a9b0a3]">
+            Open your authenticator app and enter the 6-digit code for Phrenos.ai.
+          </p>
+        )}
+        <form onSubmit={handleCode} className="mt-5 space-y-3">
+          <label className="block space-y-2">
+            <span className="text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase">
+              6-digit code
+            </span>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9 ]*"
+              maxLength={7}
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              className={inputClass}
+              required
+              autoFocus
+            />
+          </label>
+          {error ? (
+            <p className="text-sm text-[#e8b4a0]" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              className={primaryButtonClass}
+              disabled={signingIn || (settingUp && !setupInfo)}
+            >
+              {signingIn ? "Checking..." : settingUp ? "Confirm and sign in" : "Sign in"}
+            </button>
+            <button type="button" className={ghostButtonClass} onClick={backToPassword}>
+              Back
+            </button>
+          </div>
+        </form>
       </div>
     );
   }
