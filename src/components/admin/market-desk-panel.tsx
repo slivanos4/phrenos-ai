@@ -25,11 +25,13 @@ import {
   tone,
   when,
 } from "@/components/admin/market-desk-ui";
+import { RankingsTab } from "@/components/admin/market-desk-rankings";
 import { BriefTab, MarketsTab, SignalsTab } from "@/components/admin/market-desk-research";
 
-type Tab = "overview" | "holdings" | "brief" | "signals" | "markets" | "settings";
+type Tab = "overview" | "rankings" | "holdings" | "brief" | "signals" | "markets" | "settings";
 const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Overview" },
+  { key: "rankings", label: "Rankings" },
   { key: "holdings", label: "Holdings" },
   { key: "brief", label: "Weekly brief" },
   { key: "signals", label: "Signals and launches" },
@@ -113,6 +115,7 @@ export function MarketDeskPanel() {
       {overview ? (
         <>
           {tab === "overview" ? <OverviewTab overview={overview} reload={load} setNotice={setNotice} setError={setError} onTab={setTab} /> : null}
+          {tab === "rankings" ? <RankingsTab setError={setError} setNotice={setNotice} /> : null}
           {tab === "holdings" ? <HoldingsTab overview={overview} reload={load} setNotice={setNotice} setError={setError} /> : null}
           {tab === "brief" ? <BriefTab setNotice={setNotice} setError={setError} reload={load} /> : null}
           {tab === "signals" ? <SignalsTab /> : null}

@@ -13,6 +13,7 @@ export const T = {
   events: "phrenos_market_events",
   signals: "phrenos_market_signals",
   launches: "phrenos_market_launches",
+  rankings: "phrenos_market_rankings",
   push: "phrenos_push_subscriptions",
 } as const;
 

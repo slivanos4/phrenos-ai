@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import { DEFAULT_THRESHOLDS } from "@/lib/market-desk/alerts";
 import { fetchSeries } from "@/lib/market-desk/providers";
+import { rankingFor, type RankingRow } from "@/lib/market-desk/rankings";
 import { buyPriceInAssetCurrency, getSettings, listHoldings, refreshAsset, T } from "@/lib/market-desk/store";
 import type { AlertRow, AssetRow, HoldingRow } from "@/lib/market-desk/types";
 
@@ -18,6 +19,7 @@ export type Detail = {
   signals: { id: string; signal_type: string; direction: string; summary: string; source_url: string | null; observed_at: string }[];
   announcements: { title: string; event_date: string | null; source_url: string; impact: string }[];
   links: { label: string; url: string }[];
+  ranking: RankingRow | null;
 };
 
 const RULES: Record<string, string> = {
@@ -134,5 +136,6 @@ export async function buildDetail(key: string, alertId?: string | null): Promise
     signals: (signals ?? []) as Detail["signals"],
     announcements: (events ?? []) as Detail["announcements"],
     links: externalLinks(asset),
+    ranking: await rankingFor(key),
   };
 }

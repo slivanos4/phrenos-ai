@@ -17,6 +17,15 @@ export async function GET(request: Request) {
   }));
 
   const monday = new Date().getUTCDay() === 1;
+  // Prices and scores refresh daily for free. The AI-written notes (one call) are rewritten on Mondays with the brief.
+  after(async () => {
+    try {
+      const { refreshRankings } = await import("@/lib/market-desk/rankings");
+      await refreshRankings({ notes: monday });
+    } catch (error) {
+      console.error("Rankings refresh failed:", error);
+    }
+  });
   if (monday) {
     after(async () => {
       try {

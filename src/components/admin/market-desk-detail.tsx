@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Detail } from "@/lib/market-desk/detail";
+import { Avatar, ScoreBar, gbpCompact, gbpPrice } from "@/components/admin/market-desk-rankings";
 import {
   Disclaimer,
   RiskBadge,
@@ -19,39 +20,100 @@ import {
 
 const LINE_COLOURS = { buy: "#e0c078", high: "#8fbf9f", warn: "#e8b4a0", avg: "#a9b0a3" } as const;
 
-/** Price line for the last year with the key levels marked, so you can see what the warning is measuring. */
+const RANGES: [string, number][] = [["7D", 7], ["30D", 30], ["90D", 90], ["1Y", 260]];
+
+/** Price line with the key levels marked, so you can see what the warning is measuring. Pick a time range like on CoinGecko. */
 function Chart({ detail }: { detail: Detail }) {
-  const { closes, dates } = detail.chart;
+  const [range, setRange] = useState(260);
+  const closes = detail.chart.closes.slice(-range);
+  const dates = detail.chart.dates.slice(-range);
   const width = 760;
-  const height = 260;
+  const height = 280;
   const pad = { left: 8, right: 8, top: 12, bottom: 22 };
-  const levels = detail.lines.map((line) => line.value);
+  const lines = range >= 90 ? detail.lines : [];
+  const levels = lines.map((line) => line.value);
   const min = Math.min(...closes, ...levels);
   const max = Math.max(...closes, ...levels);
   const span = max - min || 1;
-  const x = (index: number) => pad.left + (index / (closes.length - 1)) * (width - pad.left - pad.right);
+  const x = (index: number) => pad.left + (index / Math.max(1, closes.length - 1)) * (width - pad.left - pad.right);
   const y = (value: number) => pad.top + (1 - (value - min) / span) * (height - pad.top - pad.bottom);
   const points = closes.map((close, index) => `${x(index).toFixed(1)},${y(close).toFixed(1)}`).join(" ");
-  const label = (value: string) => new Date(value).toLocaleDateString("en-GB", { month: "short", year: "2-digit" });
+  const area = `${pad.left},${height - pad.bottom} ${points} ${width - pad.right},${height - pad.bottom}`;
+  const up = closes[closes.length - 1] >= closes[0];
+  const colour = up ? "#8fbf9f" : "#e8b4a0";
+  const label = (value: string) => new Date(value).toLocaleDateString("en-GB", range <= 30 ? { day: "numeric", month: "short" } : { month: "short", year: "2-digit" });
 
   return (
     <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={`Price of ${detail.asset.name} over the last year`}>
-        {detail.lines.map((line) => (
+      <div className="mb-2 flex gap-1.5">
+        {RANGES.map(([name, days]) => (
+          <button key={name} type="button" onClick={() => setRange(days)} className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${range === days ? "border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]" : "border-[#d4af5a]/25 text-[#a9b0a3]"}`}>{name}</button>
+        ))}
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={`Price of ${detail.asset.name}`}>
+        <defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={colour} stopOpacity="0.25" /><stop offset="100%" stopColor={colour} stopOpacity="0" /></linearGradient></defs>
+        <polygon points={area} fill="url(#fill)" />
+        {lines.map((line) => (
           <line key={line.label} x1={pad.left} x2={width - pad.right} y1={y(line.value)} y2={y(line.value)} stroke={LINE_COLOURS[line.tone]} strokeWidth="1" strokeDasharray="5 4" opacity="0.85" />
         ))}
-        <polyline points={points} fill="none" stroke="#f1e8d6" strokeWidth="1.6" strokeLinejoin="round" />
+        <polyline points={points} fill="none" stroke={colour} strokeWidth="1.8" strokeLinejoin="round" />
         <text x={pad.left} y={height - 6} fontSize="10" fill="#a9b0a3">{label(dates[0])}</text>
         <text x={width - pad.right} y={height - 6} fontSize="10" fill="#a9b0a3" textAnchor="end">{label(dates[dates.length - 1])}</text>
       </svg>
-      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-[#c9c6ba]">
-        <li><span className="mr-1.5 inline-block h-0.5 w-4 bg-[#f1e8d6] align-middle" />Price</li>
-        {detail.lines.map((line) => (
-          <li key={line.label}><span className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: LINE_COLOURS[line.tone] }} />{line.label}</li>
-        ))}
-      </ul>
+      {lines.length > 0 ? (
+        <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-[#c9c6ba]">
+          {lines.map((line) => (
+            <li key={line.label}><span className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: LINE_COLOURS[line.tone] }} />{line.label}</li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
+}
+
+function ResearchView({ ranking }: { ranking: NonNullable<Detail["ranking"]> }) {
+  return (
+    <section className="rounded-2xl border border-[#d4af5a]/40 bg-[linear-gradient(135deg,rgba(212,175,90,0.10),rgba(16,28,20,0.9))] p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className={eyebrowClass}>Our research view</p>
+          <p className="mt-1 font-serif text-2xl text-[#f1e8d6]">#{ranking.rank} in our rankings</p>
+          <p className="text-xs text-[#a9b0a3]">Evidence score from 0 to 100, with the risk shown separately</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <ScoreBar score={ranking.score} view={ranking.view} />
+          <RiskBadge label={ranking.risk_label} score={ranking.risk_score} />
+        </div>
+      </div>
+
+      {ranking.note ? <p className="mt-4 text-sm leading-relaxed text-[#e6dfce]">{ranking.note}</p> : null}
+
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <div>
+          <p className="text-[11px] font-semibold tracking-[0.16em] text-[#8fbf9f] uppercase">Why it ranks here</p>
+          <ul className="mt-2 space-y-2 text-sm leading-relaxed text-[#d5d0c1]">{ranking.strengths.length ? ranking.strengths.map((line) => <li key={line}><span className="mr-1.5 text-[#8fbf9f]">✓</span>{line}</li>) : <li className="text-[#a9b0a3]">Little in its favour in the data right now.</li>}</ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold tracking-[0.16em] text-[#e8b4a0] uppercase">What argues against it</p>
+          <ul className="mt-2 space-y-2 text-sm leading-relaxed text-[#d5d0c1]">{ranking.concerns.map((line) => <li key={line}><span className="mr-1.5 text-[#e8b4a0]">!</span>{line}</li>)}</ul>
+        </div>
+      </div>
+      <div className="mt-5">
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[#e0c078] uppercase">What would change this view</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-[#d5d0c1]">{ranking.watch_for.map((line) => <li key={line}>{line}</li>)}</ul>
+      </div>
+
+      <details className="mt-5">
+        <summary className="cursor-pointer text-[11px] font-semibold tracking-[0.16em] text-[#a9b0a3] uppercase">How the score is worked out</summary>
+        <p className="mt-2 text-xs leading-relaxed text-[#a9b0a3]">55% is how much it has gained recently compared with how bumpy the ride was, ranked against every asset scanned. 20% is whether it sits above its 50-day and 200-day averages. 15% is whether the 1-month and longer trends agree. 10% is smart-money signals such as insider buying. A sharp recent surge or a very small crypto market cuts the score, because both are riskier. The score never looks at company earnings or valuation, and it says nothing about the future.</p>
+      </details>
+      <p className="mt-4 text-[11px] text-[#a9b0a3]">Research, not a recommendation to buy or sell. Decide for yourself, and never invest money you cannot afford to lose.</p>
+    </section>
+  );
+}
+
+function StatCell({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div className="rounded-xl border border-[#d4af5a]/15 bg-[#0a100c]/50 px-4 py-3"><p className={eyebrowClass}>{label}</p><p className="mt-1 text-sm text-[#f1e8d6]">{children}</p></div>;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -92,9 +154,16 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
     <div className="space-y-5">
       <Link href="/admin/market-desk" className="text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline">← Back to Market Desk</Link>
 
-      <header>
-        <h1 className="font-serif text-3xl text-[#f1e8d6]">{asset.name}</h1>
-        <p className="mt-1 text-sm text-[#a9b0a3]">{asset.symbol} · {asset.asset_type} · {price(asset.price, asset.currency)}{asset.price_gbp ? ` (${gbp(asset.price_gbp)})` : ""} · prices updated {when(asset.updated_at)}</p>
+      <header className="flex flex-wrap items-center gap-4">
+        <Avatar row={detail.ranking ?? { image: null, symbol: asset.symbol, name: asset.name }} size={52} />
+        <div className="min-w-0">
+          <h1 className="font-serif text-3xl text-[#f1e8d6]">{asset.name} <span className="ml-1 rounded-full border border-[#d4af5a]/40 px-2.5 py-0.5 align-middle font-sans text-xs text-[#e0c078]">{asset.symbol}</span></h1>
+          <p className="mt-1 text-xs text-[#a9b0a3]">{asset.asset_type}{detail.ranking ? ` · ranked #${detail.ranking.rank} of our scan` : ""} · prices updated {when(asset.updated_at)}</p>
+        </div>
+        <div className="ml-auto text-right">
+          <p className="font-serif text-4xl text-[#f1e8d6]">{gbpPrice(asset.price_gbp)}</p>
+          <p className={`text-sm ${tone(asset.change_1d)}`}>{pct(asset.change_1d)} today <span className="text-[11px] text-[#a9b0a3]">· {price(asset.price, asset.currency)}</span></p>
+        </div>
       </header>
 
       {alert ? (
@@ -107,10 +176,23 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
       ) : null}
 
       <section className={panelClass}>
-        <p className={eyebrowClass}>Price over the last year</p>
+        <p className={eyebrowClass}>Price chart</p>
         <div className="mt-3"><Chart detail={detail} /></div>
-        <p className="mt-3 text-[11px] text-[#a9b0a3]">Daily closing prices in {asset.currency}. Dashed lines mark the levels the warnings are measured against.</p>
+        <p className="mt-3 text-[11px] text-[#a9b0a3]">Daily closing prices in {asset.currency}. Dashed lines mark the levels any warning is measured against.</p>
       </section>
+
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCell label="Market cap">{gbpCompact(detail.ranking?.market_cap_gbp)}</StatCell>
+        <StatCell label="Traded today">{gbpCompact(detail.ranking?.volume_gbp)}</StatCell>
+        <StatCell label="7 days"><span className={tone(asset.change_7d)}>{pct(asset.change_7d)}</span></StatCell>
+        <StatCell label="30 days"><span className={tone(asset.change_30d)}>{pct(asset.change_30d)}</span></StatCell>
+        <StatCell label="90 days"><span className={tone(asset.change_90d)}>{pct(asset.change_90d)}</span></StatCell>
+        <StatCell label="52-week range">{detail.ranking?.year_low && detail.ranking?.year_high ? `${price(detail.ranking.year_low)} to ${price(detail.ranking.year_high)}` : "n/a"}</StatCell>
+        <StatCell label="Against 200-day average"><span className={tone(detail.ranking?.vs_sma200)}>{pct(detail.ranking?.vs_sma200)}</span></StatCell>
+        <StatCell label="Worst fall in a year"><span className="text-[#e8b4a0]">{pct(asset.drawdown_1y, false)}</span></StatCell>
+      </section>
+
+      {detail.ranking ? <ResearchView ranking={detail.ranking} /> : null}
 
       <section className="grid gap-5 lg:grid-cols-2">
         <div className={panelClass}>

@@ -9,7 +9,7 @@ const UA = "Mozilla/5.0 (compatible; PhrenosMarketDesk/1.0)";
 
 let session: { cookie: string; crumb: string; at: number } | null = null;
 
-async function getSession(): Promise<{ cookie: string; crumb: string } | null> {
+export async function getYahooSession(): Promise<{ cookie: string; crumb: string } | null> {
   if (session && Date.now() - session.at < 30 * 60000) return session;
   const home = await fetch("https://fc.yahoo.com", { headers: { "User-Agent": UA }, redirect: "manual", signal: AbortSignal.timeout(15000) }).catch(() => null);
   const cookie = home?.headers.getSetCookie().map((line) => line.split(";")[0]).join("; ");
@@ -63,7 +63,7 @@ export function optionsSignal(ticker: string, key: string | null, chains: Chain[
 }
 
 export async function optionsSignals(tickers: { ticker: string; key: string | null }[]): Promise<SignalRow[]> {
-  const auth = await getSession();
+  const auth = await getYahooSession();
   if (!auth) return [];
   const rows: SignalRow[] = [];
   for (const { ticker, key } of tickers.slice(0, 25)) {
