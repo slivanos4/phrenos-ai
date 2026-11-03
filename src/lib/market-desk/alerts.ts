@@ -263,7 +263,7 @@ export async function runHoldingsCheck(): Promise<CheckSummary> {
         severity: decision ? "warning" : "info",
         title: `Coming up: ${event.title}`,
         message: `${event.summary ? `${event.summary}. ` : ""}Announcements like this can move currencies, bonds, stocks and crypto quickly, often in the minutes after the release. Prices can swing in both directions.`,
-        data: { eventKey, when: event.event_date },
+        data: { eventKey, when: event.event_date, source_url: String(event.source_url).split("#")[0] },
       });
     }
   }

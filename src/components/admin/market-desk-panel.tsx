@@ -218,6 +218,11 @@ function OverviewTab({ overview, reload, setNotice, setError, onTab }: Shared & 
                     <p className="text-sm font-semibold text-[#f1e8d6]">{alert.title}</p>
                     <p className="mt-1 text-xs leading-relaxed text-[#c9c6ba]">{alert.message}</p>
                     <p className="mt-1 text-[10px] text-[#a9b0a3]">{alert.severity} · {when(alert.created_at)}</p>
+                    {alert.asset_key ? (
+                      <Link href={`/admin/market-desk/asset?key=${encodeURIComponent(alert.asset_key)}&alert=${alert.id}`} className="mt-2 inline-block text-xs font-semibold text-[#e0c078] underline-offset-4 hover:underline">See why, with the chart and sources →</Link>
+                    ) : typeof alert.data?.source_url === "string" ? (
+                      <a href={alert.data.source_url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#e0c078] underline-offset-4 hover:underline">Open the announcement ↗</a>
+                    ) : null}
                   </div>
                   <button type="button" className={microButtonClass} onClick={() => void dismiss(alert)}>Dismiss</button>
                 </div>
@@ -295,7 +300,7 @@ function HoldingRowView({ holding, onDone, setNotice, setError }: { holding: Hol
     <li className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-[#f1e8d6]">{holding.name || holding.symbol} <span className="font-normal text-[#a9b0a3]">{holding.symbol} · {holding.asset_type}</span></p>
+          <p className="text-sm font-semibold text-[#f1e8d6]"><Link href={`/admin/market-desk/asset?key=${encodeURIComponent(holding.asset_key)}`} className="underline-offset-4 hover:text-[#e0c078] hover:underline">{holding.name || holding.symbol}</Link> <span className="font-normal text-[#a9b0a3]">{holding.symbol} · {holding.asset_type}</span></p>
           <p className="text-[11px] text-[#a9b0a3]">
             {holding.quantity} bought at {price(holding.buy_price, holding.buy_currency)}{holding.buy_date ? ` on ${when(holding.buy_date)}` : ""}
           </p>

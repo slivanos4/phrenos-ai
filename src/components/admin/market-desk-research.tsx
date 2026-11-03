@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Overview } from "@/lib/market-desk/overview";
 import type { BriefIdea, BriefSections } from "@/lib/market-desk/brief";
@@ -62,7 +63,10 @@ function IdeaCard({ idea, onWatch }: { idea: BriefIdea; onWatch: (key: string) =
         <div><p className={eyebrowClass}>Evidence against and risks</p><ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-relaxed text-[#c9c6ba]">{idea.risks.map((line) => <li key={line}>{line}</li>)}</ul></div>
       </div>
       {idea.would_change_my_mind ? <p className="mt-3 text-xs text-[#a9b0a3]"><span className="font-semibold text-[#e0c078]">This view changes if:</span> {idea.would_change_my_mind}</p> : null}
-      <button type="button" className={`${microButtonClass} mt-3`} onClick={() => onWatch(idea.asset_key)}>Add to watchlist</button>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Link href={`/admin/market-desk/asset?key=${encodeURIComponent(idea.asset_key)}`} className="text-xs font-semibold text-[#e0c078] underline-offset-4 hover:underline">See the data, chart and news →</Link>
+        <button type="button" className={microButtonClass} onClick={() => onWatch(idea.asset_key)}>Add to watchlist</button>
+      </div>
     </li>
   );
 }
@@ -71,8 +75,10 @@ export function BriefTab({ setNotice, setError, reload }: Shared) {
   const [brief, setBrief] = useState<Brief | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [sources, setSources] = useState<{ title: string; source_url: string; event_date: string | null; region: string; impact: string }[]>([]);
 
   useEffect(() => {
+    void api<{ events: typeof sources }>("/api/market-desk/events").then((result) => setSources(result.events.filter((event) => event.impact !== "low" || event.title.includes(":")).slice(0, 40))).catch(() => undefined);
     void api<{ brief: Brief | null }>("/api/market-desk/brief")
       .then((result) => setBrief(result.brief))
       .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load the brief."))
@@ -147,6 +153,18 @@ export function BriefTab({ setNotice, setError, reload }: Shared) {
           </section>
 
           <section className={panelClass}>
+            <p className={eyebrowClass}>Sources behind this brief</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">Every announcement the brief drew on, as published. Click any to read the original. Price figures come from the league tables below, and each name there opens its own evidence page.</p>
+            {sources.length === 0 ? <p className="mt-3 text-sm text-[#a9b0a3]">Loading the sources...</p> : (
+              <ul className="mt-3 space-y-1.5">
+                {sources.map((item) => (
+                  <li key={item.source_url} className="text-sm"><a href={item.source_url.split("#")[0]} target="_blank" rel="noreferrer" className="text-[#f1e8d6] underline-offset-4 hover:text-[#e0c078] hover:underline">{item.title} <span aria-hidden className="text-[#a9b0a3]">↗</span></a><span className="ml-2 text-[11px] text-[#a9b0a3]">{when(item.event_date)} · {item.region}</span></li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className={panelClass}>
             <p className={eyebrowClass}>The league tables behind it</p>
             <div className="mt-4 grid gap-6 lg:grid-cols-2">
               <div>
@@ -155,19 +173,19 @@ export function BriefTab({ setNotice, setError, reload }: Shared) {
               </div>
               <div>
                 <p className="text-xs font-semibold text-[#e0c078]">Commodities</p>
-                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.commodities.map((item) => <li key={item.key}>{item.name} <span className={tone(item.change_90d)}>{pct(item.change_90d)}</span> <span className="text-[11px] text-[#a9b0a3]">3 months · {item.risk_label} risk</span></li>)}</ol>
+                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.commodities.map((item) => <li key={item.key}><Link href={`/admin/market-desk/asset?key=${encodeURIComponent(item.key)}`} className="underline-offset-4 hover:text-[#e0c078] hover:underline">{item.name}</Link> <span className={tone(item.change_90d)}>{pct(item.change_90d)}</span> <span className="text-[11px] text-[#a9b0a3]">3 months · {item.risk_label} risk</span></li>)}</ol>
               </div>
               <div>
                 <p className="text-xs font-semibold text-[#e0c078]">Strongest stocks</p>
-                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.stocks_top.map((item) => <li key={item.key}>{item.name} <span className={tone(item.change_90d)}>{pct(item.change_90d)}</span> <span className="text-[11px] text-[#a9b0a3]">{item.risk_label} risk</span></li>)}</ol>
+                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.stocks_top.map((item) => <li key={item.key}><Link href={`/admin/market-desk/asset?key=${encodeURIComponent(item.key)}`} className="underline-offset-4 hover:text-[#e0c078] hover:underline">{item.name}</Link> <span className={tone(item.change_90d)}>{pct(item.change_90d)}</span> <span className="text-[11px] text-[#a9b0a3]">{item.risk_label} risk</span></li>)}</ol>
                 <p className="mt-3 text-xs font-semibold text-[#e0c078]">Weakest stocks</p>
-                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.stocks_bottom.map((item) => <li key={item.key}>{item.name} <span className={tone(item.change_90d)}>{pct(item.change_90d)}</span></li>)}</ol>
+                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.stocks_bottom.map((item) => <li key={item.key}><Link href={`/admin/market-desk/asset?key=${encodeURIComponent(item.key)}`} className="underline-offset-4 hover:text-[#e0c078] hover:underline">{item.name}</Link> <span className={tone(item.change_90d)}>{pct(item.change_90d)}</span></li>)}</ol>
               </div>
               <div>
                 <p className="text-xs font-semibold text-[#e0c078]">Strongest crypto (200 day change)</p>
-                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.crypto_top.map((item) => <li key={item.key}>{item.name} <span className={tone(item.change_200d)}>{pct(item.change_200d)}</span> <span className="text-[11px] text-[#a9b0a3]">30 days {pct(item.change_30d)}</span></li>)}</ol>
+                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.crypto_top.map((item) => <li key={item.key}><Link href={`/admin/market-desk/asset?key=${encodeURIComponent(item.key)}`} className="underline-offset-4 hover:text-[#e0c078] hover:underline">{item.name}</Link> <span className={tone(item.change_200d)}>{pct(item.change_200d)}</span> <span className="text-[11px] text-[#a9b0a3]">30 days {pct(item.change_30d)}</span></li>)}</ol>
                 <p className="mt-3 text-xs font-semibold text-[#e0c078]">Weakest crypto</p>
-                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.crypto_bottom.map((item) => <li key={item.key}>{item.name} <span className={tone(item.change_200d)}>{pct(item.change_200d)}</span></li>)}</ol>
+                <ol className="mt-2 space-y-1 text-sm text-[#d5d0c1]">{s.leaders.crypto_bottom.map((item) => <li key={item.key}><Link href={`/admin/market-desk/asset?key=${encodeURIComponent(item.key)}`} className="underline-offset-4 hover:text-[#e0c078] hover:underline">{item.name}</Link> <span className={tone(item.change_200d)}>{pct(item.change_200d)}</span></li>)}</ol>
               </div>
             </div>
           </section>
@@ -404,7 +422,7 @@ export function MarketsTab({ overview, reload, setNotice, setError }: Shared & {
           <div className="mt-3"><RiskMeter score={asset.risk_score} /><div className="mt-1 flex justify-between text-[10px] text-[#a9b0a3]"><span>Safest</span><span>Most volatile</span></div></div>
           <p className="mt-3 text-xs text-[#a9b0a3]">1 day <span className={tone(asset.change_1d)}>{pct(asset.change_1d)}</span> · 7 days <span className={tone(asset.change_7d)}>{pct(asset.change_7d)}</span> · 30 days <span className={tone(asset.change_30d)}>{pct(asset.change_30d)}</span> · 90 days <span className={tone(asset.change_90d)}>{pct(asset.change_90d)}</span></p>
           <ul className="mt-3 list-disc space-y-1 pl-4 text-xs leading-relaxed text-[#c9c6ba]">{asset.risk_reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
-          <div className="mt-4 flex flex-wrap gap-2"><button type="button" className={microButtonClass} onClick={() => void watch(asset.key)}>Add to watchlist</button></div>
+          <div className="mt-4 flex flex-wrap items-center gap-3"><button type="button" className={microButtonClass} onClick={() => void watch(asset.key)}>Add to watchlist</button><Link href={`/admin/market-desk/asset?key=${encodeURIComponent(asset.key)}`} className="text-xs font-semibold text-[#e0c078] underline-offset-4 hover:underline">Full evidence page: chart, news and sources →</Link></div>
 
           <div className="mt-6 border-t border-[#d4af5a]/15 pt-4">
             <p className={eyebrowClass}>What if: how this played out in the past</p>
@@ -434,7 +452,7 @@ export function MarketsTab({ overview, reload, setNotice, setError }: Shared & {
           <ul className="mt-3 space-y-2">
             {overview.watchlist.map((item) => (
               <li key={item.asset_key} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d4af5a]/15 bg-[#0a100c]/50 px-4 py-2.5">
-                <button type="button" className="min-w-0 text-left" onClick={() => void open(item.asset_key)}><span className="text-sm text-[#f1e8d6]">{item.name || item.symbol}</span><span className="block text-[11px] text-[#a9b0a3]">{item.symbol} · {item.asset_type}</span></button>
+                <button type="button" className="min-w-0 text-left" onClick={() => void open(item.asset_key)}><span className="text-sm text-[#f1e8d6] underline-offset-4 hover:underline">{item.name || item.symbol}</span><span className="block text-[11px] text-[#a9b0a3]">{item.symbol} · {item.asset_type}</span></button>
                 <Sparkline values={item.asset?.history ?? []} />
                 <span className={`text-xs ${tone(item.asset?.change_30d)}`}>{pct(item.asset?.change_30d)} 30d</span>
                 <RiskBadge label={item.asset?.risk_label} score={item.asset?.risk_score} />
