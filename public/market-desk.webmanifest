@@ -1,0 +1,10 @@
+{
+  "name": "Phrenos Market Desk",
+  "short_name": "Market Desk",
+  "start_url": "/admin/market-desk",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#0a100c",
+  "theme_color": "#0a100c",
+  "icons": [{ "src": "/brand/phrenos_logo_green.png", "sizes": "512x512", "type": "image/png" }]
+}
