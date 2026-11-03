@@ -73,7 +73,12 @@ export async function yahooSeries(symbol: string, range = "1y"): Promise<PriceSe
       failure = error;
     }
   }
-  if (!data) throw failure instanceof Error ? failure : new Error("Yahoo Finance is not answering");
+  if (!data) {
+    // Backup source. Its free plan covers US stocks and ETFs, currency pairs and gold, but not UK or European shares, silver or oil.
+    const backup = await twelveSeries(symbol).catch(() => null);
+    if (backup) return backup;
+    throw failure instanceof Error ? failure : new Error("Yahoo Finance is not answering");
+  }
   const result = data.chart.result?.[0];
   if (!result) throw new Error(data.chart.error?.description ?? `No data for ${symbol}`);
 
@@ -99,6 +104,42 @@ export async function yahooSeries(symbol: string, range = "1y"): Promise<PriceSe
     currency: pence ? "GBP" : (result.meta.currency ?? "USD").toUpperCase(),
     closes,
     dates,
+  };
+}
+
+/** Turns a Yahoo-style symbol into one Twelve Data's free plan can serve, or null when it cannot. */
+export function twelveSymbol(symbol: string): { symbol: string; type: AssetType; currency: string; name?: string } | null {
+  if (symbol === "GC=F") return { symbol: "XAU/USD", type: "commodity", currency: "USD", name: "Gold" };
+  const pair = symbol.match(/^([A-Z]{3})([A-Z]{3})=X$/);
+  if (pair) return { symbol: `${pair[1]}/${pair[2]}`, type: "fx", currency: pair[2] };
+  const usd = symbol.match(/^([A-Z]{3})=X$/);
+  if (usd) return { symbol: `USD/${usd[1]}`, type: "fx", currency: usd[1] };
+  if (/^[A-Z]{1,5}(-[A-Z])?$/.test(symbol)) return { symbol: symbol.replace("-", "."), type: "stock", currency: "USD" };
+  return null;
+}
+
+type TwelveSeries = { status?: string; meta?: { symbol: string; type?: string; currency?: string }; values?: { datetime: string; close: string }[] };
+
+async function twelveSeries(symbol: string): Promise<PriceSeries | null> {
+  const key = process.env.TWELVE_DATA_API_KEY?.trim();
+  const mapped = twelveSymbol(symbol);
+  if (!key || !mapped) return null;
+  const data = await getJson<TwelveSeries>(
+    `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(mapped.symbol)}&interval=1day&outputsize=260&apikey=${key}`,
+  );
+  if (data.status === "error" || !data.values?.length) return null;
+  const rows = [...data.values].reverse().filter((row) => Number.isFinite(Number(row.close)));
+  if (rows.length < 5) return null;
+  const type = data.meta?.type === "ETF" ? "etf" : mapped.type;
+  return {
+    key: `yahoo:${symbol}`,
+    provider: "yahoo",
+    symbol,
+    name: mapped.name ?? symbol,
+    type,
+    currency: data.meta?.currency ?? mapped.currency,
+    closes: rows.map((row) => Number(row.close)),
+    dates: rows.map((row) => row.datetime.slice(0, 10)),
   };
 }
 
