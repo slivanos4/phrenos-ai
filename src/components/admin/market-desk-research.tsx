@@ -177,6 +177,8 @@ export function BriefTab({ setNotice, setError, reload }: Shared) {
   );
 }
 
+type Confluence = { symbol: string; direction: string; types: string[]; summaries: string[] };
+type Record_ = { signal_type: string; direction: string; n: number; hit_rate: number; avg_move: number; avg_days: number };
 type Signal = { id: string; symbol: string; signal_type: string; direction: string; strength: number; summary: string; source_url: string | null; observed_at: string };
 type Launch = { id: string; kind: string; name: string; symbol: string; summary: string; risk_flags: string[]; risk_level: string; source_url: string; launched_at: string | null };
 type EventItem = { id: string; kind: string; title: string; summary: string; region: string; impact: string; source_url: string; event_date: string | null };
@@ -186,12 +188,14 @@ const DIRECTION: Record<string, string> = { bullish: "text-[#8fbf9f]", bearish: 
 export function SignalsTab() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [launches, setLaunches] = useState<Launch[]>([]);
+  const [confluence, setConfluence] = useState<Confluence[]>([]);
+  const [record, setRecord] = useState<Record_[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [kind, setKind] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    void api<{ signals: Signal[]; launches: Launch[] }>("/api/market-desk/signals").then((result) => { setSignals(result.signals); setLaunches(result.launches); }).catch(() => undefined);
+    void api<{ signals: Signal[]; launches: Launch[]; confluence: Confluence[]; record: Record_[] }>("/api/market-desk/signals").then((result) => { setSignals(result.signals); setLaunches(result.launches); setConfluence(result.confluence); setRecord(result.record); }).catch(() => undefined);
     void api<{ events: EventItem[] }>("/api/market-desk/events").then((result) => setEvents(result.events)).catch(() => undefined);
   }, []);
 
@@ -222,7 +226,7 @@ export function SignalsTab() {
             {shown.map((event) => (
               <li key={event.id} className="rounded-xl border border-[#d4af5a]/15 bg-[#0a100c]/50 px-4 py-2.5">
                 <p className="text-[11px] text-[#a9b0a3]">{when(event.event_date)} · {event.region} · {event.kind.replace("_", " ")} · <span className={event.impact === "high" ? "text-[#e8a070]" : ""}>{event.impact} impact</span></p>
-                <a href={event.source_url.startsWith("https://www.forexfactory") ? undefined : event.source_url} target="_blank" rel="noreferrer" className="text-sm text-[#f1e8d6] hover:text-[#e0c078]">{event.title}</a>
+                <a href={event.source_url.split("#")[0]} target="_blank" rel="noreferrer" className="text-sm text-[#f1e8d6] underline-offset-4 hover:text-[#e0c078] hover:underline">{event.title} <span aria-hidden className="text-[#a9b0a3]">↗</span></a>
                 {event.summary ? <p className="mt-0.5 text-xs text-[#a9b0a3]">{event.summary}</p> : null}
               </li>
             ))}
@@ -230,19 +234,57 @@ export function SignalsTab() {
         )}
       </section>
 
+      {confluence.length > 0 ? (
+        <section className={panelClass}>
+          <p className={eyebrowClass}>Where different signals agree</p>
+          <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">A single signal is easy to misread. When two or more different kinds point the same way on the same asset, the case is stronger, though still not proof.</p>
+          <ul className="mt-3 space-y-2">
+            {confluence.map((item) => (
+              <li key={`${item.symbol}${item.direction}`} className="rounded-xl border border-[#d4af5a]/25 bg-[#0a100c]/55 px-4 py-2.5 text-sm text-[#f1e8d6]">
+                <strong>{item.symbol}</strong> <span className={`text-xs ${DIRECTION[item.direction]}`}>{item.direction}</span>
+                <span className="text-[11px] text-[#a9b0a3]"> · {item.types.map((type) => type.replace("_", " ")).join(" + ")}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className={panelClass}>
         <p className={eyebrowClass}>Smart money signals</p>
-        <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">Insider buying and selling (US filings), unusually heavy crypto trading, and very large crypto transfers. These are weak signals on their own. Big wallets are often wrong, and a large transfer without exchange labels does not say whether it means buying or selling.</p>
+        <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">Insider buying and selling, what the big hedge funds bought and sold last quarter (about 45 days late), unusual options trading, Bitcoin and Ethereum flowing onto or off exchanges, and unusual crypto volume. Big money is often wrong, and many of these have innocent explanations such as hedging, so each is a hint to investigate, not a reason to act.</p>
         {signals.length === 0 ? <p className="mt-3 text-sm text-[#a9b0a3]">No signals yet. They are collected when the weekly brief is written.</p> : (
           <ul className="mt-4 space-y-2">
             {signals.map((signal) => (
               <li key={signal.id} className="rounded-xl border border-[#d4af5a]/15 bg-[#0a100c]/50 px-4 py-2.5">
                 <p className="text-sm text-[#f1e8d6]"><strong>{signal.symbol}</strong> <span className={`text-xs ${DIRECTION[signal.direction]}`}>{signal.direction}</span> <span className="text-[11px] text-[#a9b0a3]">· {signal.signal_type.replace("_", " ")} · strength {signal.strength}/5 · {when(signal.observed_at)}</span></p>
                 <p className="mt-0.5 text-xs leading-relaxed text-[#c9c6ba]">{signal.summary}</p>
-                {signal.source_url ? <a href={signal.source_url} target="_blank" rel="noreferrer" className="text-[11px] text-[#e0c078] hover:underline">Source</a> : null}
+                {signal.source_url ? <a href={signal.source_url} target="_blank" rel="noreferrer" className="text-[11px] text-[#e0c078] hover:underline">Source ↗</a> : null}
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section className={panelClass}>
+        <p className={eyebrowClass}>Did following the signals work?</p>
+        <p className="mt-1 text-xs leading-relaxed text-[#a9b0a3]">Every signal records the price when it appeared. A week or more later, the price is checked and scored: did it move the way the signal pointed? This builds your own evidence over time. Until each kind has dozens of results, treat these numbers as noise.</p>
+        {record.length === 0 ? <p className="mt-3 text-sm text-[#a9b0a3]">Too early. Results start appearing a week after the first signals, and become meaningful after a few months.</p> : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[460px] text-left text-sm">
+              <thead><tr className="text-[10px] tracking-[0.16em] text-[#a9b0a3] uppercase"><th className="py-1 pr-3">Signal</th><th className="py-1 pr-3">Pointed</th><th className="py-1 pr-3">Seen</th><th className="py-1 pr-3">Price moved that way</th><th className="py-1">Average move</th></tr></thead>
+              <tbody>
+                {record.map((item) => (
+                  <tr key={`${item.signal_type}${item.direction}`} className="border-t border-[#d4af5a]/10">
+                    <td className="py-2 pr-3 text-[#f1e8d6]">{item.signal_type.replace("_", " ")}</td>
+                    <td className={`py-2 pr-3 ${DIRECTION[item.direction]}`}>{item.direction}</td>
+                    <td className="py-2 pr-3 text-[#c9c6ba]">{item.n}{item.n < 20 ? " (too few)" : ""}</td>
+                    <td className="py-2 pr-3 text-[#c9c6ba]">{(item.hit_rate * 100).toFixed(0)}%</td>
+                    <td className={`py-2 ${tone(item.avg_move)}`}>{pct(item.avg_move)} over about {Math.round(item.avg_days)} days</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

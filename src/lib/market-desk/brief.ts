@@ -4,7 +4,7 @@ import { refreshEvents, listEvents } from "@/lib/market-desk/events";
 import { collectLaunches, listLaunches } from "@/lib/market-desk/launches";
 import { sendEmail, siteOrigin } from "@/lib/market-desk/notify";
 import { sendPush } from "@/lib/market-desk/push";
-import { collectSignals, listSignals } from "@/lib/market-desk/signals";
+import { collectSignals, findConfluence, listSignals, scoreSignals, trackRecord } from "@/lib/market-desk/signals";
 import { getSettings, listHoldings, listWatchlist, T } from "@/lib/market-desk/store";
 import { scanCrypto, scanCurrencies, scanStocksEtfsCommodities } from "@/lib/market-desk/universe";
 import type { CryptoLeader, Leader } from "@/lib/market-desk/universe";
@@ -87,7 +87,10 @@ const PROMPT_RULES = `You are the research analyst behind a private market dashb
 RULES (all mandatory):
 - This is research, not financial advice. Never tell her to buy, sell or hold anything. Never give amounts to invest, price targets or promised returns. Describe what the evidence shows, what supports it, what argues against it, and what would change the view.
 - Use ONLY facts and numbers that appear in the DATA block. Never invent a price, percentage, date, event or quote. If the data does not say it, do not say it.
+- When you mention a forecast and a previous figure from the calendar, copy both exactly as given and say which is higher or lower only after checking the two numbers. Never round, reorder or reinterpret them.
+- The brief covers the week commencing WEEK_START. Use that date in the title, not today's date.
 - Separate the facts (what the data shows) from interpretation (what it might mean). Label interpretation as such ("this may suggest", "one reading is").
+- When DATA includes signal_track_record_so_far, quote it honestly: with few observations it proves nothing, and say so. Signals that agree across different kinds (signals_that_agree) are stronger than a single signal, but still not proof.
 - Be even-handed. Every idea must carry real risks and counter-evidence. Confidence is "low", "medium" or "high" and is high only when several independent signals agree. Smart-money signals (insider trades, large transfers) are weak on their own: say so.
 - Cover the whole risk scale. Include at least 2 lower-risk ideas, 2 moderate and 2 high or very high risk ideas, and say plainly why each sits where it does.
 - New tokens and newly listed companies are always very high risk. Never present one as an idea. Mention them only as things to be aware of, with the warning signs.
@@ -133,10 +136,12 @@ export async function generateWeeklyBrief(): Promise<{ id: string; week_start: s
     ...watch.filter((item) => item.asset_type === "stock" && !String(item.symbol).includes(".")).map((item) => ({ ticker: String(item.symbol), key: String(item.asset_key) })),
   ].filter((entry, index, all) => all.findIndex((other) => other.ticker === entry.ticker) === index);
 
+  await scoreSignals().catch((error) => console.warn("Scoring old signals failed:", error));
   await collectSignals({ crypto, usTickers }).catch((error) => console.warn("Signals failed:", error));
   await collectLaunches().catch((error) => console.warn("Launches failed:", error));
 
-  const [events, signals, launches] = await Promise.all([listEvents(60), listSignals(30), listLaunches(20)]);
+  const [events, signals, launches, record] = await Promise.all([listEvents(60), listSignals(60), listLaunches(20), trackRecord().catch(() => [])]);
+  const agreeing = findConfluence(signals);
   const soon = Date.now() - 7 * 86400000;
   const data = {
     today: new Date().toISOString().slice(0, 10),
@@ -151,11 +156,14 @@ export async function generateWeeklyBrief(): Promise<{ id: string; week_start: s
     etfs_and_bonds: etfs.map(compactLeader),
     crypto_strongest: crypto.slice(0, 8).map(compactCrypto),
     crypto_weakest: crypto.slice(-5).map(compactCrypto),
-    smart_money_signals: signals.map((signal) => ({ symbol: signal.symbol, type: signal.signal_type, direction: signal.direction, strength_1_to_5: signal.strength, summary: signal.summary })),
+    signals_that_agree: agreeing.map((item) => ({ symbol: item.symbol, direction: item.direction, signal_types: item.types })),
+    signal_track_record_so_far: record.map((item) => ({ signal: item.signal_type, direction: item.direction, times_seen: item.n, share_where_price_moved_that_way_pct: Number((item.hit_rate * 100).toFixed(0)), average_move_pct: Number((item.avg_move * 100).toFixed(1)), average_days_since: Math.round(item.avg_days) })),
+    smart_money_signals: signals.slice(0, 30).map((signal) => ({ symbol: signal.symbol, type: signal.signal_type, direction: signal.direction, strength_1_to_5: signal.strength, summary: signal.summary })),
     new_launches: launches.map((launch) => ({ kind: launch.kind, name: launch.name, symbol: launch.symbol, risk_level: launch.risk_level, warning_signs: launch.risk_flags })),
   };
 
-  const text = await callAnthropic(`${PROMPT_RULES}\n\nDATA:\n${JSON.stringify(data)}`, 9000);
+  const weekStart = mondayOf();
+  const text = await callAnthropic(`${PROMPT_RULES.replace("WEEK_START", weekStart)}\n\nDATA:\n${JSON.stringify(data)}`, 9000);
   const json = extractJsonObject(text);
   if (!json) throw new Error("The brief came back in an unreadable format.");
   const draft = JSON.parse(json) as Partial<BriefSections> & { title?: string };
@@ -195,7 +203,6 @@ export async function generateWeeklyBrief(): Promise<{ id: string; week_start: s
     },
   };
 
-  const weekStart = mondayOf();
   const { data: saved, error } = await createServiceRoleClient()
     .from(T.briefs)
     .upsert(

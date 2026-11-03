@@ -3,15 +3,27 @@ import type { AssetType, PriceSeries, SearchHit } from "@/lib/market-desk/types"
 /** Yahoo Finance (stocks, ETFs, FX, commodity futures) and CoinGecko (crypto). Both are free and need no key. */
 const UA = "Mozilla/5.0 (compatible; PhrenosMarketDesk/1.0)";
 
+/** CoinGecko's free tier is strict. A free "demo" key (COINGECKO_API_KEY) raises the limit and is sent when present. */
+function cgHeaders(url: string): Record<string, string> {
+  const key = process.env.COINGECKO_API_KEY?.trim();
+  return key && url.includes("coingecko.com") ? { "x-cg-demo-api-key": key } : {};
+}
+
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: { "User-Agent": UA, Accept: "application/json", ...(init?.headers ?? {}) },
-    signal: AbortSignal.timeout(20000),
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(`${new URL(url).hostname} returned ${response.status}`);
-  return (await response.json()) as T;
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(url, {
+      ...init,
+      headers: { "User-Agent": UA, Accept: "application/json", ...cgHeaders(url), ...(init?.headers ?? {}) },
+      signal: AbortSignal.timeout(20000),
+      cache: "no-store",
+    });
+    if (response.status === 429 && attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 2500 * (attempt + 1)));
+      continue;
+    }
+    if (!response.ok) throw new Error(`${new URL(url).hostname} returned ${response.status}`);
+    return (await response.json()) as T;
+  }
 }
 
 function yahooType(instrumentType: string | undefined, symbol: string): AssetType {
@@ -48,9 +60,20 @@ type YahooChart = {
 };
 
 export async function yahooSeries(symbol: string, range = "1y"): Promise<PriceSeries> {
-  const data = await getJson<YahooChart>(
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1d`,
-  );
+  // Yahoo has two front doors. If one is down or blocking us, the other often still answers.
+  let data: YahooChart | null = null;
+  let failure: unknown = null;
+  for (const host of ["query1", "query2"]) {
+    try {
+      data = await getJson<YahooChart>(
+        `https://${host}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1d`,
+      );
+      break;
+    } catch (error) {
+      failure = error;
+    }
+  }
+  if (!data) throw failure instanceof Error ? failure : new Error("Yahoo Finance is not answering");
   const result = data.chart.result?.[0];
   if (!result) throw new Error(data.chart.error?.description ?? `No data for ${symbol}`);
 
@@ -125,14 +148,9 @@ type CgChart = { prices?: [number, number][] };
 type CgMarket = { id: string; symbol: string; name: string; current_price: number }[];
 
 export async function cgSeries(id: string): Promise<PriceSeries> {
-  const [chart, eur] = await Promise.all([
-    getJson<CgChart>(
-      `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=gbp&days=365&interval=daily`,
-    ),
-    getJson<CgMarket>(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=${encodeURIComponent(id)}`,
-    ).catch(() => [] as CgMarket),
-  ]);
+  const chart = await getJson<CgChart>(
+    `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=gbp&days=365&interval=daily`,
+  );
   const points = (chart.prices ?? []).filter(([, price]) => Number.isFinite(price) && price > 0);
   const closes = points.map(([, price]) => price);
   const dates = points.map(([stamp]) => new Date(stamp).toISOString().slice(0, 10));
@@ -141,6 +159,9 @@ export async function cgSeries(id: string): Promise<PriceSeries> {
   const meta = await getJson<CgMarket>(
     `https://api.coingecko.com/api/v3/coins/markets?vs_currency=gbp&ids=${encodeURIComponent(id)}`,
   ).catch(() => [] as CgMarket);
+  const gbpPrice = meta[0]?.current_price ?? closes[closes.length - 1];
+  // Euro price comes from the pound price and the exchange rate, which saves a second CoinGecko call.
+  const eurPrice = await fxRate("GBP", "EUR").then((rate) => gbpPrice * rate).catch(() => undefined);
 
   return {
     key: `cg:${id}`,
@@ -151,8 +172,8 @@ export async function cgSeries(id: string): Promise<PriceSeries> {
     currency: "GBP",
     closes,
     dates,
-    gbpPrice: meta[0]?.current_price ?? closes[closes.length - 1],
-    eurPrice: eur[0]?.current_price,
+    gbpPrice,
+    eurPrice,
   };
 }
 

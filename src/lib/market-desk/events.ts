@@ -111,6 +111,7 @@ async function calendarEvents(): Promise<EventRow[]> {
           summary: detail,
           region: item.country,
           impact: item.impact === "High" ? "high" : "medium",
+          // The feed has no page per event, so each row links to the calendar. The fragment keeps rows distinct.
           source_url: `https://www.forexfactory.com/calendar#${encodeURIComponent(`${item.country}-${item.title}-${item.date}`)}`,
           event_date: new Date(item.date).toISOString(),
         };

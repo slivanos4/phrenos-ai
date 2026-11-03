@@ -1,5 +1,8 @@
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
-import { T } from "@/lib/market-desk/store";
+import { exchangeFlowSignals } from "@/lib/market-desk/flows";
+import { fundSignals } from "@/lib/market-desk/funds";
+import { optionsSignals } from "@/lib/market-desk/options";
+import { getAssets, refreshAsset, T } from "@/lib/market-desk/store";
 import type { CryptoLeader } from "@/lib/market-desk/universe";
 
 /**
@@ -7,7 +10,10 @@ import type { CryptoLeader } from "@/lib/market-desk/universe";
  * - Crypto: unusually heavy trading volume, large on-chain transfers, and (with a WHALE_ALERT_API_KEY) labelled
  *   exchange inflows and outflows.
  * - Stocks: insider buying and selling from US SEC Form 4 filings.
- * Not covered: fund holdings (13F) and options flow, which have no reliable free source.
+ * - Funds: what the big hedge funds bought and sold last quarter (SEC 13F filings, about 45 days late).
+ * - Exchange flows: net Bitcoin and Ethereum moving onto or off exchanges (CoinMetrics community data, labelled).
+ * - Options: unusual call and put activity on US stocks (Yahoo option chains).
+ * Every signal records the price when it was seen, so later runs can measure whether following it paid off.
  */
 const SEC_UA = "PhrenosMarketDesk/1.0 (contact@phrenosai.com)";
 
@@ -35,7 +41,7 @@ export function volumeSignals(leaders: CryptoLeader[]): SignalRow[] {
         direction: move > 0.05 ? "bullish" : move < -0.05 ? "bearish" : "neutral",
         strength: Math.min(5, Math.round(coin.volume_to_cap * 8)),
         summary: `${coin.name} traded ${(coin.volume_to_cap * 100).toFixed(0)}% of its whole market value in 24 hours, which is unusually heavy, while its price moved ${(move * 100).toFixed(1)}% over 7 days.`,
-        data: { volume_to_cap: coin.volume_to_cap, change_7d: coin.change_7d },
+        data: { volume_to_cap: coin.volume_to_cap, change_7d: coin.change_7d, price_at_signal: coin.price_gbp, price_currency: "GBP" },
         source_url: `https://www.coingecko.com/en/coins/${coin.key.slice(3)}`,
         observed_at: new Date().toISOString(),
       };
@@ -197,26 +203,140 @@ export async function insiderSignal(ticker: string, assetKey: string | null): Pr
   }
 }
 
-export async function collectSignals(input: { crypto: CryptoLeader[]; usTickers: { ticker: string; key: string | null }[] }): Promise<SignalRow[]> {
-  const [btc, labelled] = await Promise.all([bitcoinWhales(), whaleAlert()]);
-  const rows: SignalRow[] = [...volumeSignals(input.crypto), ...btc, ...labelled];
-  for (const { ticker, key } of input.usTickers.slice(0, 20)) {
-    const signal = await insiderSignal(ticker, key);
-    if (signal) rows.push(signal);
+const DAY = 86400000;
+
+/** Notes the price at the time of each signal, from the price cache or a fresh lookup, so its outcome can be scored later. */
+async function stampPrices(rows: SignalRow[]): Promise<void> {
+  const keys = [...new Set(rows.filter((row) => row.asset_key && row.data.price_at_signal === undefined).map((row) => row.asset_key as string))];
+  if (keys.length === 0) return;
+  const cached = await getAssets(keys);
+  let lookups = 0;
+  for (const key of keys) {
+    let asset = cached.get(key);
+    if (!asset && !key.startsWith("cg:") && lookups < 25) {
+      lookups += 1;
+      asset = await refreshAsset(key).then((result) => result.asset).catch(() => undefined);
+    }
+    if (!asset || asset.price === null) continue;
+    for (const row of rows) {
+      if (row.asset_key === key && row.data.price_at_signal === undefined) {
+        row.data = { ...row.data, price_at_signal: asset.price, price_currency: asset.currency };
+      }
+    }
   }
-  if (rows.length > 0) {
-    const supabase = createServiceRoleClient();
-    await supabase.from(T.signals).delete().lt("created_at", new Date(Date.now() - 21 * 86400000).toISOString());
-    const { error } = await supabase.from(T.signals).insert(rows);
-    if (error) throw new Error(error.message);
-  }
-  return rows;
 }
 
-export async function listSignals(limit = 60) {
+export async function collectSignals(input: { crypto: CryptoLeader[]; usTickers: { ticker: string; key: string | null }[] }): Promise<SignalRow[]> {
+  const [btc, labelled, funds, flows, options] = await Promise.all([
+    bitcoinWhales(),
+    whaleAlert(),
+    fundSignals().catch(() => [] as SignalRow[]),
+    exchangeFlowSignals(),
+    optionsSignals(input.usTickers).catch(() => [] as SignalRow[]),
+  ]);
+  const rows: SignalRow[] = [...volumeSignals(input.crypto), ...btc, ...labelled, ...funds, ...flows, ...options];
+  // Insider lookups are independent, so run them a few at a time. SEC allows 10 requests a second.
+  const queue = input.usTickers.slice(0, 20);
+  for (let index = 0; index < queue.length; index += 4) {
+    const batch = await Promise.all(queue.slice(index, index + 4).map(({ ticker, key }) => insiderSignal(ticker, key)));
+    for (const signal of batch) if (signal) rows.push(signal);
+  }
+  if (rows.length === 0) return rows;
+
+  const supabase = createServiceRoleClient();
+  // Keep six months of signals: older ones are what the track record is measured from.
+  await supabase.from(T.signals).delete().lt("created_at", new Date(Date.now() - 180 * DAY).toISOString());
+
+  // The same fund filing shows up every week until the next quarter, so skip anything already stored.
+  const { data: existing } = await supabase.from(T.signals).select("symbol, signal_type, summary").gte("created_at", new Date(Date.now() - 120 * DAY).toISOString());
+  const seen = new Set((existing ?? []).map((row) => `${row.symbol}|${row.signal_type}|${row.summary}`));
+  const fresh = rows.filter((row) => !seen.has(`${row.symbol}|${row.signal_type}|${row.summary}`));
+  await stampPrices(fresh);
+  if (fresh.length > 0) {
+    const { error } = await supabase.from(T.signals).insert(fresh);
+    if (error) throw new Error(error.message);
+  }
+  return fresh;
+}
+
+/** Fills in what happened to the price after each older signal, so the dashboard can show whether following them worked. */
+export async function scoreSignals(): Promise<number> {
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase.from(T.signals).select("id, asset_key, data, observed_at").lt("observed_at", new Date(Date.now() - 7 * DAY).toISOString()).limit(300);
+  const due = (data ?? []).filter((row) => row.asset_key && Number((row.data as { price_at_signal?: number }).price_at_signal) > 0);
+  const keys = [...new Set(due.map((row) => String(row.asset_key)))].slice(0, 40);
+  if (keys.length === 0) return 0;
+
+  const cached = await getAssets(keys);
+  const prices = new Map<string, { price: number; currency: string }>();
+  for (const key of keys) {
+    let asset = cached.get(key);
+    if (!asset || Date.now() - new Date(asset.updated_at).getTime() > DAY) {
+      asset = await refreshAsset(key).then((result) => result.asset).catch(() => asset);
+    }
+    if (asset?.price) prices.set(key, { price: asset.price, currency: asset.currency });
+  }
+
+  let scored = 0;
+  for (const row of due) {
+    const now = prices.get(String(row.asset_key));
+    const info = row.data as { price_at_signal: number; price_currency?: string };
+    if (!now || (info.price_currency && info.price_currency !== now.currency)) continue;
+    const days = Math.round((Date.now() - new Date(String(row.observed_at)).getTime()) / DAY);
+    const forward = now.price / info.price_at_signal - 1;
+    await supabase.from(T.signals).update({ data: { ...info, forward_pct: forward, forward_days: days } }).eq("id", row.id);
+    scored += 1;
+  }
+  return scored;
+}
+
+export type TrackRecord = { signal_type: string; direction: string; n: number; hit_rate: number; avg_move: number; avg_days: number };
+
+/** How each kind of signal has done so far: did the price move the way the signal pointed? */
+export async function trackRecord(): Promise<TrackRecord[]> {
+  const { data } = await createServiceRoleClient().from(T.signals).select("signal_type, direction, data").neq("direction", "neutral");
+  const groups = new Map<string, { n: number; hits: number; move: number; days: number }>();
+  for (const row of data ?? []) {
+    const info = row.data as { forward_pct?: number; forward_days?: number };
+    if (typeof info.forward_pct !== "number") continue;
+    const key = `${row.signal_type}|${row.direction}`;
+    const group = groups.get(key) ?? { n: 0, hits: 0, move: 0, days: 0 };
+    group.n += 1;
+    group.hits += (row.direction === "bullish" ? info.forward_pct > 0 : info.forward_pct < 0) ? 1 : 0;
+    group.move += info.forward_pct;
+    group.days += info.forward_days ?? 0;
+    groups.set(key, group);
+  }
+  return [...groups.entries()].map(([key, group]) => {
+    const [signal_type, direction] = key.split("|");
+    return { signal_type, direction, n: group.n, hit_rate: group.hits / group.n, avg_move: group.move / group.n, avg_days: group.days / group.n };
+  });
+}
+
+export type Confluence = { symbol: string; direction: string; types: string[]; summaries: string[] };
+
+/** Symbols where two or more different kinds of signal point the same way, which is a stronger case than any single signal. */
+export function findConfluence(signals: { symbol: string; signal_type: string; direction: string; summary: string; observed_at: string }[]): Confluence[] {
+  const recent = signals.filter((signal) => signal.direction !== "neutral" && Date.now() - new Date(signal.observed_at).getTime() < 45 * DAY);
+  const bySymbol = new Map<string, typeof recent>();
+  for (const signal of recent) bySymbol.set(signal.symbol, [...(bySymbol.get(signal.symbol) ?? []), signal]);
+  const out: Confluence[] = [];
+  for (const [symbol, list] of bySymbol) {
+    for (const direction of ["bullish", "bearish"]) {
+      const same = list.filter((signal) => signal.direction === direction);
+      const types = [...new Set(same.map((signal) => signal.signal_type))];
+      const opposite = list.some((signal) => signal.direction !== direction);
+      if (types.length >= 2 && !opposite) out.push({ symbol, direction, types, summaries: same.map((signal) => signal.summary) });
+    }
+  }
+  return out;
+}
+
+export async function listSignals(limit = 80) {
   const { data, error } = await createServiceRoleClient()
     .from(T.signals)
     .select("*")
+    .gte("observed_at", new Date(Date.now() - 120 * DAY).toISOString())
     .order("observed_at", { ascending: false })
     .limit(limit);
   if (error) throw new Error(error.message);

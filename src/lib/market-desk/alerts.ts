@@ -188,7 +188,19 @@ export async function runHoldingsCheck(): Promise<CheckSummary> {
   const values = new Map<string, number>();
   for (const holding of holdings) {
     const entry = loaded.get(holding.asset_key);
-    if (!entry) continue;
+    if (!entry) {
+      // Say so rather than going quiet: a silent feed failure would look like "no warnings".
+      drafts.push({
+        holding_id: holding.id,
+        asset_key: holding.asset_key,
+        kind: "data_stale",
+        severity: "warning",
+        title: `Prices for ${holding.name || holding.symbol} could not be refreshed`,
+        message: "The price feed did not answer today, so warnings for this holding are paused until it does. Check the Data sources panel in Alerts and settings.",
+        data: { reason: summary.failed.find((line) => line.startsWith(holding.asset_key)) ?? "unknown" },
+      });
+      continue;
+    }
     const { asset, series } = entry;
     const buyNative = await buyPriceInAssetCurrency(holding, series.currency);
     const since = holding.buy_date ?? "0000-00-00";

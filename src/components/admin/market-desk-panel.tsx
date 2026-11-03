@@ -134,7 +134,7 @@ type Shared = {
 function OverviewTab({ overview, reload, setNotice, setError, onTab }: Shared & { overview: Overview; onTab: (tab: Tab) => void }) {
   const [checking, setChecking] = useState(false);
   const [brief, setBrief] = useState<{ title: string; week_start: string; sections: { summary?: string[] } } | null>(null);
-  const [events, setEvents] = useState<{ title: string; event_date: string; impact: string; region: string }[]>([]);
+  const [events, setEvents] = useState<{ title: string; event_date: string; impact: string; region: string; source_url: string }[]>([]);
   const [loadedAt, setLoadedAt] = useState(0);
 
   useEffect(() => {
@@ -237,7 +237,7 @@ function OverviewTab({ overview, reload, setNotice, setError, onTab }: Shared & 
               {upcoming.map((event) => (
                 <li key={`${event.title}${event.event_date}`} className="text-sm text-[#f1e8d6]">
                   <span className="text-[11px] text-[#a9b0a3]">{when(event.event_date)} · {event.impact}</span>
-                  <br />{event.title}
+                  <br /><a href={event.source_url.split("#")[0]} target="_blank" rel="noreferrer" className="underline-offset-4 hover:text-[#e0c078] hover:underline">{event.title}</a>
                 </li>
               ))}
             </ul>
@@ -487,6 +487,8 @@ function SettingsTab({ overview, reload, setNotice, setError }: Shared & { overv
   );
   const [saving, setSaving] = useState(false);
   const [pushState, setPushState] = useState<"unknown" | "on" | "off" | "unsupported">("unknown");
+  const [health, setHealth] = useState<{ name: string; used_for: string; ok: boolean; detail: string; ms: number }[] | null>(null);
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -546,6 +548,17 @@ function SettingsTab({ overview, reload, setNotice, setError }: Shared & { overv
     }
   }
 
+  async function testSources() {
+    setTesting(true);
+    try {
+      setHealth((await api<{ results: NonNullable<typeof health> }>("/api/market-desk/health")).results);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not test the data sources.");
+    } finally {
+      setTesting(false);
+    }
+  }
+
   const types = ["fx", "bond", "etf", "commodity", "stock", "crypto"];
   return (
     <div className="space-y-5">
@@ -558,6 +571,24 @@ function SettingsTab({ overview, reload, setNotice, setError }: Shared & { overv
           {pushState === "on" ? <button type="button" className={microButtonClass} onClick={() => void testPush()}>Send a test</button> : null}
         </div>
         <p className="mt-2 text-[11px] text-[#a9b0a3]">On your phone, open this page in Chrome, choose Install app or Add to Home screen, then turn notifications on from the installed app.</p>
+      </section>
+
+      <section className={panelClass}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className={eyebrowClass}>Data sources</p>
+          <button type="button" className={microButtonClass} onClick={() => void testSources()} disabled={testing}>{testing ? "Testing..." : "Test them now"}</button>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-[#a9b0a3]">Everything here comes from free public sources. If one stops answering, holdings that depend on it show a &quot;prices could not be refreshed&quot; warning instead of going quiet.</p>
+        {health ? (
+          <ul className="mt-3 space-y-1.5">
+            {health.map((item) => (
+              <li key={item.name} className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+                <span className="text-[#f1e8d6]"><span className={item.ok ? "text-[#8fbf9f]" : "text-[#e8b4a0]"}>{item.ok ? "●" : "●"}</span> {item.name} <span className="text-[11px] text-[#a9b0a3]">{item.used_for}</span></span>
+                <span className={`text-[11px] ${item.ok ? "text-[#a9b0a3]" : "text-[#e8b4a0]"}`}>{item.detail}{item.ok ? ` · ${item.ms}ms` : ""}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
 
       <section className={panelClass}>
