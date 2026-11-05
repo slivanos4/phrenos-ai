@@ -105,3 +105,14 @@ export function namedMostOften(latest: { competitors: string[] }[], top = 5): { 
   for (const c of latest) for (const name of c.competitors) counts.set(name, (counts.get(name) ?? 0) + 1);
   return [...counts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, top);
 }
+
+/** Turns HTML entities (&amp;, &apos;, &#x27; and the like) back into plain characters. */
+export const decodeEntities = (s: string) =>
+  s
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(Number(dec)))
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");

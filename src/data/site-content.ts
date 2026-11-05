@@ -3,7 +3,7 @@ export const site = {
   tagline: "AI Strategy, Automation & Innovation",
   definition: "phren·os (n.): mind, intellect, reason",
   description:
-    "An independent AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
+    "An independent, UK-based AI consultancy led by Sophia Livanos, helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
   email: "hello@phrenosai.com",
   linkedin: "https://www.linkedin.com/in/sophia-livanos-45144b22",
 } as const;
@@ -41,7 +41,7 @@ export const hero = {
     "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
   offerLead: "AI that actually works for your business.",
   offer:
-    "Phrenos.ai is an independent AI consultancy. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
+    "Phrenos.ai is an independent, UK-based AI consultancy, founded and led by Sophia Livanos. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
   secondary: {
     emphasis:
       "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
@@ -67,7 +67,7 @@ export const services = [
     title: "AI Strategy & Adoption",
     short: "Strategy",
     description:
-      "Clarify where Generative AI creates commercial value, set priorities your leadership team can act on, and build a practical path from ambition to adoption.",
+      "Work out where Generative AI will pay off in your business, set priorities your leadership team can act on, and build a practical path from ambition to adoption.",
     points: [
       "Board-ready opportunity maps with clear commercial bets.",
       "Prioritised adoption roadmaps your leadership team can fund and follow.",
@@ -79,7 +79,7 @@ export const services = [
     title: "Intelligent Workflow Automation",
     short: "Automation",
     description:
-      "Redesign repetitive operational processes into reliable AI-assisted workflows that free expert time and reduce costly manual friction.",
+      "Automate the manual tasks your team repeats every week, such as reporting, monitoring and content production. Repetitive processes become reliable AI-assisted workflows that free expert time and reduce costly manual friction.",
     points: [
       "Process redesign around the work that actually moves outcomes.",
       "AI-assisted workflows with human checkpoints where risk is high.",
@@ -103,7 +103,7 @@ export const services = [
     title: "Competitive Intelligence & Analytics",
     short: "Intelligence",
     description:
-      "Turn fragmented market signals into structured insight so teams can anticipate competitors, customers and commercial opportunity sooner.",
+      "Track what competitors, customers and markets are doing without the manual research. Fragmented market signals become structured insight, so teams can anticipate competitors, customers and commercial opportunity sooner.",
     points: [
       "Signal capture across competitors, customers and markets.",
       "Structured insight instead of scattered screenshots and noise.",
@@ -115,7 +115,7 @@ export const services = [
     title: "AI Training & Team Enablement",
     short: "Enablement",
     description:
-      "Equip leaders and practitioners with the fluency, judgement and working habits needed to use AI responsibly and productively every day.",
+      "Practical AI training for leaders and teams. It builds the fluency, judgement and working habits needed to use AI responsibly and productively every day.",
     points: [
       "Fluency programmes tailored to leaders and practitioners.",
       "Working habits that keep judgement ahead of the tool.",

@@ -30,7 +30,7 @@ export const caseStudies: readonly CaseStudy[] = [
     title: "Competitive Intelligence",
     slug: "competitive-intelligence",
     name: "AI-Powered Competitive Intelligence Platform",
-    summary: "Automated competitor monitoring and strategic analysis across multiple comparison websites.",
+    summary: "Automated competitor monitoring and analysis across multiple comparison websites, turning days of manual research into minutes for content, SEO and product teams.",
     facts: [
       { label: "Business area", value: "Competitive intelligence" },
       { label: "Users", value: "Content, SEO and Product" },
@@ -86,7 +86,7 @@ export const caseStudies: readonly CaseStudy[] = [
     title: "Brand Review Governance",
     slug: "brand-review-governance",
     name: "AI Brand Review Governance Platform",
-    summary: "Automated governance platform that validates long-form brand reviews against official brand websites.",
+    summary: "Continuous, automatic checking of hundreds of brand reviews against official brand websites, replacing occasional manual checks, for editorial and operations teams.",
     facts: [
       { label: "Business area", value: "Content governance" },
       { label: "Users", value: "Editorial and Operations" },
@@ -129,7 +129,7 @@ export const caseStudies: readonly CaseStudy[] = [
     title: "Content Buddy",
     slug: "content-buddy",
     name: "Content Buddy: AI Knowledge & Workflow Assistant",
-    summary: "A domain-specific AI assistant that centralised organisational knowledge into one conversational interface.",
+    summary: "One AI assistant that answers questions from knowledge spread across seven systems, so content managers find answers and onboard new starters faster.",
     facts: [
       { label: "Business area", value: "Knowledge management" },
       { label: "Users", value: "Content managers" },
@@ -176,7 +176,7 @@ export const caseStudies: readonly CaseStudy[] = [
     slug: "content-data-hub",
     name: "Content & Data Hub: AI-Powered Data, Content & Automation Platform",
     summary:
-      "A single platform connecting performance data, content generation and automated experimentation into one growth decision system.",
+      "One platform connecting performance data, content generation and automated testing across 12 countries and 9 languages, for content, SEO, growth and product teams.",
     facts: [
       { label: "Business area", value: "Content and growth operations" },
       { label: "Users", value: "Content, SEO, Growth and Product" },
@@ -247,7 +247,7 @@ export const caseStudies: readonly CaseStudy[] = [
     title: "Monthly Report Automation",
     slug: "monthly-report-automation",
     name: "Monthly Report Automation Platform",
-    summary: "Automated generation of executive PowerPoint reports from Excel data sources.",
+    summary: "Executive PowerPoint reports built automatically from Excel data, cutting report building from days to minutes for an analytics and finance team.",
     facts: [
       { label: "Business area", value: "Executive reporting" },
       { label: "Users", value: "Analytics and Finance" },

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VisibilityState } from "@/app/api/ai-visibility/route";
 import type { Advice, Gap } from "@/lib/ai-visibility/advice";
-import { ENGINE_LABELS, MAX_QUESTIONS, headline, type Check, type Engine } from "@/lib/ai-visibility/score";
+import { ENGINE_LABELS, MAX_QUESTIONS, decodeEntities, headline, type Check, type Engine } from "@/lib/ai-visibility/score";
 import { api, eyebrowClass, fieldClass, labelClass, microButtonClass, panelClass, primaryButtonClass } from "@/components/admin/market-desk-ui";
 
 const when = (iso: string | null) => (iso ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso)) : null);
@@ -264,8 +264,10 @@ function adviceToMarkdown(advice: Advice, at: string | null): string {
     lines.push(`**What to do:** ${g.action}`, "");
     lines.push(`**${g.format}:** ${g.title}`, "");
     g.outline.forEach((o) => lines.push(`- ${o}`));
-    lines.push("", `Covers ${g.questions.length} tracked question${g.questions.length === 1 ? "" : "s"}:`, "");
-    g.questions.forEach((q) => lines.push(`- ${q}`));
+    if (g.questions.length > 0) {
+      lines.push("", `Covers ${g.questions.length} tracked question${g.questions.length === 1 ? "" : "s"}:`, "");
+      g.questions.forEach((q) => lines.push(`- ${q}`));
+    }
     lines.push("");
   });
   if (advice.offsite.length > 0) {
@@ -296,8 +298,10 @@ async function downloadAdvice(advice: Advice, at: string | null) {
     children.push(heading(`${i + 1}. ${g.theme} (${g.priority} priority)`, HeadingLevel.HEADING_1));
     children.push(body("Why you are missing", g.why), body("What to do", g.action), body(g.format, g.title));
     g.outline.forEach((o) => children.push(bullet(o)));
-    children.push(new Paragraph({ children: [new TextRun({ text: `Covers ${g.questions.length} tracked question${g.questions.length === 1 ? "" : "s"}:`, italics: true })], spacing: { before: 120 } }));
-    g.questions.forEach((q) => children.push(bullet(q)));
+    if (g.questions.length > 0) {
+      children.push(new Paragraph({ children: [new TextRun({ text: `Covers ${g.questions.length} tracked question${g.questions.length === 1 ? "" : "s"}:`, italics: true })], spacing: { before: 120 } }));
+      g.questions.forEach((q) => children.push(bullet(q)));
+    }
   });
   if (advice.offsite.length > 0) {
     children.push(heading("Beyond your own site", HeadingLevel.HEADING_1));
@@ -321,7 +325,20 @@ async function downloadAdvice(advice: Advice, at: string | null) {
 }
 
 /** What to write or fix so Phrenos is named: grouped by what is missing, with who is named instead and a working title and outline for each. */
-function AdviceSection({ advice, at, busy, canAdvise, onAdvise }: { advice: Advice | null; at: string | null; busy: string | null; canAdvise: boolean; onAdvise: () => void }) {
+function cleanAdvice(a: Advice | null): Advice | null {
+  if (!a) return a;
+  const d = decodeEntities;
+  return {
+    summary: d(a.summary),
+    gaps: a.gaps.map((g) => ({ ...g, theme: d(g.theme), why: d(g.why), action: d(g.action), title: d(g.title), questions: g.questions.map(d), outline: g.outline.map(d) })),
+    offsite: a.offsite.map((o) => ({ where: d(o.where), how: d(o.how) })),
+    basics: a.basics.map(d),
+  };
+}
+
+function AdviceSection({ advice: saved, at, busy, canAdvise, onAdvise }: { advice: Advice | null; at: string | null; busy: string | null; canAdvise: boolean; onAdvise: () => void }) {
+  // Suggestions saved earlier can still contain codes such as &apos;, so they are cleaned whenever they are shown or exported.
+  const advice = cleanAdvice(saved);
   const [copied, setCopied] = useState(false);
   const copy = () => {
     if (!advice) return;
@@ -363,10 +380,12 @@ function AdviceSection({ advice, at, busy, canAdvise, onAdvise }: { advice: Advi
                   <p className="text-[#f1e8d6]"><span className="text-[10px] font-semibold tracking-[0.16em] text-[#e0c078] uppercase">{g.format}</span> · {g.title}</p>
                   <ul className="mt-1 list-disc pl-5 text-[#c9c6ba]">{g.outline.map((o) => <li key={o}>{o}</li>)}</ul>
                 </div>
-                <details className="text-xs text-[#a9b0a3]">
-                  <summary className="cursor-pointer">Covers {g.questions.length} tracked question{g.questions.length === 1 ? "" : "s"}</summary>
-                  <ul className="mt-1 list-disc pl-5">{g.questions.map((q) => <li key={q}>{q}</li>)}</ul>
-                </details>
+                {g.questions.length > 0 ? (
+                  <details className="text-xs text-[#a9b0a3]">
+                    <summary className="cursor-pointer">Covers {g.questions.length} tracked question{g.questions.length === 1 ? "" : "s"}</summary>
+                    <ul className="mt-1 list-disc pl-5">{g.questions.map((q) => <li key={q}>{q}</li>)}</ul>
+                  </details>
+                ) : <p className="text-xs text-[#a9b0a3]">Not tied to one of the tracked questions yet.</p>}
               </div>
             ))}
           </div>

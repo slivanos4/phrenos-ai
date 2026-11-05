@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { caseStudies } from "@/data/case-studies";
+import { guides } from "@/data/guides";
 import { isServiceRoleConfigured, listPublishedPosts } from "@/lib/phrenos-updates";
 
 const siteUrl = "https://phrenosai.com";
@@ -12,6 +13,7 @@ const staticRoutes: Array<{ path: string; priority: number }> = [
   { path: "/approach", priority: 0.8 },
   { path: "/work", priority: 0.8 },
   ...caseStudies.map((study) => ({ path: `/work/${study.slug}`, priority: 0.7 })),
+  ...guides.map((guide) => ({ path: `/guides/${guide.slug}`, priority: 0.7 })),
   { path: "/ai-updates", priority: 0.8 },
   { path: "/resources", priority: 0.7 },
   { path: "/resources/ai-readiness", priority: 0.7 },

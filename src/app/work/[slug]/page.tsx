@@ -5,6 +5,7 @@ import { ContactCta } from "@/components/contact-cta";
 import { DrawOnView, Reveal } from "@/components/home/motion";
 import { PageHero } from "@/components/page-hero";
 import { caseStudies, caseStudyBySlug } from "@/data/case-studies";
+import { guideForCaseStudy } from "@/data/guides";
 import { selectedWork } from "@/data/site-content";
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -44,6 +45,7 @@ export default async function CaseStudyPage({ params }: PageProps) {
 
   const index = caseStudies.findIndex((item) => item.slug === study.slug);
   const others = caseStudies.filter((item) => item.slug !== study.slug);
+  const guide = guideForCaseStudy(study.slug);
 
   return (
     <>
@@ -246,6 +248,14 @@ export default async function CaseStudyPage({ params }: PageProps) {
         <div className="mx-auto max-w-6xl px-6 lg:px-8">
           <Reveal>
             <p className={eyebrow}>What could this become?</p>
+            {guide ? (
+              <p className="mb-8 text-base text-ivory/85">
+                Want the plain-English version?{" "}
+                <Link href={`/guides/${guide.slug}`} className="text-[#e0c078] underline-offset-4 hover:underline">
+                  Read the guide: {guide.label.toLowerCase()} →
+                </Link>
+              </p>
+            ) : null}
             <ul className="mt-6 flex flex-wrap gap-3">
               {study.future.map((item) => (
                 <li

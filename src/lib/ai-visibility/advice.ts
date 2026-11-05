@@ -2,7 +2,7 @@
 // covers, then says what to write or fix. Nothing here edits the site; it is advice for a person to act on.
 import sitemap from "@/app/sitemap";
 import type { QuestionResult } from "@/lib/ai-visibility/server";
-import { ENGINE_LABELS, isOwnUrl, type Engine } from "@/lib/ai-visibility/score";
+import { ENGINE_LABELS, decodeEntities, isOwnUrl, type Engine } from "@/lib/ai-visibility/score";
 import { SITE } from "@/lib/ai-visibility/profile";
 
 export type Gap = { theme: string; questions: string[]; why: string; action: string; format: "new page" | "improve a page" | "FAQ" | "comparison" | "guide" | "video"; title: string; outline: string[]; priority: "high" | "medium" | "low" };
@@ -26,7 +26,7 @@ export function topCitedSites(questions: QuestionResult[], own: string, top = 8)
   return [...counts.entries()].map(([site, count]) => ({ site, count })).sort((a, b) => b.count - a.count).slice(0, top);
 }
 
-const decode = (s: string) => s.replace(/&amp;/g, "&").replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+const plain = (s: unknown) => (typeof s === "string" ? decodeEntities(s) : "");
 
 /** What our public pages already say, from each page's title and description. A page that cannot be read is simply left out. */
 export async function ownPages(limit = 40): Promise<{ url: string; title: string; description: string }[]> {
@@ -44,8 +44,8 @@ export async function ownPages(limit = 40): Promise<{ url: string; title: string
     chosen.map(async (url) => {
       try {
         const html = await (await fetch(url, { signal: AbortSignal.timeout(6000), headers: { "User-Agent": "PhrenosVisibilityCheck" } })).text();
-        const title = decode(html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] ?? "").trim();
-        const description = decode(html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i)?.[1] ?? "").trim();
+        const title = decodeEntities(html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] ?? "").trim();
+        const description = decodeEntities(html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i)?.[1] ?? "").trim();
         return { url, title, description };
       } catch {
         return null;
@@ -126,5 +126,19 @@ export async function buildAdvice(input: { questions: QuestionResult[]; about: s
   if (!response.ok) throw new Error(data.error?.message ?? `Claude returned ${response.status}.`);
   const advice = data.content?.find((b) => b.type === "tool_use")?.input;
   if (!advice || !Array.isArray(advice.gaps)) throw new Error("Claude did not return suggestions.");
-  return { summary: advice.summary ?? "", gaps: advice.gaps, offsite: advice.offsite ?? [], basics: advice.basics ?? [] };
+  // The answer sometimes echoes entities from the page titles it was shown, so every string is cleaned before it is saved.
+  return {
+    summary: plain(advice.summary),
+    gaps: advice.gaps.map((g) => ({
+      ...g,
+      theme: plain(g.theme),
+      why: plain(g.why),
+      action: plain(g.action),
+      title: plain(g.title),
+      questions: (g.questions ?? []).map(plain),
+      outline: (g.outline ?? []).map(plain),
+    })),
+    offsite: (advice.offsite ?? []).map((o) => ({ where: plain(o.where), how: plain(o.how) })),
+    basics: (advice.basics ?? []).map(plain),
+  };
 }

@@ -25,7 +25,7 @@ const manrope = Manrope({
 const siteUrl = "https://phrenosai.com";
 const defaultTitle = "Phrenos.ai | AI Strategy, Automation & Innovation";
 const defaultDescription =
-  "Phrenos.ai is an independent AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.";
+  "Phrenos.ai is an independent, UK-based AI consultancy led by Sophia Livanos, helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -59,6 +59,7 @@ const organizationJsonLd = {
   url: siteUrl,
   logo: `${siteUrl}/brand/phrenos_logo_green.png`,
   description: defaultDescription,
+  address: { "@type": "PostalAddress", addressCountry: "GB" },
   founder: {
     "@type": "Person",
     name: "Sophia Livanos",
