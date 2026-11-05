@@ -281,12 +281,39 @@ function adviceToMarkdown(advice: Advice, at: string | null): string {
   return lines.join("\n");
 }
 
-function downloadAdvice(advice: Advice, at: string | null) {
-  const blob = new Blob([adviceToMarkdown(advice, at)], { type: "text/markdown;charset=utf-8" });
+/** Every suggestion as a Word document. The library is loaded only when the button is pressed. */
+async function downloadAdvice(advice: Advice, at: string | null) {
+  const { Document, HeadingLevel, Packer, Paragraph, TextRun } = await import("docx");
+  const body = (label: string, text: string) => new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: `${label}: `, bold: true }), new TextRun(text)] });
+  const bullet = (text: string) => new Paragraph({ text, bullet: { level: 0 } });
+  const heading = (text: string, level: (typeof HeadingLevel)[keyof typeof HeadingLevel]) => new Paragraph({ text, heading: level, spacing: { before: 280, after: 120 } });
+
+  const children: InstanceType<typeof Paragraph>[] = [heading("How to appear in AI answers", HeadingLevel.TITLE)];
+  if (at) children.push(new Paragraph({ children: [new TextRun({ text: `Updated ${when(at)}`, italics: true })], spacing: { after: 160 } }));
+  children.push(new Paragraph({ text: advice.summary, spacing: { after: 200 } }));
+
+  advice.gaps.forEach((g, i) => {
+    children.push(heading(`${i + 1}. ${g.theme} (${g.priority} priority)`, HeadingLevel.HEADING_1));
+    children.push(body("Why you are missing", g.why), body("What to do", g.action), body(g.format, g.title));
+    g.outline.forEach((o) => children.push(bullet(o)));
+    children.push(new Paragraph({ children: [new TextRun({ text: `Covers ${g.questions.length} tracked question${g.questions.length === 1 ? "" : "s"}:`, italics: true })], spacing: { before: 120 } }));
+    g.questions.forEach((q) => children.push(bullet(q)));
+  });
+  if (advice.offsite.length > 0) {
+    children.push(heading("Beyond your own site", HeadingLevel.HEADING_1));
+    advice.offsite.forEach((o) => children.push(body(o.where, o.how)));
+  }
+  if (advice.basics.length > 0) {
+    children.push(heading("The basics", HeadingLevel.HEADING_1));
+    advice.basics.forEach((b) => children.push(bullet(b)));
+  }
+
+  const doc = new Document({ creator: "Phrenos.ai", title: "How to appear in AI answers", sections: [{ children }] });
+  const blob = await Packer.toBlob(doc);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `ai-visibility-suggestions-${new Date().toISOString().slice(0, 10)}.md`;
+  link.download = `ai-visibility-suggestions-${new Date().toISOString().slice(0, 10)}.docx`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -314,7 +341,7 @@ function AdviceSection({ advice, at, busy, canAdvise, onAdvise }: { advice: Advi
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#a9b0a3]">Worked out from the answers above, who is named or cited instead, and what the site already covers. It is advice to act on; nothing changes on the site by itself.{at ? ` Updated ${when(at)}.` : ""}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {advice ? <button type="button" className={microButtonClass} onClick={() => downloadAdvice(advice, at)}>Export all suggestions</button> : null}
+          {advice ? <button type="button" className={microButtonClass} onClick={() => void downloadAdvice(advice, at)}>Export all suggestions (Word)</button> : null}
           {advice ? <button type="button" className={microButtonClass} onClick={copy}>{copied ? "Copied" : "Copy all"}</button> : null}
           <button type="button" className={microButtonClass} disabled={busy !== null || !canAdvise} onClick={onAdvise}>{busy === "advise" ? "Working it out..." : advice ? "Refresh suggestions" : "Work out suggestions"}</button>
         </div>
