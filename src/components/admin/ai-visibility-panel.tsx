@@ -253,8 +253,59 @@ export function AiVisibilityPanel() {
 
 const PRIORITY_TONE: Record<Gap["priority"], string> = { high: "bg-[#e8b4a0]/15 text-[#e8b4a0]", medium: "bg-[#e0c078]/15 text-[#e0c078]", low: "bg-[#a9b0a3]/15 text-[#a9b0a3]" };
 
+/** Every suggestion as one readable document (Markdown), so it can be saved, shared or pasted into a brief. */
+function adviceToMarkdown(advice: Advice, at: string | null): string {
+  const lines: string[] = ["# How to appear in AI answers", ""];
+  if (at) lines.push(`Updated ${when(at)}.`, "");
+  lines.push(advice.summary, "");
+  advice.gaps.forEach((g, i) => {
+    lines.push(`## ${i + 1}. ${g.theme} (${g.priority} priority)`, "");
+    lines.push(`**Why you are missing:** ${g.why}`, "");
+    lines.push(`**What to do:** ${g.action}`, "");
+    lines.push(`**${g.format}:** ${g.title}`, "");
+    g.outline.forEach((o) => lines.push(`- ${o}`));
+    lines.push("", `Covers ${g.questions.length} tracked question${g.questions.length === 1 ? "" : "s"}:`, "");
+    g.questions.forEach((q) => lines.push(`- ${q}`));
+    lines.push("");
+  });
+  if (advice.offsite.length > 0) {
+    lines.push("## Beyond your own site", "");
+    advice.offsite.forEach((o) => lines.push(`- **${o.where}:** ${o.how}`));
+    lines.push("");
+  }
+  if (advice.basics.length > 0) {
+    lines.push("## The basics", "");
+    advice.basics.forEach((b) => lines.push(`- ${b}`));
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+function downloadAdvice(advice: Advice, at: string | null) {
+  const blob = new Blob([adviceToMarkdown(advice, at)], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ai-visibility-suggestions-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** What to write or fix so Phrenos is named: grouped by what is missing, with who is named instead and a working title and outline for each. */
 function AdviceSection({ advice, at, busy, canAdvise, onAdvise }: { advice: Advice | null; at: string | null; busy: string | null; canAdvise: boolean; onAdvise: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    if (!advice) return;
+    navigator.clipboard
+      .writeText(adviceToMarkdown(advice, at))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => undefined);
+  };
   return (
     <div className={`${panelClass} space-y-4`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -262,7 +313,11 @@ function AdviceSection({ advice, at, busy, canAdvise, onAdvise }: { advice: Advi
           <p className="font-serif text-xl text-[#f1e8d6]">How to appear in AI answers</p>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#a9b0a3]">Worked out from the answers above, who is named or cited instead, and what the site already covers. It is advice to act on; nothing changes on the site by itself.{at ? ` Updated ${when(at)}.` : ""}</p>
         </div>
-        <button type="button" className={microButtonClass} disabled={busy !== null || !canAdvise} onClick={onAdvise}>{busy === "advise" ? "Working it out..." : advice ? "Refresh suggestions" : "Work out suggestions"}</button>
+        <div className="flex flex-wrap gap-2">
+          {advice ? <button type="button" className={microButtonClass} onClick={() => downloadAdvice(advice, at)}>Export all suggestions</button> : null}
+          {advice ? <button type="button" className={microButtonClass} onClick={copy}>{copied ? "Copied" : "Copy all"}</button> : null}
+          <button type="button" className={microButtonClass} disabled={busy !== null || !canAdvise} onClick={onAdvise}>{busy === "advise" ? "Working it out..." : advice ? "Refresh suggestions" : "Work out suggestions"}</button>
+        </div>
       </div>
       {!advice ? <p className="text-sm text-[#a9b0a3]">{canAdvise ? "Press Work out suggestions, or run Check now, which does it for you." : "Run Check now first, so there are answers to work from."}</p> : null}
       {advice ? (
