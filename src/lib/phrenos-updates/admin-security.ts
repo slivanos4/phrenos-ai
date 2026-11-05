@@ -1,5 +1,5 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { adminSecretMaterial } from "@/lib/phrenos-updates/admin-auth";
+import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { adminSecretMaterial, environmentPasswordFingerprint, environmentPasswordMatches } from "@/lib/phrenos-updates/admin-auth";
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import { ADMIN_SECURITY_TABLE } from "@/lib/phrenos-updates/tables";
 import { generateTotpSecret, verifyTotp } from "@/lib/phrenos-updates/totp";
@@ -123,4 +123,66 @@ export async function checkCode(code: string): Promise<TotpCheck> {
 export async function readEnrolmentSecret(): Promise<string | null> {
   const row = await readRow();
   return row?.totp_secret_enc && !row.enrolled_at ? decrypt(row.totp_secret_enc) : null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Password: the environment setting until a reset replaces it with a salted hash in the database.
+// ---------------------------------------------------------------------------------------------
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16);
+  const hash = scryptSync(password, salt, 64);
+  return `scrypt$${salt.toString("base64")}$${hash.toString("base64")}`;
+}
+
+function matchesHash(password: string, stored: string): boolean {
+  const [scheme, salt, hash] = stored.split("$");
+  if (scheme !== "scrypt" || !salt || !hash) return false;
+  const expected = Buffer.from(hash, "base64");
+  const actual = scryptSync(password, Buffer.from(salt, "base64"), expected.length);
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+async function passwordRow(): Promise<{ password_hash: string | null; reset_requested_at: string | null }> {
+  const { data, error } = await createServiceRoleClient().from(ADMIN_SECURITY_TABLE).select("password_hash, reset_requested_at").eq("id", 1).maybeSingle();
+  if (error) {
+    // Before migration 010 the columns do not exist: keep using the environment password.
+    if (/password_hash|reset_requested_at/.test(error.message)) return { password_hash: null, reset_requested_at: null };
+    throw new Error(error.message);
+  }
+  return { password_hash: (data?.password_hash as string | null) ?? null, reset_requested_at: (data?.reset_requested_at as string | null) ?? null };
+}
+
+export async function checkPassword(password: string): Promise<boolean> {
+  const { password_hash } = await passwordRow();
+  return password_hash ? matchesHash(password, password_hash) : environmentPasswordMatches(password);
+}
+
+/** Changes whenever the password does, so a reset link stops working the moment it has been used. */
+export async function passwordFingerprint(): Promise<string> {
+  const { password_hash } = await passwordRow();
+  return createHash("sha256").update(password_hash ?? `env:${environmentPasswordFingerprint()}`).digest("hex").slice(0, 24);
+}
+
+export const MIN_PASSWORD_LENGTH = 12;
+
+export async function setPassword(password: string): Promise<void> {
+  if (password.length < MIN_PASSWORD_LENGTH) throw new Error(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
+  const { error } = await createServiceRoleClient()
+    .from(ADMIN_SECURITY_TABLE)
+    .upsert({ id: 1, password_hash: hashPassword(password), password_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+  if (error) {
+    throw new Error(/password_hash/.test(error.message) ? "Password reset needs its columns. Run supabase/migrations/010_admin_password_reset.sql in Supabase." : error.message);
+  }
+}
+
+/** Allows one reset email every two minutes. Returns false when it is too soon. */
+export async function noteResetRequest(): Promise<boolean> {
+  const { reset_requested_at } = await passwordRow();
+  if (reset_requested_at && Date.now() - new Date(reset_requested_at).getTime() < 2 * 60000) return false;
+  const { error } = await createServiceRoleClient().from(ADMIN_SECURITY_TABLE).upsert({ id: 1, reset_requested_at: new Date().toISOString() });
+  if (error) {
+    throw new Error(/reset_requested_at/.test(error.message) ? "Password reset needs its columns. Run supabase/migrations/010_admin_password_reset.sql in Supabase." : error.message);
+  }
+  return true;
 }

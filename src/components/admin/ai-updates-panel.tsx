@@ -1885,6 +1885,9 @@ export function AiUpdatesPanel() {
   const [password, setPassword] = useState("");
   const [signingIn, setSigningIn] = useState(false);
   const [code, setCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetNote, setResetNote] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
   const [setupInfo, setSetupInfo] = useState<{ qr: string; key: string } | null>(null);
 
   const [runs, setRuns] = useState<ResearchRun[]>([]);
@@ -2187,6 +2190,23 @@ export function AiUpdatesPanel() {
       setError(cause instanceof Error ? cause.message : "Could not check that code.");
     } finally {
       setSigningIn(false);
+    }
+  }
+
+  async function handleForgot() {
+    setResetting(true);
+    setError(null);
+    setResetNote(null);
+    try {
+      const result = await requestJson<{ message: string }>("/api/phrenos-updates/auth/reset", {
+        method: "POST",
+        body: JSON.stringify({ action: "request" }),
+      });
+      setResetNote(result.message);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not send a reset link.");
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -2775,18 +2795,34 @@ export function AiUpdatesPanel() {
             <span className="text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase">
               Password
             </span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className={inputClass}
-              required
-            />
+            <span className="relative block">
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className={`${inputClass} pr-20`}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-pressed={showPassword}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute top-1/2 right-4 -translate-y-1/2 text-[11px] font-semibold tracking-[0.14em] text-[#e0c078] uppercase hover:text-[#f1e8d6]"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </span>
           </label>
           {error ? (
             <p className="text-sm text-[#e8b4a0]" role="alert">
               {error}
+            </p>
+          ) : null}
+          {resetNote ? (
+            <p className="text-sm text-[#cfe0d1]" role="status">
+              {resetNote}
             </p>
           ) : null}
           <button
@@ -2796,6 +2832,16 @@ export function AiUpdatesPanel() {
           >
             {signingIn ? "Signing in..." : "Sign in"}
           </button>
+          <p>
+            <button
+              type="button"
+              onClick={() => void handleForgot()}
+              disabled={resetting}
+              className="text-xs text-[#e0c078] underline-offset-4 hover:underline disabled:opacity-50"
+            >
+              {resetting ? "Sending a link..." : "Forgot password?"}
+            </button>
+          </p>
         </form>
       </div>
     );

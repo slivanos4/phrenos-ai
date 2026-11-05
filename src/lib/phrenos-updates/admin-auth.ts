@@ -86,6 +86,36 @@ function constantTimeEqual(left: string, right: string): boolean {
   return mismatch === 0;
 }
 
+/** Signed, expiring token for links sent by email. The fingerprint ties it to the current password, so it dies once the password changes. */
+export async function createSignedToken(purpose: string, fingerprint: string, ttlSeconds: number): Promise<string> {
+  const payload = `${purpose}:${Math.floor(Date.now() / 1000) + ttlSeconds}:${fingerprint}`;
+  const body = btoa(payload).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return `${body}.${await sign(payload)}`;
+}
+
+export async function readSignedToken(token: string, purpose: string): Promise<{ fingerprint: string } | null> {
+  const [body, signature] = token.split(".");
+  if (!body || !signature) return null;
+  try {
+    const payload = atob(body.replace(/-/g, "+").replace(/_/g, "/"));
+    if (!constantTimeEqual(await sign(payload), signature)) return null;
+    const [kind, expiry, fingerprint] = payload.split(":");
+    if (kind !== purpose || !fingerprint || Number(expiry) * 1000 <= Date.now()) return null;
+    return { fingerprint };
+  } catch {
+    return null;
+  }
+}
+
+/** The password set in the environment, for when no reset has replaced it yet. */
+export function environmentPasswordMatches(password: string | null | undefined): boolean {
+  return verifyAdminPassword(password);
+}
+
+export function environmentPasswordFingerprint(): string {
+  return adminPassword();
+}
+
 export function verifyAdminPassword(password: string | null | undefined): boolean {
   const expected = adminPassword();
   if (!expected) return false;

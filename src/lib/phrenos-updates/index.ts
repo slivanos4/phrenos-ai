@@ -126,12 +126,14 @@ export {
   clearPendingSession,
   createAdminSession,
   createPendingSession,
+  createSignedToken,
   isAdminAuthConfigured,
   requireAdminSession,
   verifyAdminPassword,
   verifyAdminSession,
   verifyCronOrAdmin,
   verifyCronSecret,
+  readSignedToken,
   verifyPendingSession,
 } from "@/lib/phrenos-updates/admin-auth";
 

@@ -6,10 +6,9 @@ import {
   createPendingSession,
   errorResponse,
   isAdminAuthConfigured,
-  verifyAdminPassword,
   verifyAdminSession,
 } from "@/lib/phrenos-updates";
-import { isTwoStepEnrolled } from "@/lib/phrenos-updates/admin-security";
+import { checkPassword, isTwoStepEnrolled } from "@/lib/phrenos-updates/admin-security";
 
 export async function GET(request: Request) {
   try {
@@ -37,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     const payload = (await request.json()) as { password?: string };
-    if (!verifyAdminPassword(payload.password)) {
+    if (!(await checkPassword(String(payload.password ?? "")))) {
       return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
     }
 
