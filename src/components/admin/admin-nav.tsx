@@ -3,6 +3,7 @@ import Link from "next/link";
 const ITEMS = [
   { href: "/admin/ai-updates", label: "Content research", key: "content" },
   { href: "/admin/market-desk", label: "Market Desk", key: "markets" },
+  { href: "/admin/ai-visibility", label: "AI visibility", key: "visibility" },
   { href: "/admin/leads", label: "Leads", key: "leads" },
 ] as const;
 
