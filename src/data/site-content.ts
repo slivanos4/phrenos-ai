@@ -3,7 +3,7 @@ export const site = {
   tagline: "AI Strategy, Automation & Innovation",
   definition: "phren·os (n.): mind, intellect, reason",
   description:
-    "An independent, UK-based AI consultancy led by Sophia Livanos, helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
+    "An independent, UK-based AI consultancy helping businesses turn Generative AI, data and automation into measurable operational and commercial impact.",
   email: "hello@phrenosai.com",
   linkedin: "https://www.linkedin.com/in/sophia-livanos-45144b22",
 } as const;
@@ -41,7 +41,7 @@ export const hero = {
     "Technology changes quickly, but curiosity, critical thinking and good judgement never go out of style.",
   offerLead: "AI that actually works for your business.",
   offer:
-    "Phrenos.ai is an independent, UK-based AI consultancy, founded and led by Sophia Livanos. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
+    "Phrenos.ai is an independent, UK-based AI consultancy. We help business leaders introduce Generative AI, data and automation, stay ahead and expand, from the first strategy to the systems and training that keep it working.",
   secondary: {
     emphasis:
       "The best use of AI doesn't replace expertise, creativity or human judgement; it amplifies them.",
