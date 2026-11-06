@@ -8,7 +8,7 @@ import { services } from "@/data/site-content";
 
 const pageTitle = "Consultancy";
 const pageDescription =
-  "Phrenos.ai is an independent, UK-based AI consultancy led by Sophia Livanos. Five services for business leaders: AI strategy, workflow automation, content and digital systems, competitive intelligence and AI training.";
+  "Phrenos.ai is an independent, UK-based AI consultancy. Five services for business leaders: AI strategy, workflow automation, content and digital systems, competitive intelligence and AI training.";
 
 const servicesJsonLd = {
   "@context": "https://schema.org",
@@ -62,7 +62,7 @@ export default function ConsultancyPage() {
         lightWash
         eyebrow="Consultancy"
         title="Capability with commercial intent."
-        description="Phrenos.ai is an independent, UK-based AI consultancy led by Sophia Livanos. Five capabilities, one goal: AI that changes what your business can do, not just how it talks about the future."
+        description="Phrenos.ai is an independent, UK-based AI consultancy. Five capabilities, one goal: AI that changes what your business can do, not just how it talks about the future."
       />
       <section className="bg-[#0a100c] pt-12 pb-2 lg:pt-16">
         <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
