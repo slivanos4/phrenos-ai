@@ -62,14 +62,14 @@ export default function ConsultancyPage() {
         lightWash
         eyebrow="Consultancy"
         title="Capability with commercial intent."
-        description="Five capabilities. One goal: AI that changes what your business can do, not just how it talks about the future."
+        description="Phrenos.ai is an independent, UK-based AI consultancy led by Sophia Livanos. Five capabilities, one goal: AI that changes what your business can do, not just how it talks about the future."
       />
       <section className="bg-[#0a100c] pt-12 pb-2 lg:pt-16">
         <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
           <p className="text-base leading-relaxed text-ivory/90 sm:text-lg">
-            Phrenos.ai is an independent, UK-based AI consultancy led by Sophia Livanos. We help business leaders introduce Generative AI, data and automation,
-            from the first strategy to the systems and training that keep it working. Our proof is five AI systems in the
-            solutions portfolio and more than 40 custom GPTs and AI assistants built.
+            We help business leaders introduce Generative AI, data and automation, from the first strategy to the
+            systems and training that keep it working. Our proof is five AI systems in the solutions portfolio and
+            more than 40 custom GPTs and AI assistants built.
           </p>
           <p className="mt-4 text-sm text-sage">
             The first step is free: a 15-minute intro call, or the{" "}

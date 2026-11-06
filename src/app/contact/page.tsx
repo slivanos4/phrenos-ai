@@ -5,7 +5,7 @@ import { contactPage } from "@/data/site-content";
 
 const pageTitle = "Contact";
 const pageDescription =
-  "Contact Phrenos.ai to build your AI strategy. A short note is enough to begin finding where AI, data or automation can create real leverage.";
+  "Contact Sophia Livanos at Phrenos.ai, an independent UK-based AI consultancy. Book a free 15-minute intro call or send a short note to find where AI, data or automation can create real leverage in your business.";
 
 export const metadata: Metadata = {
   title: pageTitle,

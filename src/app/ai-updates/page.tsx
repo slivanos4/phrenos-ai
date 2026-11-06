@@ -13,7 +13,7 @@ import {
 
 const pageTitle = "AI Updates";
 const pageDescription =
-  "Fortnightly AI news and analysis on Generative AI models, products and industry moves, written for leaders putting AI to work.";
+  "Fortnightly AI news and analysis from Phrenos.ai on Generative AI models, products and industry moves, written for business leaders deciding where to put AI to work.";
 
 export const metadata: Metadata = {
   title: pageTitle,

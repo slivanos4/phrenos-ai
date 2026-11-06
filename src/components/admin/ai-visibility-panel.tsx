@@ -360,7 +360,7 @@ function AdviceSection({ advice: saved, at, busy, canAdvise, onAdvise }: { advic
         <div className="flex flex-wrap gap-2">
           {advice ? <button type="button" className={microButtonClass} onClick={() => void downloadAdvice(advice, at)}>Export all suggestions (Word)</button> : null}
           {advice ? <button type="button" className={microButtonClass} onClick={copy}>{copied ? "Copied" : "Copy all"}</button> : null}
-          <button type="button" className={microButtonClass} disabled={busy !== null || !canAdvise} onClick={onAdvise}>{busy === "advise" ? "Working it out..." : advice ? "Refresh suggestions" : "Work out suggestions"}</button>
+          <button type="button" className={advice ? primaryButtonClass : microButtonClass} disabled={busy !== null || !canAdvise} onClick={onAdvise}>{busy === "advise" ? "Working it out..." : advice ? "Refresh suggestions" : "Work out suggestions"}</button>
         </div>
       </div>
       {!advice ? <p className="text-sm text-[#a9b0a3]">{canAdvise ? "Press Work out suggestions, or run Check now, which does it for you." : "Run Check now first, so there are answers to work from."}</p> : null}
@@ -401,6 +401,10 @@ function AdviceSection({ advice: saved, at, busy, canAdvise, onAdvise }: { advic
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[#c9c6ba]">{advice.basics.map((b) => <li key={b}>{b}</li>)}</ul>
             </div>
           ) : null}
+          <div className="flex flex-wrap items-center gap-3 border-t border-[#d4af5a]/15 pt-4">
+            <button type="button" className={primaryButtonClass} disabled={busy !== null || !canAdvise} onClick={onAdvise}>{busy === "advise" ? "Working it out..." : "Refresh suggestions"}</button>
+            <p className="text-xs text-[#a9b0a3]">Works out a fresh set from the latest answers and the current state of the site. It replaces the list above.</p>
+          </div>
         </>
       ) : null}
     </div>

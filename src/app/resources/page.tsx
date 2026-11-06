@@ -7,7 +7,7 @@ import { leadMagnets } from "@/data/site-content";
 
 const pageTitle = "Resources";
 const pageDescription =
-  "Free AI tools and cheat sheets from Phrenos.ai for leaders putting Generative AI to work, starting with How to Brief AI Like a Strategist.";
+  "Free tools for business leaders putting AI to work: the eight-question AI readiness check and the 8-page cheat sheet How to Brief AI Like a Strategist, from Phrenos.ai.";
 
 export const metadata: Metadata = {
   title: pageTitle,

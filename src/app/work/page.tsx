@@ -6,7 +6,7 @@ import { SelectedWork } from "@/components/selected-work";
 
 const pageTitle = "Work";
 const pageDescription =
-  "AI consulting case studies from Phrenos.ai: competitive intelligence, workflow automation, content systems and knowledge assistants built for real businesses.";
+  "Five AI systems built by Phrenos.ai for content, SEO, product, editorial, analytics and finance teams: competitor research and report building from days to minutes, plus continuous review checking and one place to ask company questions.";
 
 export const metadata: Metadata = {
   title: pageTitle,
