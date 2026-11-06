@@ -333,6 +333,7 @@ export const footer = {
     { label: "Consultancy", href: "/consultancy" },
     { label: "Work", href: "/work" },
     { label: "Approach", href: "/approach" },
+    { label: "Guides", href: "/guides" },
     { label: "AI Updates", href: "/ai-updates" },
     { label: "Resources", href: "/resources" },
     { label: "About", href: "/about" },
