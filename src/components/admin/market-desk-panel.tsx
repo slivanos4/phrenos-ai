@@ -26,11 +26,13 @@ import {
   when,
 } from "@/components/admin/market-desk-ui";
 import { RankingsTab } from "@/components/admin/market-desk-rankings";
+import { DashboardsTab } from "@/components/admin/market-desk-dashboards";
 import { BriefTab, MarketsTab, SignalsTab } from "@/components/admin/market-desk-research";
 
-type Tab = "overview" | "rankings" | "holdings" | "brief" | "signals" | "markets" | "settings";
+type Tab = "overview" | "dashboards" | "rankings" | "holdings" | "brief" | "signals" | "markets" | "settings";
 const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Overview" },
+  { key: "dashboards", label: "Dashboards" },
   { key: "rankings", label: "Rankings" },
   { key: "holdings", label: "Holdings" },
   { key: "brief", label: "Weekly brief" },
@@ -115,6 +117,7 @@ export function MarketDeskPanel() {
       {overview ? (
         <>
           {tab === "overview" ? <OverviewTab overview={overview} reload={load} setNotice={setNotice} setError={setError} onTab={setTab} /> : null}
+          {tab === "dashboards" ? <DashboardsTab overview={overview} setError={setError} setNotice={setNotice} /> : null}
           {tab === "rankings" ? <RankingsTab setError={setError} setNotice={setNotice} /> : null}
           {tab === "holdings" ? <HoldingsTab overview={overview} reload={load} setNotice={setNotice} setError={setError} /> : null}
           {tab === "brief" ? <BriefTab setNotice={setNotice} setError={setError} reload={load} /> : null}

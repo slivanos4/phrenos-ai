@@ -93,7 +93,7 @@ export function ComparePanel({ initialKeys }: { initialKeys: string[] }) {
       if (valid.length < 2) return null;
       return valid.reduce((a, b) => ((pick(a) as number) >= (pick(b) as number) === high ? a : b)).key;
     };
-    const change = (field: keyof CompareAsset) => (a: CompareAsset) => <span className={tone(a[field] as number | null)}>{pct(a[field] as number | null)}</span>;
+    const change = (field: keyof CompareAsset) => function ChangeCell(a: CompareAsset) { return <span className={tone(a[field] as number | null)}>{pct(a[field] as number | null)}</span>; };
     return [
       { label: "Price", cell: (a) => `${a.price >= 1000 ? a.price.toLocaleString("en-GB", { maximumFractionDigits: 0 }) : a.price >= 1 ? a.price.toFixed(2) : a.price.toPrecision(3)} ${a.currency}` },
       { label: "1 day", cell: change("change_1d"), best: best((a) => a.change_1d) },
