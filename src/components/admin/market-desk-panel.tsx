@@ -6,6 +6,7 @@ import type { Overview, HoldingView } from "@/lib/market-desk/overview";
 import type { AlertRow, SearchHit } from "@/lib/market-desk/types";
 import {
   Disclaimer,
+  RiskBanner,
   RiskBadge,
   RiskMeter,
   Sparkline,
@@ -27,6 +28,7 @@ import {
 } from "@/components/admin/market-desk-ui";
 import { RankingsTab } from "@/components/admin/market-desk-rankings";
 import { DashboardsTab } from "@/components/admin/market-desk-dashboards";
+import { ApiAccessCard } from "@/components/admin/market-desk-api";
 import { BriefTab, MarketsTab, SignalsTab } from "@/components/admin/market-desk-research";
 
 type Tab = "overview" | "dashboards" | "rankings" | "holdings" | "brief" | "signals" | "markets" | "settings";
@@ -93,6 +95,7 @@ export function MarketDeskPanel() {
 
   return (
     <div className="space-y-5">
+      <RiskBanner />
       <div role="tablist" aria-label="Market Desk sections" className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-2 bg-[#0a100c]/90 px-1 py-2 backdrop-blur">
         {TABS.map((item) => (
           <button
@@ -601,6 +604,8 @@ function SettingsTab({ overview, reload, setNotice, setError }: Shared & { overv
           </ul>
         ) : null}
       </section>
+
+      <ApiAccessCard setError={setError} />
 
       <section className={panelClass}>
         <p className={eyebrowClass}>When to warn me</p>

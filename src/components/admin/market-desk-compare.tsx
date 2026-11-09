@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Compare, CompareAsset } from "@/lib/market-desk/compare";
 import type { SearchHit } from "@/lib/market-desk/types";
-import { RiskBadge, api, eyebrowClass, fieldClass, ghostButtonClass, microButtonClass, panelClass, pct, tone } from "@/components/admin/market-desk-ui";
+import { RiskBadge, RiskBanner, api, eyebrowClass, fieldClass, ghostButtonClass, microButtonClass, panelClass, pct, tone } from "@/components/admin/market-desk-ui";
 import { makeMoney } from "@/components/admin/market-desk-stats";
 
 const COLOURS = ["#e0c078", "#8fbf9f", "#a9b8e8", "#e8a0c0"];
@@ -115,6 +115,7 @@ export function ComparePanel({ initialKeys }: { initialKeys: string[] }) {
   return (
     <div className="space-y-5">
       <Link href="/admin/market-desk" className="text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline">← Back to Market Desk</Link>
+      <RiskBanner />
       <header>
         <h1 className="font-serif text-3xl text-[#f1e8d6]">Compare</h1>
         <p className="mt-1 max-w-2xl text-sm text-[#a9b0a3]">Up to four assets side by side. The chart starts every line at 100, so a £5 coin and a £500 share can be compared by how each moved. It shows the past, not what comes next.</p>

@@ -7,6 +7,7 @@ import { Avatar, ScoreBar, gbpCompact, gbpPrice } from "@/components/admin/marke
 import {
   Disclaimer,
   RiskBadge,
+  RiskBanner,
   RiskMeter,
   api,
   eyebrowClass,
@@ -268,6 +269,8 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
         <div className="mt-3"><Chart detail={detail} /></div>
         <p className="mt-3 text-[11px] text-[#a9b0a3]">Daily closing prices in {asset.currency}. Dashed lines mark the levels any warning is measured against.</p>
       </section>
+
+      <RiskBanner />
 
       <SectionNav hasResearch={!!detail.ranking} hasAbout={!!detail.facts?.about} />
 

@@ -102,3 +102,12 @@ export function Disclaimer() {
     </p>
   );
 }
+
+/** The standing reminder at the top of every Market Desk page, with a link to how it all works. */
+export function RiskBanner() {
+  return (
+    <p className="rounded-xl border border-[#e0c078]/35 bg-[#e0c078]/8 px-4 py-2.5 text-[11px] leading-relaxed text-[#d5d0c1]">
+      Research and risk flags only, not financial advice. You can lose money, and past moves do not predict the future. <a href="/admin/market-desk/methodology" className="font-semibold text-[#e0c078] underline-offset-4 hover:underline">How this works, and where the data comes from</a>
+    </p>
+  );
+}
