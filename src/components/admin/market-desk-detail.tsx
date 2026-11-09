@@ -237,7 +237,10 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
   const { asset, alert, holding } = detail;
   return (
     <div className="space-y-5">
-      <Link href="/admin/market-desk" className="text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline">← Back to Market Desk</Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link href="/admin/market-desk" className="text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline">← Back to Market Desk</Link>
+        <Link href={`/admin/market-desk/compare?keys=${encodeURIComponent(detail.asset.key)}`} className={ghostButtonClass}>Compare with others</Link>
+      </div>
 
       <header className="flex flex-wrap items-center gap-4">
         <Avatar row={detail.ranking ?? { image: null, symbol: asset.symbol, name: asset.name }} size={52} />
