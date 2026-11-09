@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import { DEFAULT_THRESHOLDS } from "@/lib/market-desk/alerts";
+import { buildFacts, type AssetFacts } from "@/lib/market-desk/facts";
 import { fetchSeries } from "@/lib/market-desk/providers";
 import { rankingFor, type RankingRow } from "@/lib/market-desk/rankings";
 import { buyPriceInAssetCurrency, getSettings, listHoldings, refreshAsset, T } from "@/lib/market-desk/store";
@@ -20,6 +21,7 @@ export type Detail = {
   announcements: { title: string; event_date: string | null; source_url: string; impact: string }[];
   links: { label: string; url: string }[];
   ranking: RankingRow | null;
+  facts: AssetFacts | null;
 };
 
 const RULES: Record<string, string> = {
@@ -124,6 +126,12 @@ export async function buildDetail(key: string, alertId?: string | null): Promise
     supabase.from(T.events).select("title, event_date, source_url, impact").eq("impact", "high").gte("event_date", new Date(Date.now() - 7 * 86400000).toISOString()).order("event_date", { ascending: false }).limit(6),
   ]);
 
+  const [newsItems, facts, ranking] = await Promise.all([
+    news(asset),
+    buildFacts(asset, series).catch((error) => { console.warn(`Facts for ${key} failed:`, error); return null; }),
+    rankingFor(key),
+  ]);
+
   return {
     asset,
     chart: { dates: dates.slice(-260), closes: closes.slice(-260) },
@@ -132,10 +140,11 @@ export async function buildDetail(key: string, alertId?: string | null): Promise
     rule: alert ? (RULES[alert.kind] ?? null) : null,
     holding: holdingRow && buyNative ? { ...holdingRow, buy_native: buyNative } : null,
     timeline: timeline.map((item) => ({ ...item, date: dateLabel(item.date) })),
-    news: await news(asset),
+    news: newsItems,
     signals: (signals ?? []) as Detail["signals"],
     announcements: (events ?? []) as Detail["announcements"],
     links: externalLinks(asset),
-    ranking: await rankingFor(key),
+    ranking,
+    facts,
   };
 }

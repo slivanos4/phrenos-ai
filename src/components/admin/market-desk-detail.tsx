@@ -10,13 +10,15 @@ import {
   RiskMeter,
   api,
   eyebrowClass,
-  gbp,
+  ghostButtonClass,
   panelClass,
   pct,
   price,
   tone,
   when,
 } from "@/components/admin/market-desk-ui";
+import { makeMoney, useMarketStats, type Currency } from "@/components/admin/market-desk-stats";
+import type { HistoryRow } from "@/lib/market-desk/facts";
 
 const LINE_COLOURS = { buy: "#e0c078", high: "#8fbf9f", warn: "#e8b4a0", avg: "#a9b0a3" } as const;
 
@@ -112,6 +114,88 @@ function ResearchView({ ranking }: { ranking: NonNullable<Detail["ranking"]> }) 
   );
 }
 
+
+const SECTIONS: [string, string][] = [["price", "Price"], ["stats", "Stats"], ["convert", "Converter"], ["research", "Our view"], ["history", "History"], ["about", "About"], ["news", "News"], ["sources", "Sources"]];
+
+/** Jump links to each part of the page, like the section bar on a CoinGecko or Kraken asset page. */
+function SectionNav({ hasResearch, hasAbout }: { hasResearch: boolean; hasAbout: boolean }) {
+  return (
+    <nav aria-label="Sections" className="flex flex-wrap gap-1.5">
+      {SECTIONS.filter(([id]) => (id !== "research" || hasResearch) && (id !== "about" || hasAbout)).map(([id, label]) => (
+        <a key={id} href={`#${id}`} className="rounded-full border border-[#d4af5a]/25 px-3 py-1 text-[11px] font-semibold text-[#a9b0a3] transition-colors hover:border-[#d4af5a]/60 hover:text-[#e0c078]">{label}</a>
+      ))}
+    </nav>
+  );
+}
+
+const units = (value: number | null | undefined) => (value === null || value === undefined ? "n/a" : value >= 1e9 ? `${(value / 1e9).toFixed(2)}bn` : value >= 1e6 ? `${(value / 1e6).toFixed(2)}m` : value.toLocaleString("en-GB", { maximumFractionDigits: 0 }));
+const dateText = (value: string) => new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+/** Turns an amount of the asset into pounds, dollars or euros, and back. Uses today's rates, so it is a conversion, not a quote. */
+function Converter({ priceGbp, symbol }: { priceGbp: number | null; symbol: string }) {
+  const stats = useMarketStats();
+  const [amount, setAmount] = useState("1");
+  const [currency, setCurrency] = useState<Currency>("GBP");
+  const [reverse, setReverse] = useState(false);
+  const rate = currency === "GBP" ? 1 : (stats?.rates[currency] ?? null);
+  const money = makeMoney(currency, stats?.rates ?? null);
+  const n = Number(amount.replace(/,/g, ""));
+  const ready = priceGbp !== null && rate !== null && Number.isFinite(n) && n >= 0;
+  const result = !ready ? null : reverse ? n / (priceGbp! * rate!) : money.price(n * priceGbp!);
+  return (
+    <section id="convert" className={`${panelClass} scroll-mt-24`}>
+      <p className={eyebrowClass}>Converter</p>
+      <div className="mt-3 grid items-end gap-3 sm:grid-cols-[1fr_auto_1fr]">
+        <label className="space-y-1.5">
+          <span className="text-[11px] text-[#a9b0a3]">{reverse ? `Amount in ${currency}` : `Amount of ${symbol}`}</span>
+          <input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} className="w-full rounded-xl border border-[#d4af5a]/55 bg-[#0a100c]/70 px-4 py-2.5 text-sm text-[#f1e8d6] outline-none focus:border-[#e0c078]" />
+        </label>
+        <button type="button" onClick={() => setReverse((value) => !value)} aria-label="Swap direction" className={ghostButtonClass}>⇄</button>
+        <div className="space-y-1.5">
+          <span className="text-[11px] text-[#a9b0a3]">{reverse ? `Worth in ${symbol}` : `Worth in ${currency}`}</span>
+          <p className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/40 px-4 py-2.5 text-sm text-[#f1e8d6]">{result === null ? "n/a" : typeof result === "number" ? result.toLocaleString("en-GB", { maximumSignificantDigits: 6 }) : result}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex gap-1.5">{(["GBP", "USD", "EUR"] as Currency[]).map((code) => <button key={code} type="button" disabled={code !== "GBP" && !stats?.rates[code]} onClick={() => setCurrency(code)} className={`rounded-full border px-3 py-1 text-[11px] font-semibold disabled:opacity-40 ${currency === code ? "border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]" : "border-[#d4af5a]/25 text-[#a9b0a3]"}`}>{code}</button>)}</div>
+    </section>
+  );
+}
+
+const PERIODS: [keyof NonNullable<Detail["facts"]>["history"], string][] = [["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"], ["year", "Yearly"]];
+
+function HistoryTable({ facts, currency }: { facts: NonNullable<Detail["facts"]>; currency: string }) {
+  const available = PERIODS.filter(([key]) => facts.history[key].length > 0);
+  const [period, setPeriod] = useState<keyof typeof facts.history>("day");
+  const active = available.some(([key]) => key === period) ? period : (available[0]?.[0] ?? "day");
+  const rows: HistoryRow[] = facts.history[active];
+  return (
+    <section id="history" className={`${panelClass} scroll-mt-24`}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className={eyebrowClass}>Price history</p>
+        <div className="flex gap-1.5">{available.map(([key, label]) => <button key={key} type="button" onClick={() => setPeriod(key)} className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${active === key ? "border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]" : "border-[#d4af5a]/25 text-[#a9b0a3]"}`}>{label}</button>)}</div>
+      </div>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[520px] text-left text-sm">
+          <thead><tr className="border-b border-[#d4af5a]/15 text-[10px] uppercase tracking-[0.12em] text-[#a9b0a3]"><th className="py-2 pr-3 font-semibold">Period</th><th className="px-3 py-2 text-right font-semibold">Open</th><th className="px-3 py-2 text-right font-semibold">High</th><th className="px-3 py-2 text-right font-semibold">Low</th><th className="px-3 py-2 text-right font-semibold">Close</th><th className="px-3 py-2 text-right font-semibold">Change</th></tr></thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.label} className="border-b border-[#d4af5a]/8">
+                <td className="py-2 pr-3 text-[#f1e8d6]">{row.label}</td>
+                <td className="px-3 py-2 text-right text-[#c9c6ba]">{price(row.open)}</td>
+                <td className="px-3 py-2 text-right text-[#c9c6ba]">{price(row.high)}</td>
+                <td className="px-3 py-2 text-right text-[#c9c6ba]">{price(row.low)}</td>
+                <td className="px-3 py-2 text-right text-[#f1e8d6]">{price(row.close)}</td>
+                <td className={`px-3 py-2 text-right ${tone(row.change)}`}>{pct(row.change)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-[11px] leading-relaxed text-[#a9b0a3]">Prices in {currency}, built from daily closing prices. Open is the previous period&apos;s close, and high and low are the highest and lowest close in the period, so brief swings inside a day are not shown.</p>
+    </section>
+  );
+}
+
 function StatCell({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="rounded-xl border border-[#d4af5a]/15 bg-[#0a100c]/50 px-4 py-3"><p className={eyebrowClass}>{label}</p><p className="mt-1 text-sm text-[#f1e8d6]">{children}</p></div>;
 }
@@ -175,24 +259,48 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
         </section>
       ) : null}
 
-      <section className={panelClass}>
+      <section id="price" className={`${panelClass} scroll-mt-24`}>
         <p className={eyebrowClass}>Price chart</p>
         <div className="mt-3"><Chart detail={detail} /></div>
         <p className="mt-3 text-[11px] text-[#a9b0a3]">Daily closing prices in {asset.currency}. Dashed lines mark the levels any warning is measured against.</p>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <SectionNav hasResearch={!!detail.ranking} hasAbout={!!detail.facts?.about} />
+
+      <section id="stats" className="grid scroll-mt-24 grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCell label="Market cap">{gbpCompact(detail.ranking?.market_cap_gbp)}</StatCell>
         <StatCell label="Traded today">{gbpCompact(detail.ranking?.volume_gbp)}</StatCell>
+        <StatCell label="Market rank">{detail.facts?.rank ? `#${detail.facts.rank}` : detail.ranking ? `#${detail.ranking.rank} in our scan` : "n/a"}</StatCell>
+        <StatCell label="Last 30 sessions">{detail.facts ? <><span className="text-[#8fbf9f]">{detail.facts.up_days_30} up</span> · <span className="text-[#e8b4a0]">{detail.facts.down_days_30} down</span></> : "n/a"}</StatCell>
         <StatCell label="7 days"><span className={tone(asset.change_7d)}>{pct(asset.change_7d)}</span></StatCell>
         <StatCell label="30 days"><span className={tone(asset.change_30d)}>{pct(asset.change_30d)}</span></StatCell>
         <StatCell label="90 days"><span className={tone(asset.change_90d)}>{pct(asset.change_90d)}</span></StatCell>
         <StatCell label="52-week range">{detail.ranking?.year_low && detail.ranking?.year_high ? `${price(detail.ranking.year_low)} to ${price(detail.ranking.year_high)}` : "n/a"}</StatCell>
+        {detail.facts?.ath ? <StatCell label={detail.facts.ath.scope === "all-time" ? "All-time high" : "10-year high"}>{price(detail.facts.ath.price, asset.currency)}<span className="block text-[11px] text-[#a9b0a3]">{dateText(detail.facts.ath.date)}</span></StatCell> : null}
+        {detail.facts?.ath ? <StatCell label="From that high"><span className={tone(detail.facts.ath.below_by)}>{pct(detail.facts.ath.below_by)}</span><span className="block text-[11px] text-[#a9b0a3]">{detail.facts.ath.days_since.toLocaleString("en-GB")} days ago</span></StatCell> : null}
         <StatCell label="Against 200-day average"><span className={tone(detail.ranking?.vs_sma200)}>{pct(detail.ranking?.vs_sma200)}</span></StatCell>
         <StatCell label="Worst fall in a year"><span className="text-[#e8b4a0]">{pct(asset.drawdown_1y, false)}</span></StatCell>
+        {detail.facts?.max_supply || (asset.asset_type === "crypto" && detail.facts?.circulating_supply) ? <StatCell label="Coins in circulation">{units(detail.facts?.circulating_supply)}{detail.facts?.max_supply ? <span className="block text-[11px] text-[#a9b0a3]">of {units(detail.facts.max_supply)} maximum</span> : null}</StatCell> : null}
+        {detail.facts?.pe ? <StatCell label="Price to earnings">{detail.facts.pe.toFixed(1)}</StatCell> : null}
+        {detail.facts?.dividend_yield ? <StatCell label="Dividend yield">{(detail.facts.dividend_yield * 100).toFixed(2)}%</StatCell> : null}
+        {detail.facts?.beta !== null && detail.facts?.beta !== undefined ? <StatCell label="Beta (vs the market)">{detail.facts.beta.toFixed(2)}</StatCell> : null}
+        {detail.facts?.sector ? <StatCell label="Sector">{detail.facts.sector}{detail.facts.industry ? <span className="block text-[11px] text-[#a9b0a3]">{detail.facts.industry}</span> : null}</StatCell> : null}
       </section>
 
-      {detail.ranking ? <ResearchView ranking={detail.ranking} /> : null}
+      <Converter priceGbp={asset.price_gbp} symbol={asset.symbol} />
+
+      {detail.ranking ? <div id="research" className="scroll-mt-24"><ResearchView ranking={detail.ranking} /></div> : null}
+
+      {detail.facts ? <HistoryTable facts={detail.facts} currency={asset.currency} /> : null}
+
+      {detail.facts?.about ? (
+        <section id="about" className={`${panelClass} scroll-mt-24`}>
+          <p className={eyebrowClass}>About {asset.name}</p>
+          <p className="mt-3 text-sm leading-relaxed text-[#d5d0c1]">{detail.facts.about}</p>
+          {detail.facts.categories.length > 0 ? <ul className="mt-3 flex flex-wrap gap-2">{detail.facts.categories.map((name) => <li key={name} className="rounded-full border border-[#d4af5a]/30 px-3 py-1 text-[11px] text-[#c9c6ba]">{name}</li>)}</ul> : null}
+          <p className="mt-3 text-[11px] text-[#a9b0a3]">{detail.facts.about_source ? <>Description from <ExternalLink href={detail.facts.about_source.url}>{detail.facts.about_source.name}</ExternalLink>. </> : null}{detail.facts.website ? <ExternalLink href={detail.facts.website}>Official website</ExternalLink> : null}</p>
+        </section>
+      ) : null}
 
       <section className="grid gap-5 lg:grid-cols-2">
         <div className={panelClass}>
@@ -210,7 +318,7 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
         </div>
       </section>
 
-      <section className={panelClass}>
+      <section id="news" className={`${panelClass} scroll-mt-24`}>
         <p className={eyebrowClass}>Latest news about it</p>
         {detail.news.length === 0 ? <p className="mt-3 text-sm text-[#a9b0a3]">No recent headlines found. Try the links below.</p> : (
           <ul className="mt-3 space-y-2">
@@ -244,7 +352,7 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
         </section>
       ) : null}
 
-      <section className={panelClass}>
+      <section id="sources" className={`${panelClass} scroll-mt-24`}>
         <p className={eyebrowClass}>Check the numbers yourself</p>
         <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
           {detail.links.map((link) => <li key={link.url}><ExternalLink href={link.url}>{link.label}</ExternalLink></li>)}
