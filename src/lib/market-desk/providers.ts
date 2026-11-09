@@ -9,7 +9,7 @@ function cgHeaders(url: string): Record<string, string> {
   return key && url.includes("coingecko.com") ? { "x-cg-demo-api-key": key } : {};
 }
 
-async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
+export async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   for (let attempt = 0; ; attempt += 1) {
     const response = await fetch(url, {
       ...init,

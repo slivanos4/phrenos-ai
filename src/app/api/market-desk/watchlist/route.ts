@@ -1,7 +1,11 @@
 import { adminJson } from "@/lib/market-desk/route";
-import { addToWatchlist, removeFromWatchlist } from "@/lib/market-desk/store";
+import { addToWatchlist, listWatchlist, removeFromWatchlist } from "@/lib/market-desk/store";
 
 export const maxDuration = 60;
+
+export function GET(request: Request) {
+  return adminJson(request, async () => ({ keys: (await listWatchlist()).map((item) => String(item.asset_key)) }));
+}
 
 export function POST(request: Request) {
   return adminJson(request, async () => {

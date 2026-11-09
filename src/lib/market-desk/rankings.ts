@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import { computeMetrics, riskLabelFor } from "@/lib/market-desk/metrics";
 import { getYahooSession } from "@/lib/market-desk/options";
 import { fxRate, yahooSeries } from "@/lib/market-desk/providers";
+import { cleanAll, type Quality } from "@/lib/market-desk/sanity";
 import { listSignals } from "@/lib/market-desk/signals";
 import { T } from "@/lib/market-desk/store";
 import { COMMODITIES, ETFS, STOCKS } from "@/lib/market-desk/universe";
@@ -298,6 +299,8 @@ async function writeNotes(top: ReturnType<typeof scoreCandidates>): Promise<Reco
   return json ? (JSON.parse(json) as Record<string, string>) : {};
 }
 
+let lastQuality: Quality = { dropped: [], fixed: 0 };
+
 /** The scan and the scoring, without saving anything. */
 export async function computeRankings() {
   const [yahoo, crypto, signals] = await Promise.all([
@@ -305,7 +308,10 @@ export async function computeRankings() {
     gatherCrypto().catch((error) => { console.warn("Crypto rankings skipped:", error); return [] as Candidate[]; }),
     listSignals(200).catch(() => []),
   ]);
-  const sorted = scoreCandidates([...yahoo, ...crypto], signals as Signal[]).sort((a, b) => b.score - a.score || b.tie - a.tie);
+  const { kept, quality } = cleanAll([...yahoo, ...crypto]);
+  if (quality.dropped.length > 0 || quality.fixed > 0) console.warn(`Rankings data check: left out ${quality.dropped.join(", ") || "nothing"}; repaired ${quality.fixed} rows.`);
+  lastQuality = quality;
+  const sorted = scoreCandidates(kept, signals as Signal[]).sort((a, b) => b.score - a.score || b.tie - a.tie);
   // Labels follow both the score and the position, so only the top tenth can be called strongest.
   return sorted.map((entry, index) => ({
     ...entry,
@@ -314,7 +320,7 @@ export async function computeRankings() {
 }
 
 /** Scans the whole universe, scores and orders it, and saves the list. Notes (one AI call) are written weekly. */
-export async function refreshRankings(options: { notes?: boolean } = {}): Promise<{ ranked: number; noted: number }> {
+export async function refreshRankings(options: { notes?: boolean } = {}): Promise<{ ranked: number; noted: number; repaired: number; left_out: number }> {
   const startedAt = new Date().toISOString();
   const scored = await computeRankings();
 
@@ -350,7 +356,7 @@ export async function refreshRankings(options: { notes?: boolean } = {}): Promis
     if (error) throw new Error(/phrenos_market_rankings/.test(error.message) ? "The rankings table is missing. Run supabase/migrations/009_market_rankings.sql in Supabase." : error.message);
   }
   await supabase.from(T.rankings).delete().lt("updated_at", startedAt);
-  return { ranked: rows.length, noted: Object.keys(notes).length };
+  return { ranked: rows.length, noted: Object.keys(notes).length, repaired: lastQuality.fixed, left_out: lastQuality.dropped.length };
 }
 
 export async function listRankings(): Promise<RankingRow[]> {
