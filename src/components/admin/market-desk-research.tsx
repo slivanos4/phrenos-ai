@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { Overview } from "@/lib/market-desk/overview";
 import type { BriefIdea, BriefSections } from "@/lib/market-desk/brief";
 import type { AssetRow, SearchHit } from "@/lib/market-desk/types";
-import type { WhatIf } from "@/lib/market-desk/whatif";
+import type { Dca, WhatIf } from "@/lib/market-desk/whatif";
 import {
   RiskBadge,
   RiskMeter,
@@ -338,6 +338,8 @@ export function MarketsTab({ overview, reload, setNotice, setError }: Shared & {
   const [amount, setAmount] = useState("1000");
   const [months, setMonths] = useState("12");
   const [result, setResult] = useState<WhatIf | null>(null);
+  const [dca, setDca] = useState<Dca | null>(null);
+  const [mode, setMode] = useState<"once" | "weekly" | "monthly">("once");
   const [calculating, setCalculating] = useState(false);
 
   async function search() {
@@ -385,7 +387,14 @@ export function MarketsTab({ overview, reload, setNotice, setError }: Shared & {
     setCalculating(true);
     setError(null);
     try {
-      setResult((await api<{ result: WhatIf }>(`/api/market-desk/whatif?key=${encodeURIComponent(asset.key)}&amount=${Number(amount)}&months=${Number(months)}`)).result);
+      const base = `/api/market-desk/whatif?key=${encodeURIComponent(asset.key)}&amount=${Number(amount)}&months=${Number(months)}`;
+      if (mode === "once") {
+        setDca(null);
+        setResult((await api<{ result: WhatIf }>(base)).result);
+      } else {
+        setResult(null);
+        setDca((await api<{ dca: Dca }>(`${base}&frequency=${mode}`)).dca);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not calculate.");
     } finally {
@@ -426,11 +435,26 @@ export function MarketsTab({ overview, reload, setNotice, setError }: Shared & {
 
           <div className="mt-6 border-t border-[#d4af5a]/15 pt-4">
             <p className={eyebrowClass}>What if: how this played out in the past</p>
-            <div className="mt-2 flex flex-wrap items-end gap-3">
-              <label className="space-y-1.5"><span className={labelClass}>Amount</span><input className={`${fieldClass} w-32`} inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
-              <label className="space-y-1.5"><span className={labelClass}>Held for (months)</span><input className={`${fieldClass} w-28`} inputMode="numeric" value={months} onChange={(event) => setMonths(event.target.value)} /></label>
+            <div className="mt-2 flex gap-1.5" role="tablist" aria-label="How the money goes in">
+              {([["once", "All at once"], ["weekly", "Every week"], ["monthly", "Every month"]] as const).map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={mode === key} onClick={() => { setMode(key); setResult(null); setDca(null); }} className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${mode === key ? "border-[#d4af5a] bg-[#d4af5a]/15 text-[#e0c078]" : "border-[#d4af5a]/25 text-[#a9b0a3]"}`}>{label}</button>)}
+            </div>
+            <div className="mt-3 flex flex-wrap items-end gap-3">
+              <label className="space-y-1.5"><span className={labelClass}>{mode === "once" ? "Amount" : `Amount each ${mode === "weekly" ? "week" : "month"}`}</span><input className={`${fieldClass} w-32`} inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
+              <label className="space-y-1.5"><span className={labelClass}>{mode === "once" ? "Held for (months)" : "Saving for (months)"}</span><input className={`${fieldClass} w-28`} inputMode="numeric" value={months} onChange={(event) => setMonths(event.target.value)} /></label>
               <button type="button" className={primaryButtonClass} disabled={calculating} onClick={() => void calculate()}>{calculating ? "Looking back..." : "Look back"}</button>
             </div>
+            {dca ? (
+              <div className="mt-4 text-sm text-[#d5d0c1]">
+                <p>Paying in {price(dca.amount, dca.currency)} every {dca.frequency === "weekly" ? "week" : "month"} for {dca.months} month{dca.months === 1 ? "" : "s"}, over {dca.windows} possible start dates in the last {dca.years} years, the gain or loss on the money paid in ended like this:</p>
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                  {[["Worst", dca.worst], ["Poor (1 in 10)", dca.p10], ["Typical", dca.median], ["Good (1 in 10)", dca.p90], ["Best", dca.best]].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-xl border border-[#d4af5a]/20 bg-[#0a100c]/55 px-3 py-2"><p className={eyebrowClass}>{label}</p><p className={`mt-1 font-serif text-lg ${tone(Number(value))}`}>{pct(Number(value))}</p></div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs">Most recent stretch: {dca.recent.buys} payments, {price(dca.recent.invested, dca.currency)} paid in, now worth {price(dca.recent.value, dca.currency)} ({pct(dca.recent.gain)}), average price paid {price(dca.recent.average_cost, dca.currency)}. Putting all of it in on day one would now be worth {price(dca.recent.lump_value, dca.currency)}.</p>
+                <p className="mt-2 text-xs">Regular buying lost money in {(dca.loss_share * 100).toFixed(0)}% of start dates, and beat putting everything in on day one in {(dca.beat_lump_share * 100).toFixed(0)}% of them. {dca.note}</p>
+              </div>
+            ) : null}
             {result ? (
               <div className="mt-4 text-sm text-[#d5d0c1]">
                 <p>Over {result.windows} possible start dates in the last {result.years} years, holding {price(result.amount, result.currency)} for {result.months} month{result.months === 1 ? "" : "s"} ended like this:</p>
