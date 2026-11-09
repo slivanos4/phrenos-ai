@@ -36,7 +36,7 @@ const RULES: Record<string, string> = {
   event_risk: "Tells you about big announcements due within a day, because prices often move sharply when they land.",
 };
 
-async function news(asset: AssetRow): Promise<NewsItem[]> {
+export async function fetchNews(asset: AssetRow): Promise<NewsItem[]> {
   const query = asset.provider === "cg" ? asset.name : asset.symbol;
   try {
     const response = await fetch(
@@ -127,7 +127,7 @@ export async function buildDetail(key: string, alertId?: string | null): Promise
   ]);
 
   const [newsItems, facts, ranking] = await Promise.all([
-    news(asset),
+    fetchNews(asset),
     buildFacts(asset, series).catch((error) => { console.warn(`Facts for ${key} failed:`, error); return null; }),
     rankingFor(key),
   ]);

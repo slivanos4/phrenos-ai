@@ -25,6 +25,13 @@ export async function GET(request: Request) {
     } catch (error) {
       console.error("Rankings refresh failed:", error);
     }
+    // A fresh Pulse each day for everything you hold or watch, and the top of the rankings.
+    try {
+      const { generatePulses, pulseTargets } = await import("@/lib/market-desk/pulse");
+      await generatePulses(await pulseTargets());
+    } catch (error) {
+      console.error("Daily Pulse failed:", error);
+    }
   });
   if (monday) {
     after(async () => {

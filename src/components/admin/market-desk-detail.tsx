@@ -18,6 +18,7 @@ import {
   when,
 } from "@/components/admin/market-desk-ui";
 import { makeMoney, useMarketStats, type Currency } from "@/components/admin/market-desk-stats";
+import { PulseCard } from "@/components/admin/market-desk-pulse";
 import type { HistoryRow } from "@/lib/market-desk/facts";
 
 const LINE_COLOURS = { buy: "#e0c078", high: "#8fbf9f", warn: "#e8b4a0", avg: "#a9b0a3" } as const;
@@ -115,7 +116,7 @@ function ResearchView({ ranking }: { ranking: NonNullable<Detail["ranking"]> }) 
 }
 
 
-const SECTIONS: [string, string][] = [["price", "Price"], ["stats", "Stats"], ["convert", "Converter"], ["research", "Our view"], ["history", "History"], ["about", "About"], ["news", "News"], ["sources", "Sources"]];
+const SECTIONS: [string, string][] = [["price", "Price"], ["stats", "Stats"], ["pulse", "Pulse"], ["convert", "Converter"], ["research", "Our view"], ["history", "History"], ["about", "About"], ["news", "News"], ["sources", "Sources"]];
 
 /** Jump links to each part of the page, like the section bar on a CoinGecko or Kraken asset page. */
 function SectionNav({ hasResearch, hasAbout }: { hasResearch: boolean; hasAbout: boolean }) {
@@ -286,6 +287,8 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
         {detail.facts?.beta !== null && detail.facts?.beta !== undefined ? <StatCell label="Beta (vs the market)">{detail.facts.beta.toFixed(2)}</StatCell> : null}
         {detail.facts?.sector ? <StatCell label="Sector">{detail.facts.sector}{detail.facts.industry ? <span className="block text-[11px] text-[#a9b0a3]">{detail.facts.industry}</span> : null}</StatCell> : null}
       </section>
+
+      <PulseCard assetKey={asset.key} />
 
       <Converter priceGbp={asset.price_gbp} symbol={asset.symbol} />
 

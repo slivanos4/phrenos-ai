@@ -14,6 +14,9 @@ export const T = {
   signals: "phrenos_market_signals",
   launches: "phrenos_market_launches",
   rankings: "phrenos_market_rankings",
+  pulses: "phrenos_market_pulses",
+  dashboards: "phrenos_market_dashboards",
+  tokens: "phrenos_market_api_tokens",
   push: "phrenos_push_subscriptions",
 } as const;
 
