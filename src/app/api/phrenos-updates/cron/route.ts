@@ -7,7 +7,8 @@ import {
   verifyCronSecret,
 } from "@/lib/phrenos-updates";
 
-export const maxDuration = 300;
+// Research plus the week's hero draft took about 4m50s on a good week, right at the old 300s limit. The Pro plan allows up to 800s.
+export const maxDuration = 800;
 
 // The schedule fires every Sunday, but automatic research only runs every second one (a fortnightly
 // cadence, to save credits). Anchored to a fixed Sunday so it never drifts across months or years.

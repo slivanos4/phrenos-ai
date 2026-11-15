@@ -39,7 +39,10 @@ import type {
 import { runResearchAgent } from "@/lib/phrenos-updates/research-agent";
 import { CUSTOM_RUN_LOOKBACK } from "@/lib/phrenos-updates/types";
 
-const STALE_RUN_MINUTES = 12;
+/** Must stay above the 800 second function limit on the research routes, or a run still working could be marked failed. */
+const STALE_RUN_MINUTES = 16;
+/** No new attempt is started after this long, so a failing run records its real error before the function limit ends it. */
+const NO_NEW_ATTEMPT_AFTER_MS = 9 * 60 * 1000;
 const MAX_RESEARCH_ATTEMPTS = 3;
 
 export type TriggerType = "cron" | "manual" | "retry";
@@ -326,6 +329,7 @@ export async function executeResearchRun(options: {
 
   let runId = options.existingRunId;
   let attempt = 0;
+  const functionStartedMs = Date.now();
 
   if (!runId) {
     const { data: run, error } = await supabase
@@ -463,7 +467,9 @@ export async function executeResearchRun(options: {
         message.includes("ANTHROPIC_API_KEY") ||
         message.includes("TAVILY_API_KEY");
 
-      if (nonRetryable || attempt >= MAX_RESEARCH_ATTEMPTS) {
+      const outOfTime = Date.now() - functionStartedMs > NO_NEW_ATTEMPT_AFTER_MS;
+
+      if (nonRetryable || outOfTime || attempt >= MAX_RESEARCH_ATTEMPTS) {
         await supabase
           .from(RUNS_TABLE)
           .update({

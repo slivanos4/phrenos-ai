@@ -10,7 +10,8 @@ import {
   requireAdminSession,
 } from "@/lib/phrenos-updates";
 
-export const maxDuration = 300;
+// Research plus the week's hero draft took about 4m50s on a good week, right at the old 300s limit. The Pro plan allows up to 800s.
+export const maxDuration = 800;
 
 export async function GET(request: Request) {
   try {
