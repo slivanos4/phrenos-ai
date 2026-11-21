@@ -20,8 +20,8 @@ function RebasedChart({ compare, range }: { compare: Compare; range: number }) {
     const closes = compare.closes[asset.key].slice(-count);
     return { asset, colour: COLOURS[index], values: closes.map((value) => (value / closes[0]) * 100), closes };
   });
-  const width = 800;
-  const height = 300;
+  const width = 1000;
+  const height = 340;
   const pad = { left: 38, right: 10, top: 12, bottom: 22 };
   const all = lines.flatMap((line) => line.values);
   const min = Math.min(...all, 100);

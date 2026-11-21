@@ -36,8 +36,8 @@ function Chart({ detail }: { detail: Detail }) {
   const [hover, setHover] = useState<number | null>(null);
   const closes = detail.chart.closes.slice(-range);
   const dates = detail.chart.dates.slice(-range);
-  const width = 760;
-  const height = 280;
+  const width = 1000;
+  const height = 340;
   const pad = { left: 8, right: 8, top: 12, bottom: 22 };
   const lines = range >= 90 ? detail.lines : [];
   const levels = lines.map((line) => line.value);
@@ -467,7 +467,7 @@ export function AssetDetailPanel({ assetKey, alertId }: { assetKey: string; aler
 
       <SectionNav hasResearch={!!detail.ranking} hasAbout={!!detail.facts?.about} hasCompany={!!detail.facts?.fundamentals} />
 
-      <section id="stats" className="grid scroll-mt-24 grid-cols-2 gap-3 sm:grid-cols-4">
+      <section id="stats" className="grid scroll-mt-24 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         <StatCell label="Market cap">{gbpCompact(detail.ranking?.market_cap_gbp)}</StatCell>
         <StatCell label="Traded today">{gbpCompact(detail.ranking?.volume_gbp)}</StatCell>
         <StatCell label="Market rank">{detail.facts?.rank ? `#${detail.facts.rank}` : detail.ranking ? `#${detail.ranking.rank} in our scan` : "n/a"}</StatCell>
