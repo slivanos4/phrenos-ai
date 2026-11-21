@@ -21,11 +21,11 @@ const SOURCES: [string, string, string][] = [
 export default function MethodologyPage() {
   return (
     <section className="relative isolate min-h-[100svh] bg-[#0a100c]">
-      <div className="relative z-10 mx-auto max-w-3xl px-5 pt-28 pb-16 sm:px-8 sm:pt-32 lg:pt-36 lg:pb-24">
+      <div className="relative z-10 mx-auto max-w-7xl px-5 pt-28 pb-16 sm:px-8 sm:pt-32 lg:pt-36 lg:pb-24">
         <AdminNav current="markets" />
-        <div className="space-y-5">
-          <Link href="/admin/market-desk" className="text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline">← Back to Market Desk</Link>
-          <header>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Link href="/admin/market-desk" className="lg:col-span-2 text-[11px] font-semibold tracking-[0.18em] text-[#e0c078] uppercase underline-offset-4 hover:underline">← Back to Market Desk</Link>
+          <header className="lg:col-span-2">
             <h1 className="font-serif text-3xl text-[#f1e8d6]">How Market Desk works</h1>
             <p className="mt-2 text-sm leading-relaxed text-[#a9b0a3]">What each number means, where it comes from, how fresh it is, and what it cannot tell you. Read this before relying on anything on the dashboard.</p>
           </header>
@@ -57,7 +57,7 @@ export default function MethodologyPage() {
             <p className="text-sm leading-relaxed text-[#d5d0c1]">Before anything is ranked, impossible numbers are blanked: a fall of more than 100%, a rise of more than 10,000%, a negative market value, a price of zero or a reversed yearly range. An asset with no believable price is left out. A rescan tells you how many were repaired or left out. All-time highs for shares listed outside the US are limited to ten years, because older prices on those exchanges are often in different units.</p>
           </section>
 
-          <section className={panelClass}>
+          <section className={`${panelClass} lg:col-span-2`}>
             <p className={eyebrowClass}>Where the data comes from</p>
             <ul className="mt-3 space-y-3">
               {SOURCES.map(([name, used, fresh]) => <li key={name} className="text-sm"><span className="font-semibold text-[#f1e8d6]">{name}</span><span className="block text-[#c9c6ba]">{used}</span><span className="block text-[11px] text-[#a9b0a3]">{fresh}</span></li>)}
@@ -74,7 +74,7 @@ export default function MethodologyPage() {
               <li>It gives research and risk flags, never advice on what to buy, sell or how much to invest.</li>
             </ul>
           </section>
-          <Disclaimer />
+          <div className="lg:col-span-2"><Disclaimer /></div>
         </div>
       </div>
     </section>

@@ -27,7 +27,7 @@ export default function AdminAiUpdatesPage() {
       />
 
       {/* Clear the fixed site header */}
-      <div className="relative z-10 mx-auto max-w-6xl px-5 pt-28 pb-16 sm:px-8 sm:pt-32 lg:pt-36 lg:pb-24">
+      <div className="relative z-10 mx-auto max-w-7xl px-5 pt-28 pb-16 sm:px-8 sm:pt-32 lg:pt-36 lg:pb-24">
         <AdminNav current="content" />
         <p className="text-xs font-semibold tracking-[0.28em] text-[#d4af5a] uppercase">
           Private
@@ -39,11 +39,11 @@ export default function AdminAiUpdatesPage() {
           Research the week, auto-draft the strongest featured blog and LinkedIn
           pack, then approve and publish the blog on its own.
         </p>
-        <div className="mt-10 max-w-3xl">
+        <div className="mt-10">
           <AiUpdatesPanel />
         </div>
 
-        <div className="mt-8 max-w-3xl">
+        <div className="mt-8">
           <ResourceNotifyForm />
         </div>
       </div>
