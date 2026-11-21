@@ -1,12 +1,17 @@
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
 import { DEFAULT_THRESHOLDS } from "@/lib/market-desk/alerts";
+import { fetchNews, type NewsItem } from "@/lib/market-desk/news";
 import { buildFacts, type AssetFacts } from "@/lib/market-desk/facts";
-import { fetchSeries } from "@/lib/market-desk/providers";
+import { historicalOdds, type Odds } from "@/lib/market-desk/odds";
+import { outlookFrom, type Outlook } from "@/lib/market-desk/outlook-core";
+import { getView, type ViewRecord } from "@/lib/market-desk/views";
+import { fetchSeries, yahooSeries } from "@/lib/market-desk/providers";
 import { rankingFor, type RankingRow } from "@/lib/market-desk/rankings";
 import { buyPriceInAssetCurrency, getSettings, listHoldings, refreshAsset, T } from "@/lib/market-desk/store";
 import type { AlertRow, AssetRow, HoldingRow } from "@/lib/market-desk/types";
 
-export type NewsItem = { title: string; publisher: string; link: string; published: string | null };
+
+export type { NewsItem };
 
 export type Detail = {
   asset: AssetRow;
@@ -22,6 +27,9 @@ export type Detail = {
   links: { label: string; url: string }[];
   ranking: RankingRow | null;
   facts: AssetFacts | null;
+  outlook: Outlook;
+  odds: Odds;
+  view: ViewRecord | null;
 };
 
 const RULES: Record<string, string> = {
@@ -35,26 +43,6 @@ const RULES: Record<string, string> = {
   data_stale: "Warns when the price feed could not be reached, so the other rules cannot be checked.",
   event_risk: "Tells you about big announcements due within a day, because prices often move sharply when they land.",
 };
-
-export async function fetchNews(asset: AssetRow): Promise<NewsItem[]> {
-  const query = asset.provider === "cg" ? asset.name : asset.symbol;
-  try {
-    const response = await fetch(
-      `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=0&newsCount=8`,
-      { headers: { "User-Agent": "Mozilla/5.0 (compatible; PhrenosMarketDesk/1.0)" }, signal: AbortSignal.timeout(15000), cache: "no-store" },
-    );
-    if (!response.ok) return [];
-    const body = (await response.json()) as { news?: { title: string; publisher?: string; link: string; providerPublishTime?: number }[] };
-    return (body.news ?? []).map((item) => ({
-      title: item.title,
-      publisher: item.publisher ?? "",
-      link: item.link,
-      published: item.providerPublishTime ? new Date(item.providerPublishTime * 1000).toISOString() : null,
-    }));
-  } catch {
-    return [];
-  }
-}
 
 function externalLinks(asset: AssetRow) {
   if (asset.provider === "cg") {
@@ -126,11 +114,19 @@ export async function buildDetail(key: string, alertId?: string | null): Promise
     supabase.from(T.events).select("title, event_date, source_url, impact").eq("impact", "high").gte("event_date", new Date(Date.now() - 7 * 86400000).toISOString()).order("event_date", { ascending: false }).limit(6),
   ]);
 
-  const [newsItems, facts, ranking] = await Promise.all([
+  const [newsItems, facts, ranking, view, longCloses] = await Promise.all([
     fetchNews(asset),
     buildFacts(asset, series).catch((error) => { console.warn(`Facts for ${key} failed:`, error); return null; }),
     rankingFor(key),
+    getView(key).catch(() => null),
+    // Five years of history gives the "what happened after similar falls" record far more cases than one year does.
+    key.startsWith("yahoo:") ? yahooSeries(key.slice(6), "5y").then((long) => long.closes).catch(() => closes) : Promise.resolve(closes),
   ]);
+  const outlook = outlookFrom({
+    change_1d: asset.change_1d, change_7d: asset.change_7d, change_30d: asset.change_30d, change_90d: asset.change_90d,
+    vs_sma200: asset.sma200 && asset.price ? asset.price / asset.sma200 - 1 : null,
+  });
+  const odds = historicalOdds(longCloses, key.startsWith("cg:") ? 365 : 252);
 
   return {
     asset,
@@ -146,5 +142,8 @@ export async function buildDetail(key: string, alertId?: string | null): Promise
     links: externalLinks(asset),
     ranking,
     facts,
+    outlook,
+    odds,
+    view,
   };
 }

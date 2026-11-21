@@ -8,7 +8,7 @@ import type { Pulse } from "@/lib/market-desk/pulse";
 import type { RankingRow } from "@/lib/market-desk/rankings";
 import { Avatar } from "@/components/admin/market-desk-rankings";
 import { MarketStrip, makeMoney, useMarketStats } from "@/components/admin/market-desk-stats";
-import { RiskBadge, api, eyebrowClass, fieldClass, ghostButtonClass, microButtonClass, panelClass, pct, primaryButtonClass, tone, when } from "@/components/admin/market-desk-ui";
+import { OutlookChip, RiskBadge, api, eyebrowClass, fieldClass, ghostButtonClass, microButtonClass, panelClass, pct, primaryButtonClass, tone, when } from "@/components/admin/market-desk-ui";
 
 type EventRow = { title: string; event_date: string; impact: string; region: string; source_url: string };
 type BriefRow = { title: string; week_start: string; sections: { summary?: string[] } };
@@ -59,7 +59,8 @@ function RankList({ rows, field }: { rows: RankingRow[]; field: "change_1d" | "s
           <Link href={assetHref(row.key)} className="flex items-center gap-2.5 text-sm text-[#f1e8d6] hover:text-[#e0c078]">
             <Avatar row={row} size={22} />
             <span className="min-w-0 flex-1 truncate">{row.name} <span className="text-[11px] text-[#a9b0a3]">{row.symbol}</span></span>
-            <span className="text-xs text-[#c9c6ba]">{money.price(row.price_gbp)}</span>
+            <span className="hidden text-xs text-[#c9c6ba] sm:inline">{money.price(row.price_gbp)}</span>
+            <span className="hidden md:inline"><OutlookChip input={row} /></span>
             {field === "score" ? <span className="w-8 text-right font-serif text-[#e0c078]">{row.score}</span> : <span className={`w-16 text-right text-xs ${tone(row.change_1d)}`}>{pct(row.change_1d)}</span>}
           </Link>
         </li>
@@ -88,7 +89,7 @@ function WidgetBody({ type, data }: { type: WidgetType; data: Shared }) {
               <p className="font-serif text-3xl text-[#f1e8d6]">{makeMoney("GBP", null).price(t.value_gbp)}</p>
               <p className={`text-sm ${tone(t.pl_gbp)}`}>{makeMoney("GBP", null).price(Math.abs(t.pl_gbp))} {t.pl_gbp >= 0 ? "ahead" : "behind"} {t.pl_pct !== null ? `(${pct(t.pl_pct)})` : ""}</p>
               <div className="mt-3"><RiskBadge label={t.risk_label} score={t.risk_score} /></div>
-              <ul className="mt-3 space-y-1 text-xs text-[#c9c6ba]">{overview.holdings.slice(0, 5).map((holding) => <li key={holding.id} className="flex justify-between gap-2"><Link href={assetHref(holding.asset_key)} className="truncate hover:text-[#e0c078]">{holding.name || holding.symbol}</Link><span className={tone(holding.pl_pct)}>{pct(holding.pl_pct)}</span></li>)}</ul>
+              <ul className="mt-3 space-y-1 text-xs text-[#c9c6ba]">{overview.holdings.slice(0, 5).map((holding) => <li key={holding.id} className="flex items-center justify-between gap-2"><Link href={assetHref(holding.asset_key)} className="min-w-0 flex-1 truncate hover:text-[#e0c078]">{holding.name || holding.symbol}</Link>{holding.asset ? <OutlookChip input={{ change_1d: holding.asset.change_1d, change_7d: holding.asset.change_7d, change_30d: holding.asset.change_30d, change_90d: holding.asset.change_90d, vs_sma200: holding.asset.sma200 && holding.asset.price ? holding.asset.price / holding.asset.sma200 - 1 : null }} /> : null}<span className={tone(holding.pl_pct)}>{pct(holding.pl_pct)}</span></li>)}</ul>
             </>
           )}
         </Card>
@@ -131,7 +132,7 @@ function WidgetBody({ type, data }: { type: WidgetType; data: Shared }) {
       return (
         <Card title="Watchlist">
           {overview.watchlist.length === 0 ? <p className="text-sm text-[#a9b0a3]">Nothing watched yet. Press the star beside any asset in the Rankings.</p> : (
-            <ul className="space-y-2">{overview.watchlist.slice(0, 6).map((item) => <li key={item.asset_key} className="flex items-center justify-between gap-2 text-sm"><Link href={assetHref(item.asset_key)} className="truncate text-[#f1e8d6] hover:text-[#e0c078]">{item.name || item.symbol}</Link><span className={`text-xs ${tone(item.asset?.change_1d)}`}>{pct(item.asset?.change_1d)}</span></li>)}</ul>
+            <ul className="space-y-2">{overview.watchlist.slice(0, 6).map((item) => <li key={item.asset_key} className="flex items-center justify-between gap-2 text-sm"><Link href={assetHref(item.asset_key)} className="min-w-0 flex-1 truncate text-[#f1e8d6] hover:text-[#e0c078]">{item.name || item.symbol}</Link>{item.asset ? <OutlookChip input={{ change_1d: item.asset.change_1d, change_7d: item.asset.change_7d, change_30d: item.asset.change_30d, change_90d: item.asset.change_90d, vs_sma200: item.asset.sma200 && item.asset.price ? item.asset.price / item.asset.sma200 - 1 : null }} /> : null}<span className={`text-xs ${tone(item.asset?.change_1d)}`}>{pct(item.asset?.change_1d)}</span></li>)}</ul>
           )}
         </Card>
       );

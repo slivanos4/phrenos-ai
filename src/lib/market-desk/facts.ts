@@ -1,4 +1,5 @@
 import { getJson } from "@/lib/market-desk/providers";
+import { parseFundamentals, type Fundamentals } from "@/lib/market-desk/fundamentals";
 import { getYahooSession } from "@/lib/market-desk/options";
 import type { AssetRow, PriceSeries } from "@/lib/market-desk/types";
 
@@ -26,6 +27,7 @@ export type AssetFacts = {
   pe: number | null;
   dividend_yield: number | null;
   beta: number | null;
+  fundamentals: Fundamentals | null;
   up_days_30: number;
   down_days_30: number;
   history: HistoryTable;
@@ -125,13 +127,17 @@ type YahooSummary = {
     assetProfile?: { longBusinessSummary?: string; sector?: string; industry?: string; website?: string };
     summaryDetail?: { trailingPE?: unknown; dividendYield?: unknown; beta?: unknown };
     defaultKeyStatistics?: { beta?: unknown; sharesOutstanding?: unknown };
+    financialData?: Record<string, unknown>;
+    earningsHistory?: { history?: unknown[] };
+    calendarEvents?: { earnings?: { earningsDate?: { fmt?: string }[] } };
+    recommendationTrend?: { trend?: { period?: string; strongBuy?: number; buy?: number; hold?: number; sell?: number; strongSell?: number }[] };
   }[] };
 };
 
 export async function buildFacts(asset: AssetRow, series: PriceSeries): Promise<AssetFacts> {
   const facts: AssetFacts = {
     about: null, about_source: null, categories: [], sector: null, industry: null, website: null, rank: null,
-    circulating_supply: null, total_supply: null, max_supply: null, ath: null, atl: null, pe: null, dividend_yield: null, beta: null,
+    circulating_supply: null, total_supply: null, max_supply: null, ath: null, atl: null, pe: null, dividend_yield: null, beta: null, fundamentals: null,
     up_days_30: 0, down_days_30: 0,
     history: {
       day: periodRows(series.dates, series.closes, (d) => d, 14, fmtDay),
@@ -190,7 +196,7 @@ export async function buildFacts(asset: AssetRow, series: PriceSeries): Promise<
   }
   if (auth) {
     const summary = await getJson<YahooSummary>(
-      `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(asset.symbol)}?modules=assetProfile,summaryDetail,defaultKeyStatistics&crumb=${encodeURIComponent(auth.crumb)}`,
+      `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(asset.symbol)}?modules=assetProfile,summaryDetail,defaultKeyStatistics,financialData,earningsHistory,calendarEvents,recommendationTrend&crumb=${encodeURIComponent(auth.crumb)}`,
       { headers: { Cookie: auth.cookie, "User-Agent": UA } },
     ).catch(() => null);
     const result = summary?.quoteSummary?.result?.[0];
@@ -205,7 +211,22 @@ export async function buildFacts(asset: AssetRow, series: PriceSeries): Promise<
       facts.dividend_yield = raw(result.summaryDetail?.dividendYield);
       facts.beta = raw(result.summaryDetail?.beta) ?? raw(result.defaultKeyStatistics?.beta);
       facts.circulating_supply = raw(result.defaultKeyStatistics?.sharesOutstanding);
+      // Funds and some listings have no reported results, in which case this stays empty.
+      facts.fundamentals = asset.asset_type === "stock" ? parseFundamentals(result as Parameters<typeof parseFundamentals>[0]) : null;
     }
   }
   return facts;
+}
+
+/** Just the company results, for the written research view. Shares only; funds, crypto and currencies have none. */
+export async function loadFundamentals(asset: AssetRow): Promise<Fundamentals | null> {
+  if (asset.provider !== "yahoo" || asset.asset_type !== "stock") return null;
+  const auth = await getYahooSession().catch(() => null);
+  if (!auth) return null;
+  const summary = await getJson<YahooSummary>(
+    `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(asset.symbol)}?modules=summaryDetail,financialData,earningsHistory,calendarEvents,recommendationTrend&crumb=${encodeURIComponent(auth.crumb)}`,
+    { headers: { Cookie: auth.cookie, "User-Agent": UA } },
+  ).catch(() => null);
+  const result = summary?.quoteSummary?.result?.[0];
+  return result ? parseFundamentals(result as Parameters<typeof parseFundamentals>[0]) : null;
 }

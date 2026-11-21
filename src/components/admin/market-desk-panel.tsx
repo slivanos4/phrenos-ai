@@ -6,6 +6,7 @@ import type { Overview, HoldingView } from "@/lib/market-desk/overview";
 import type { AlertRow, SearchHit } from "@/lib/market-desk/types";
 import {
   Disclaimer,
+  OutlookChip,
   RiskBanner,
   RiskBadge,
   RiskMeter,
@@ -232,6 +233,9 @@ function OverviewTab({ overview, reload, setNotice, setError, onTab }: Shared & 
                     ) : typeof alert.data?.source_url === "string" ? (
                       <a href={alert.data.source_url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#e0c078] underline-offset-4 hover:underline">Open the announcement ↗</a>
                     ) : null}
+                    {alert.asset_key && alert.kind === "news" && typeof alert.data?.source_url === "string" ? (
+                      <a href={alert.data.source_url} target="_blank" rel="noreferrer" className="mt-2 ml-4 inline-block text-xs font-semibold text-[#e0c078] underline-offset-4 hover:underline">Read the story ↗</a>
+                    ) : null}
                   </div>
                   <button type="button" className={microButtonClass} onClick={() => void dismiss(alert)}>Dismiss</button>
                 </div>
@@ -320,6 +324,7 @@ function HoldingRowView({ holding, onDone, setNotice, setError }: { holding: Hol
           <p className={`text-xs ${tone(holding.pl_pct)}`}>{pct(holding.pl_pct)} {holding.pl_gbp !== null ? `(${gbp(holding.pl_gbp)})` : ""}</p>
         </div>
         <RiskBadge label={asset?.risk_label} score={asset?.risk_score} />
+        {asset ? <OutlookChip input={{ change_1d: asset.change_1d, change_7d: asset.change_7d, change_30d: asset.change_30d, change_90d: asset.change_90d, vs_sma200: asset.sma200 && asset.price ? asset.price / asset.sma200 - 1 : null }} /> : null}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <button type="button" className={microButtonClass} onClick={() => setOpen((current) => !current)}>{open ? "Hide why" : "Why this risk?"}</button>

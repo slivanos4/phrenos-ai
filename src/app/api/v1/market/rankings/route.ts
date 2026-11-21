@@ -1,4 +1,5 @@
 import { apiJson } from "@/lib/market-desk/api-route";
+import { outlookFrom } from "@/lib/market-desk/outlook-core";
 import { listRankings } from "@/lib/market-desk/rankings";
 
 export const maxDuration = 60;
@@ -16,6 +17,7 @@ export function GET(request: Request) {
         key: row.key, rank: row.rank, score: row.score, view: row.view, name: row.name, symbol: row.symbol, type: row.asset_type,
         price_gbp: row.price_gbp, change_1d: row.change_1d, change_7d: row.change_7d, change_30d: row.change_30d, change_90d: row.change_90d,
         market_cap_gbp: row.market_cap_gbp, risk: row.risk_label, risk_score: row.risk_score,
+        outlook: (({ label, comment }) => ({ label, comment }))(outlookFrom(row)),
         strengths: row.strengths, concerns: row.concerns, updated_at: row.updated_at,
       })),
     };

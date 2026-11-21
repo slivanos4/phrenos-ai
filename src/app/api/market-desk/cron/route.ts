@@ -32,6 +32,13 @@ export async function GET(request: Request) {
     } catch (error) {
       console.error("Daily Pulse failed:", error);
     }
+    // And a fresh research view and outlook for what you hold or watch.
+    try {
+      const { refreshViews, viewTargets } = await import("@/lib/market-desk/views");
+      await refreshViews(await viewTargets());
+    } catch (error) {
+      console.error("Daily research views failed:", error);
+    }
   });
   if (monday) {
     after(async () => {

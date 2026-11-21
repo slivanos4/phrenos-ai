@@ -7,6 +7,7 @@ import type { BriefIdea, BriefSections } from "@/lib/market-desk/brief";
 import type { AssetRow, SearchHit } from "@/lib/market-desk/types";
 import type { Dca, WhatIf } from "@/lib/market-desk/whatif";
 import {
+  OutlookChip,
   RiskBadge,
   RiskMeter,
   Sparkline,
@@ -480,6 +481,7 @@ export function MarketsTab({ overview, reload, setNotice, setError }: Shared & {
                 <Sparkline values={item.asset?.history ?? []} />
                 <span className={`text-xs ${tone(item.asset?.change_30d)}`}>{pct(item.asset?.change_30d)} 30d</span>
                 <RiskBadge label={item.asset?.risk_label} score={item.asset?.risk_score} />
+                {item.asset ? <OutlookChip input={{ change_1d: item.asset.change_1d, change_7d: item.asset.change_7d, change_30d: item.asset.change_30d, change_90d: item.asset.change_90d, vs_sma200: item.asset.sma200 && item.asset.price ? item.asset.price / item.asset.sma200 - 1 : null }} /> : null}
                 <button type="button" className={microButtonClass} onClick={() => void unwatch(item.asset_key)}>Remove</button>
               </li>
             ))}

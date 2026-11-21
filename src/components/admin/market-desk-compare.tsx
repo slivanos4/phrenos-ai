@@ -5,19 +5,20 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Compare, CompareAsset } from "@/lib/market-desk/compare";
 import type { SearchHit } from "@/lib/market-desk/types";
-import { RiskBadge, RiskBanner, api, eyebrowClass, fieldClass, ghostButtonClass, microButtonClass, panelClass, pct, tone } from "@/components/admin/market-desk-ui";
+import { OutlookChip, RiskBadge, RiskBanner, api, eyebrowClass, fieldClass, ghostButtonClass, microButtonClass, panelClass, pct, tone } from "@/components/admin/market-desk-ui";
 import { makeMoney } from "@/components/admin/market-desk-stats";
 
 const COLOURS = ["#e0c078", "#8fbf9f", "#a9b8e8", "#e8a0c0"];
 const RANGES: [string, number][] = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", 260]];
 
-/** Every asset rebased to 100 at the start of the chosen range, so very different prices can be compared by how they moved. */
+/** Every asset rebased to 100 at the start of the chosen range, so very different prices can be compared by how they moved. Hover to read each one on a date. */
 function RebasedChart({ compare, range }: { compare: Compare; range: number }) {
+  const [hover, setHover] = useState<number | null>(null);
   const count = Math.min(range, compare.dates.length);
   const dates = compare.dates.slice(-count);
   const lines = compare.assets.map((asset, index) => {
     const closes = compare.closes[asset.key].slice(-count);
-    return { asset, colour: COLOURS[index], values: closes.map((value) => (value / closes[0]) * 100) };
+    return { asset, colour: COLOURS[index], values: closes.map((value) => (value / closes[0]) * 100), closes };
   });
   const width = 800;
   const height = 300;
@@ -30,14 +31,60 @@ function RebasedChart({ compare, range }: { compare: Compare; range: number }) {
   const y = (v: number) => pad.top + (1 - (v - min) / span) * (height - pad.top - pad.bottom);
   const ticks = [min, (min + max) / 2, max];
   const label = (value: string) => new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const at = hover === null ? -1 : Math.min(hover, dates.length - 1);
+  const left = at >= 0 ? (x(at) / width) * 100 : 0;
+
+  function move(clientX: number, target: SVGSVGElement) {
+    const rect = target.getBoundingClientRect();
+    const svgX = ((clientX - rect.left) / rect.width) * width;
+    setHover(Math.max(0, Math.min(dates.length - 1, Math.round(((svgX - pad.left) / (width - pad.left - pad.right)) * (dates.length - 1)))));
+  }
+
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label="Performance of each asset, rebased to 100">
-      {ticks.map((tick) => <g key={tick}><line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} stroke="#d4af5a" strokeOpacity="0.12" /><text x={pad.left - 6} y={y(tick) + 3} fontSize="10" fill="#a9b0a3" textAnchor="end">{tick.toFixed(0)}</text></g>)}
-      <line x1={pad.left} x2={width - pad.right} y1={y(100)} y2={y(100)} stroke="#a9b0a3" strokeOpacity="0.5" strokeDasharray="4 4" />
-      {lines.map((line) => <polyline key={line.asset.key} points={line.values.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" ")} fill="none" stroke={line.colour} strokeWidth="1.9" strokeLinejoin="round" />)}
-      <text x={pad.left} y={height - 6} fontSize="10" fill="#a9b0a3">{label(dates[0])}</text>
-      <text x={width - pad.right} y={height - 6} fontSize="10" fill="#a9b0a3" textAnchor="end">{label(dates[dates.length - 1])}</text>
-    </svg>
+    <div className="relative">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="w-full touch-pan-y outline-none"
+        role="img"
+        aria-label="Performance of each asset, rebased to 100. Move the pointer or use the arrow keys to read values."
+        tabIndex={0}
+        onPointerMove={(event) => move(event.clientX, event.currentTarget)}
+        onPointerDown={(event) => move(event.clientX, event.currentTarget)}
+        onPointerLeave={() => setHover(null)}
+        onBlur={() => setHover(null)}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft") { event.preventDefault(); setHover((current) => Math.max(0, (current ?? dates.length - 1) - 1)); }
+          if (event.key === "ArrowRight") { event.preventDefault(); setHover((current) => Math.min(dates.length - 1, (current ?? dates.length - 1) + 1)); }
+          if (event.key === "Escape") setHover(null);
+        }}
+      >
+        {ticks.map((tick) => <g key={tick}><line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} stroke="#d4af5a" strokeOpacity="0.12" /><text x={pad.left - 6} y={y(tick) + 3} fontSize="10" fill="#a9b0a3" textAnchor="end">{tick.toFixed(0)}</text></g>)}
+        <line x1={pad.left} x2={width - pad.right} y1={y(100)} y2={y(100)} stroke="#a9b0a3" strokeOpacity="0.5" strokeDasharray="4 4" />
+        {lines.map((line) => <polyline key={line.asset.key} points={line.values.map((value, i) => `${x(i).toFixed(1)},${y(value).toFixed(1)}`).join(" ")} fill="none" stroke={line.colour} strokeWidth="1.9" strokeLinejoin="round" />)}
+        {at >= 0 ? (
+          <>
+            <line x1={x(at)} x2={x(at)} y1={pad.top} y2={height - pad.bottom} stroke="#f1e8d6" strokeOpacity="0.45" />
+            {lines.map((line) => <circle key={line.asset.key} cx={x(at)} cy={y(line.values[at])} r="4" fill="#0a100c" stroke={line.colour} strokeWidth="2" />)}
+          </>
+        ) : null}
+        <text x={pad.left} y={height - 6} fontSize="10" fill="#a9b0a3">{label(dates[0])}</text>
+        <text x={width - pad.right} y={height - 6} fontSize="10" fill="#a9b0a3" textAnchor="end">{label(dates[dates.length - 1])}</text>
+      </svg>
+      {at >= 0 ? (
+        <div className="pointer-events-none absolute top-2 z-10 w-52 rounded-xl border border-[#d4af5a]/40 bg-[#0a100c]/95 px-3 py-2 text-xs shadow-lg" style={{ left: `${left}%`, transform: left > 60 ? "translateX(calc(-100% - 12px))" : "translateX(12px)" }} role="status">
+          <p className="text-[11px] text-[#a9b0a3]">{new Date(dates[at]).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</p>
+          <ul className="mt-1 space-y-1">
+            {lines.map((line) => (
+              <li key={line.asset.key} className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-[#f1e8d6]"><span className="h-2 w-2 rounded-full" style={{ background: line.colour }} />{line.asset.symbol}</span>
+                <span className={tone(line.values[at] / 100 - 1)}>{pct(line.values[at] / 100 - 1)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-[10px] text-[#a9b0a3]">Change since {label(dates[0])}</p>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -105,6 +152,7 @@ export function ComparePanel({ initialKeys }: { initialKeys: string[] }) {
       { label: "Worst fall in a year", hint: "Closer to zero is better", cell: (a) => <span className="text-[#e8b4a0]">{pct(a.drawdown_1y, false)}</span>, best: best((a) => a.drawdown_1y) },
       { label: "Against 200-day average", cell: change("vs_sma200"), best: best((a) => a.vs_sma200) },
       { label: "Risk", hint: "Lower is safer", cell: (a) => <RiskBadge label={a.risk_label} score={a.risk_score} />, best: best((a) => a.risk_score, false) },
+      { label: "Outlook", hint: "Where the price pattern stands", cell: (a) => <OutlookChip input={a} /> },
       { label: "Our evidence score", hint: "Out of 100", cell: (a) => (a.score === null ? "Not ranked" : `${a.score} · ${a.view}`), best: best((a) => a.score) },
       { label: "Market cap", cell: (a) => makeMoney("GBP", null).compact(a.market_cap_gbp) },
     ];

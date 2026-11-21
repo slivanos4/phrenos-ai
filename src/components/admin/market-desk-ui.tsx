@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TONE_CLASS, outlookFrom, type OutlookInput } from "@/lib/market-desk/outlook-core";
 
 export const panelClass = "rounded-2xl border border-[#d4af5a]/25 bg-[#101c14]/88 p-5 backdrop-blur-md sm:p-6";
 export const primaryButtonClass =
@@ -109,5 +110,16 @@ export function RiskBanner() {
     <p className="rounded-xl border border-[#e0c078]/35 bg-[#e0c078]/8 px-4 py-2.5 text-[11px] leading-relaxed text-[#d5d0c1]">
       Research and risk flags only, not financial advice. You can lose money, and past moves do not predict the future. <a href="/admin/market-desk/methodology" className="font-semibold text-[#e0c078] underline-offset-4 hover:underline">How this works, and where the data comes from</a>
     </p>
+  );
+}
+
+/** A small label for where the price pattern stands, with the plain-language reading as its tooltip. Used wherever an asset appears. */
+export function OutlookChip({ input }: { input: OutlookInput }) {
+  const outlook = outlookFrom(input);
+  if (outlook.state === "unknown") return <span className="text-[11px] text-[#a9b0a3]">n/a</span>;
+  return (
+    <span title={outlook.comment} className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-semibold tracking-wide ${TONE_CLASS[outlook.tone]}`}>
+      {outlook.label}
+    </span>
   );
 }

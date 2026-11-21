@@ -1,6 +1,6 @@
 import { callAnthropic, extractJsonObject, isAnthropicConfigured } from "@/lib/phrenos-updates/anthropic";
 import { createServiceRoleClient } from "@/lib/phrenos-updates/supabase";
-import { fetchNews, type NewsItem } from "@/lib/market-desk/detail";
+import { fetchNews, type NewsItem } from "@/lib/market-desk/news";
 import { listHoldings, listWatchlist, refreshAsset, T } from "@/lib/market-desk/store";
 import type { AssetRow } from "@/lib/market-desk/types";
 

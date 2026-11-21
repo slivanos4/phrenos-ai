@@ -1,5 +1,6 @@
 import { apiJson } from "@/lib/market-desk/api-route";
 import { ApiError } from "@/lib/market-desk/api-tokens";
+import { outlookFrom } from "@/lib/market-desk/outlook-core";
 import { pulsesFor } from "@/lib/market-desk/pulse";
 import { rankingFor } from "@/lib/market-desk/rankings";
 import { refreshAsset } from "@/lib/market-desk/store";
@@ -20,6 +21,7 @@ export function GET(request: Request) {
         risk: asset.risk_label, risk_score: asset.risk_score, risk_reasons: asset.risk_reasons, drawdown_1y: asset.drawdown_1y, updated_at: asset.updated_at,
       },
       ranking: ranking ? { rank: ranking.rank, score: ranking.score, view: ranking.view, strengths: ranking.strengths, concerns: ranking.concerns, watch_for: ranking.watch_for, note: ranking.note } : null,
+      outlook: outlookFrom({ change_1d: asset.change_1d, change_7d: asset.change_7d, change_30d: asset.change_30d, change_90d: asset.change_90d, vs_sma200: asset.sma200 && asset.price ? asset.price / asset.sma200 - 1 : null }),
       pulse: pulses[0] ?? null,
     };
   });

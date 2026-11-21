@@ -38,19 +38,20 @@ const SEVERITY_COLOUR: Record<string, string> = { critical: "#b3261e", warning: 
 export function alertEmail(alerts: AlertRow[]): { subject: string; html: string } {
   const critical = alerts.filter((alert) => alert.severity === "critical").length;
   const subject = critical
-    ? `Market Desk: ${critical} urgent warning${critical === 1 ? "" : "s"} on your holdings`
-    : `Market Desk: ${alerts.length} new warning${alerts.length === 1 ? "" : "s"} on your holdings`;
+    ? `Market Desk: ${critical} urgent warning${critical === 1 ? "" : "s"}`
+    : `Market Desk: ${alerts.length} new warning${alerts.length === 1 ? "" : "s"}`;
   const items = alerts
     .map(
       (alert) => `<div style="border-left:4px solid ${SEVERITY_COLOUR[alert.severity] ?? "#4a5248"};padding:8px 14px;margin:0 0 14px;">
   <p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:#101c14;">${escapeHtml(alert.title)}</p>
-  <p style="margin:0;font-size:14px;line-height:1.5;color:#4a5248;">${escapeHtml(alert.message)}</p>
+  <p style="margin:0;font-size:14px;line-height:1.5;color:#4a5248;">${escapeHtml(alert.message)}</p>${alert.asset_key ? `
+  <p style="margin:8px 0 0;font-size:13px;"><a href="${siteOrigin()}/admin/market-desk/asset?key=${encodeURIComponent(alert.asset_key)}&alert=${alert.id}" style="color:#101c14;">See why, with the chart and sources</a></p>` : ""}
 </div>`,
     )
     .join("");
   const html = `<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;color:#1a221c;">
   <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#a9893d;">Market Desk</p>
-  <h1 style="margin:0 0 16px;font-size:22px;color:#101c14;">Holdings worth a look</h1>
+  <h1 style="margin:0 0 16px;font-size:22px;color:#101c14;">Worth a look</h1>
   ${items}
   <p style="margin:18px 0 16px;"><a href="${siteOrigin()}/admin/market-desk" style="display:inline-block;padding:12px 20px;background:#101c14;color:#f1e8d6;text-decoration:none;border-radius:999px;font-size:14px;">Open Market Desk</a></p>
   <p style="margin:0;font-size:12px;color:#7a8278;line-height:1.5;">These are automatic risk flags based on price data and your own alert rules. They are research, not financial advice, and they cannot predict the market.</p>

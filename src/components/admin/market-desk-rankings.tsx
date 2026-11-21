@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { RankingRow } from "@/lib/market-desk/rankings";
 import {
+  OutlookChip,
   RiskBadge,
   Sparkline,
   api,
@@ -260,7 +261,7 @@ export function RankingsTab({ setError, setNotice }: { setError: (value: string 
             ) : null}
 
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[1080px] text-left text-sm">
+              <table className="w-full min-w-[1240px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#d4af5a]/15 text-[10px] text-[#a9b0a3]">
                     <th className="w-16 px-2 py-2.5" aria-label="Watch and compare" />
@@ -273,6 +274,7 @@ export function RankingsTab({ setError, setNotice }: { setError: (value: string 
                     {header("90d", "change_90d", "text-right")}
                     {header("Market cap", "market_cap_gbp", "text-right")}
                     {header("Risk", "risk_score")}
+                    <th className="px-3 py-2.5 font-semibold uppercase tracking-[0.12em]" title="Where the price pattern stands. Hover a label for the reading. Not a prediction.">Outlook</th>
                     <th className="px-3 py-2.5 font-semibold uppercase tracking-[0.12em]">Evidence score</th>
                     <th className="px-3 py-2.5 font-semibold uppercase tracking-[0.12em]">Trend</th>
                   </tr>
@@ -300,6 +302,7 @@ export function RankingsTab({ setError, setNotice }: { setError: (value: string 
                       {changeCell(row, "change_90d")}
                       <td className="px-3 py-3 text-right text-[#c9c6ba]">{money.compact(row.market_cap_gbp)}</td>
                       <td className="px-3 py-3"><RiskBadge label={row.risk_label} score={row.risk_score} /></td>
+                      <td className="px-3 py-3"><OutlookChip input={row} /></td>
                       <td className="px-3 py-3"><ScoreBar score={row.score} view={row.view} /></td>
                       <td className="px-3 py-3" title={row.asset_type === "crypto" ? "Last 7 days" : "Last 90 days"}><Sparkline values={row.history} width={110} height={32} /><span className="block text-[9px] text-[#a9b0a3]/70">{row.asset_type === "crypto" ? "7 days" : "90 days"}</span></td>
                     </tr>
